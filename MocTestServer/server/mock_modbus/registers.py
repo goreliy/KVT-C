@@ -3,114 +3,95 @@
 """
 
 import threading
-from typing import Dict, Optional
+from typing import Dict
+
+from ..utils import UINT16_MAX, INT16_MAX, INT16_OVERFLOW
 
 
 class VirtualRegisters:
     """Управление виртуальными Modbus регистрами"""
-    
+
     def __init__(self, value_base: int = 30000, status_base: int = 40000, sensor_count: int = 10):
         self.value_base = value_base
         self.status_base = status_base
         self.sensor_count = sensor_count
-        
         self._registers: Dict[int, int] = {}
         self._lock = threading.Lock()
-        
-        # Инициализация регистров
         self._init_registers()
-    
+
+    def _sensor_addrs(self, sensor_id: int):
+        """Вычислить адреса регистров для датчика"""
+        idx = (sensor_id - 1) * 2
+        return (
+            self.value_base + idx,       # temp value
+            self.value_base + idx + 1,   # hum value
+            self.status_base + idx,      # temp status
+            self.status_base + idx + 1,  # hum status
+        )
+
     def _init_registers(self):
-        """Инициализация регистров значениями по умолчанию"""
         for sensor_id in range(1, self.sensor_count + 1):
-            # Регистры значений (температура и влажность)
-            temp_addr = self.value_base + (sensor_id - 1) * 2
-            hum_addr = self.value_base + (sensor_id - 1) * 2 + 1
-            
-            self._registers[temp_addr] = 220  # 22.0°C
-            self._registers[hum_addr] = 450   # 45.0%
-            
-            # Регистры статусов
-            temp_status_addr = self.status_base + (sensor_id - 1) * 2
-            hum_status_addr = self.status_base + (sensor_id - 1) * 2 + 1
-            
-            self._registers[temp_status_addr] = 0  # OK
-            self._registers[hum_status_addr] = 0   # OK
-    
+            t_addr, h_addr, ts_addr, hs_addr = self._sensor_addrs(sensor_id)
+            self._registers[t_addr] = 220   # 22.0°C
+            self._registers[h_addr] = 450   # 45.0%
+            self._registers[ts_addr] = 0    # OK
+            self._registers[hs_addr] = 0    # OK
+
     def get_register(self, address: int) -> int:
-        """Получить значение регистра"""
         with self._lock:
             return self._registers.get(address, 0)
-    
+
     def set_register(self, address: int, value: int):
-        """Установить значение регистра"""
         with self._lock:
-            # Ограничение значения 16-битным числом
-            self._registers[address] = value & 0xFFFF
-    
+            self._registers[address] = value & UINT16_MAX
+
     def get_registers(self, start_address: int, count: int) -> list:
-        """Получить несколько регистров"""
         return [self.get_register(start_address + i) for i in range(count)]
-    
+
     def set_registers(self, start_address: int, values: list):
-        """Установить несколько регистров"""
         for i, value in enumerate(values):
             self.set_register(start_address + i, value)
-    
-    def set_sensor_values(self, sensor_id: int, temperature: float, humidity: float, 
+
+    def set_sensor_values(self, sensor_id: int, temperature: float, humidity: float,
                           temp_status: int = 0, hum_status: int = 0):
         """Установить значения датчика"""
-        # Преобразование в raw (умножаем на 10)
-        temp_raw = int(temperature * 10) & 0xFFFF
-        hum_raw = int(humidity * 10) & 0xFFFF
-        
-        temp_addr = self.value_base + (sensor_id - 1) * 2
-        hum_addr = self.value_base + (sensor_id - 1) * 2 + 1
-        temp_status_addr = self.status_base + (sensor_id - 1) * 2
-        hum_status_addr = self.status_base + (sensor_id - 1) * 2 + 1
-        
+        t_addr, h_addr, ts_addr, hs_addr = self._sensor_addrs(sensor_id)
+        temp_raw = int(temperature * 10) & UINT16_MAX
+        hum_raw = int(humidity * 10) & UINT16_MAX
+
         with self._lock:
-            self._registers[temp_addr] = temp_raw
-            self._registers[hum_addr] = hum_raw
-            self._registers[temp_status_addr] = temp_status
-            self._registers[hum_status_addr] = hum_status
-    
+            self._registers[t_addr] = temp_raw
+            self._registers[h_addr] = hum_raw
+            self._registers[ts_addr] = temp_status
+            self._registers[hs_addr] = hum_status
+
     def get_sensor_values(self, sensor_id: int) -> Dict:
         """Получить значения датчика"""
-        temp_addr = self.value_base + (sensor_id - 1) * 2
-        hum_addr = self.value_base + (sensor_id - 1) * 2 + 1
-        temp_status_addr = self.status_base + (sensor_id - 1) * 2
-        hum_status_addr = self.status_base + (sensor_id - 1) * 2 + 1
-        
+        t_addr, h_addr, ts_addr, hs_addr = self._sensor_addrs(sensor_id)
+
         with self._lock:
-            temp_raw = self._registers.get(temp_addr, 0)
-            hum_raw = self._registers.get(hum_addr, 0)
-            temp_status = self._registers.get(temp_status_addr, 0)
-            hum_status = self._registers.get(hum_status_addr, 0)
-        
-        # Преобразование из raw (делим на 10)
+            temp_raw = self._registers.get(t_addr, 0)
+            hum_raw = self._registers.get(h_addr, 0)
+            temp_status = self._registers.get(ts_addr, 0)
+            hum_status = self._registers.get(hs_addr, 0)
+
         # Обработка знака для температуры
-        if temp_raw > 32767:
-            temp_raw = temp_raw - 65536
-        
+        temp_signed = temp_raw - INT16_OVERFLOW if temp_raw > INT16_MAX else temp_raw
+
         return {
             "temperature": {
-                "value": temp_raw / 10.0,
+                "value": temp_signed / 10.0,
                 "raw": temp_raw,
-                "address": temp_addr,
+                "address": t_addr,
                 "status": temp_status
             },
             "humidity": {
                 "value": hum_raw / 10.0,
                 "raw": hum_raw,
-                "address": hum_addr,
+                "address": h_addr,
                 "status": hum_status
             }
         }
-    
+
     def get_all_values(self) -> Dict:
-        """Получить значения всех датчиков"""
-        result = {}
-        for sensor_id in range(1, self.sensor_count + 1):
-            result[sensor_id] = self.get_sensor_values(sensor_id)
-        return result
+        return {sid: self.get_sensor_values(sid) for sid in range(1, self.sensor_count + 1)}

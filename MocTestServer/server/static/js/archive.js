@@ -31,8 +31,33 @@ async function loadStatus() {
         document.getElementById('stat-events').textContent = data.events?.total_events || 0;
         document.getElementById('stat-unack').textContent = data.events?.unacknowledged || 0;
         document.getElementById('stat-memory').textContent = (data.data?.memory_usage_mb || 0) + ' MB';
+        
+        // Files
+        if (data.files) {
+            const archiveInfo = data.files.archive_exists 
+                ? `✓ ${data.files.archive_size_mb} MB` 
+                : '✗ не создан';
+            const eventsInfo = data.files.events_exists 
+                ? `✓ ${data.files.events_size_mb} MB` 
+                : '✗ не создан';
+            
+            document.getElementById('file-archive').textContent = archiveInfo;
+            document.getElementById('file-events').textContent = eventsInfo;
+            document.getElementById('file-path').textContent = data.files.archive_file?.replace(/[^/\\]*$/, '') || '—';
+        }
     } catch (e) {
         console.error('Error loading status:', e);
+    }
+}
+
+// Save archive now
+async function saveNow() {
+    try {
+        await api('/api/archive/save', 'POST');
+        showToast('Архив сохранён в файл', 'success');
+        loadStatus();
+    } catch (e) {
+        showToast('Ошибка сохранения: ' + e.message, 'error');
     }
 }
 

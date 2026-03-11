@@ -4,7 +4,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 
 
 @dataclass
@@ -18,11 +18,19 @@ class SensorValue:
     modbus_error: Optional[str] = None
 
 
+# Предустановленное значение для offline-датчиков
+OFFLINE_VALUE = SensorValue(
+    temperature=0.0, humidity=0.0,
+    temp_status="offline", hum_status="offline",
+    combined_status="offline", modbus_error="timeout"
+)
+
+
 class BaseScenario(ABC):
     """Базовый класс для всех сценариев"""
-    
+
     description = "Base scenario"
-    
+
     def __init__(
         self,
         temp_base: float = 22.0,
@@ -45,47 +53,73 @@ class BaseScenario(ABC):
         self.hum_min = hum_min
         self.hum_max = hum_max
         self.offline_sensors = offline_sensors or []
-        
         self._iteration = 0
-        self._start_time = None
-    
+
     @abstractmethod
-    def get_value(self, sensor_id: int, limits: Dict[str, float]) -> SensorValue:
+    def _generate_raw(self, sensor_id: int, limits: Dict[str, float]) -> tuple:
         """
-        Получить значение для датчика
-        
-        Args:
-            sensor_id: ID датчика
-            limits: Словарь с лимитами (temp_min, temp_max, hum_min, hum_max, etc.)
-        
+        Генерация сырых значений температуры и влажности.
+
         Returns:
-            SensorValue с температурой, влажностью и статусами
+            (temperature: float, humidity: float)
         """
         pass
-    
-    def _clamp(self, value: float, min_val: float, max_val: float) -> float:
-        """Ограничение значения в диапазоне"""
+
+    def get_value(self, sensor_id: int, limits: Dict[str, float]) -> SensorValue:
+        """Получить значение для датчика с автоматическим расчётом статусов."""
+        if sensor_id in self.offline_sensors:
+            return OFFLINE_VALUE
+
+        temp, hum = self._generate_raw(sensor_id, limits)
+
+        temp = round(self._clamp(temp, self.temp_min, self.temp_max), 1)
+        hum = round(self._clamp(hum, self.hum_min, self.hum_max), 1)
+
+        temp_status = self._calculate_status(
+            temp,
+            limits.get('temp_min', -10), limits.get('temp_max', 40),
+            limits.get('temp_warning_delta', 3), limits.get('temp_alarm_delta', 5)
+        )
+        hum_status = self._calculate_status(
+            hum,
+            limits.get('hum_min', 20), limits.get('hum_max', 80),
+            limits.get('hum_warning_delta', 5), limits.get('hum_alarm_delta', 10)
+        )
+
+        return SensorValue(
+            temperature=temp,
+            humidity=hum,
+            temp_status=temp_status,
+            hum_status=hum_status,
+            combined_status=self._get_combined_status(temp_status, hum_status)
+        )
+
+    def _sensor_offset(self, sensor_id: int, factor: float = 0.3) -> float:
+        """Смещение значения для конкретного датчика"""
+        return (sensor_id - 1) * factor
+
+    @staticmethod
+    def _clamp(value: float, min_val: float, max_val: float) -> float:
         return max(min_val, min(max_val, value))
-    
-    def _calculate_status(self, value: float, limit_min: float, limit_max: float, 
+
+    @staticmethod
+    def _calculate_status(value: float, limit_min: float, limit_max: float,
                           warning_delta: float, alarm_delta: float) -> str:
-        """Вычисление статуса значения"""
         if value < limit_min - alarm_delta or value > limit_max + alarm_delta:
             return "alarm"
-        elif value < limit_min - warning_delta or value > limit_max + warning_delta:
+        if value < limit_min - warning_delta or value > limit_max + warning_delta:
             return "warning"
-        elif value < limit_min or value > limit_max:
+        if value < limit_min or value > limit_max:
             return "warning"
         return "normal"
-    
-    def _get_combined_status(self, temp_status: str, hum_status: str) -> str:
-        """Определение комбинированного статуса"""
-        if temp_status == "alarm" or hum_status == "alarm":
+
+    @staticmethod
+    def _get_combined_status(temp_status: str, hum_status: str) -> str:
+        if "alarm" in (temp_status, hum_status):
             return "alarm"
-        elif temp_status == "warning" or hum_status == "warning":
+        if "warning" in (temp_status, hum_status):
             return "warning"
         return "normal"
-    
+
     def tick(self):
-        """Увеличить счётчик итераций"""
         self._iteration += 1
