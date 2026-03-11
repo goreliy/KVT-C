@@ -10,8 +10,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 from collections import deque
 
-"""from pymodbus.server import StartTcpServer, ServerStop"""
-from pymodbus.server.sync import StartTcpServer, ServerStop
+from pymodbus.server.sync import ModbusTcpServer
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 from pymodbus.datastore.store import ModbusSequentialDataBlock
 
@@ -213,6 +212,7 @@ class ModbusServer:
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._server_context = None
+        self._tcp_server: Optional[ModbusTcpServer] = None
         self._init_components()
 
     @staticmethod
@@ -279,7 +279,8 @@ class ModbusServer:
         logger.info(f"Starting Modbus TCP server on port {port}")
         try:
             context = self._create_server_context()
-            StartTcpServer(context=context, address=("0.0.0.0", port))
+            self._tcp_server = ModbusTcpServer(context=context, address=("0.0.0.0", port))
+            self._tcp_server.serve_forever()
         except Exception as e:
             logger.error(f"Modbus server error: {e}")
             self._running = False
@@ -297,7 +298,10 @@ class ModbusServer:
         self._running = False
         self._generator.stop()
         try:
-            ServerStop()
+            if self._tcp_server:
+                self._tcp_server.shutdown()
+                self._tcp_server.server_close()
+                self._tcp_server = None
         except Exception:
             pass
         logger.info("Modbus server stopped")
