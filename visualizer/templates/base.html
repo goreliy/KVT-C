@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}КВТ{% endblock %} — Система мониторинга</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar__brand">КВТ Мониторинг</a>
+    <div class="navbar__links">
+      <a href="/" class="{{ 'active' if request.path == '/' }}">Мнемосхема</a>
+      <a href="/settings" class="{{ 'active' if request.path.startswith('/settings') }}">Настройки</a>
+      <a href="/events" class="{{ 'active' if request.path == '/events' }}">Журнал</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    function showToast(msg, type='success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast toast-' + type + ' show';
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    async function apiFetch(url, options={}) {
+      const defaults = { headers: {'Content-Type': 'application/json'} };
+      const resp = await fetch(url, {...defaults, ...options});
+      const data = await resp.json();
+      if (!resp.ok) {
+        const err = data.errors ? data.errors.join(', ') : (data.error || 'Ошибка');
+        showToast(err, 'error');
+        throw new Error(err);
+      }
+      return data;
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

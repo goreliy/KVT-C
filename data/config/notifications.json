@@ -1,0 +1,39 @@
+{
+  "email": {
+    "enabled": false,
+    "smtp_server": "",
+    "smtp_port": 587,
+    "smtp_user": "",
+    "smtp_password": "",
+    "from_address": "",
+    "recipients": [],
+    "on_alarm": true,
+    "on_warning": true,
+    "daily_report": false,
+    "daily_report_time": "08:00"
+  },
+  "telegram": {
+    "enabled": false,
+    "bot_token": "",
+    "chat_ids": [],
+    "on_alarm": true,
+    "on_warning": true,
+    "on_violation_start": true,
+    "on_violation_end": true,
+    "include_chart_in_alert": true,
+    "reports": {
+      "enabled": false,
+      "schedule": [
+        { "type": "hourly", "enabled": false, "minute": 0 },
+        { "type": "daily", "enabled": false, "time": "08:00" },
+        { "type": "weekly", "enabled": false, "day_of_week": "monday", "time": "09:00" },
+        { "type": "monthly", "enabled": false, "day_of_month": 1, "time": "09:00" }
+      ],
+      "include_charts": true,
+      "include_violations_summary": true,
+      "include_temperature_ranges": true,
+      "chart_period_hours": 24
+    }
+  },
+  "per_sensor": {}
+}

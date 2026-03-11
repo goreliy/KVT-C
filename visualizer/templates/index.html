@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Мнемосхема{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+  <h1 class="page-title" style="margin-bottom:0;">Текущие показания</h1>
+  <span class="text-muted" id="last-update">{{ data.timestamp or '—' }}</span>
+</div>
+
+<div class="sensor-grid" id="sensor-grid">
+  {% for s in data.sensors %}
+  <a href="/sensor/{{ s.id }}" class="sensor-card sensor-card--{{ s.combined_status.split('_')[0] if '_' in s.combined_status else s.combined_status }}" style="text-decoration:none;color:inherit;">
+    <div class="sensor-card__status status-{{ s.combined_status }}"></div>
+    <div class="sensor-card__name">{{ s.name }}</div>
+    <div class="sensor-card__values">
+      <div class="sensor-card__value">
+        {{ "%.1f"|format(s.temperature.value) }}°C
+        <small>Температура</small>
+      </div>
+      <div class="sensor-card__value">
+        {{ "%.1f"|format(s.humidity.value) }}%
+        <small>Влажность</small>
+      </div>
+    </div>
+    <div class="sensor-card__meta">
+      Modbus: slave={{ s.modbus_slave_id }}, addr={{ s.modbus_addr_temp }}/{{ s.modbus_addr_hum }}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Auto-refresh every 2 seconds
+  setInterval(async () => {
+    try {
+      const data = await apiFetch('/api/current');
+      document.getElementById('last-update').textContent = data.timestamp || '—';
+      const grid = document.getElementById('sensor-grid');
+      grid.innerHTML = data.sensors.map(s => {
+        const statusBase = s.combined_status.includes('_') ? s.combined_status.split('_')[0] : s.combined_status;
+        return `
+          <a href="/sensor/${s.id}" class="sensor-card sensor-card--${statusBase}" style="text-decoration:none;color:inherit;">
+            <div class="sensor-card__status status-${s.combined_status}"></div>
+            <div class="sensor-card__name">${s.name}</div>
+            <div class="sensor-card__values">
+              <div class="sensor-card__value">
+                ${s.temperature.value.toFixed(1)}°C
+                <small>Температура</small>
+              </div>
+              <div class="sensor-card__value">
+                ${s.humidity.value.toFixed(1)}%
+                <small>Влажность</small>
+              </div>
+            </div>
+            <div class="sensor-card__meta">
+              Modbus: slave=${s.modbus_slave_id}, addr=${s.modbus_addr_temp}/${s.modbus_addr_hum}
+            </div>
+          </a>`;
+      }).join('');
+    } catch(e) {}
+  }, 2000);
+</script>
+{% endblock %}

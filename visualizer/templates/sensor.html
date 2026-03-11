@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Датчик {{ sensor.name if sensor else sensor_id }}{% endblock %}
+
+{% block content %}
+{% if sensor %}
+<h1 class="page-title">{{ sensor.name }}</h1>
+<div class="form-section">
+  <div class="form-row">
+    <div class="form-group">
+      <label>Температура</label>
+      <div class="sensor-card__value" id="temp-val">{{ "%.1f"|format(sensor.temperature.value) }}°C</div>
+    </div>
+    <div class="form-group">
+      <label>Влажность</label>
+      <div class="sensor-card__value" id="hum-val">{{ "%.1f"|format(sensor.humidity.value) }}%</div>
+    </div>
+    <div class="form-group">
+      <label>Статус</label>
+      <span class="badge badge-{{ sensor.combined_status.split('_')[0] if '_' in sensor.combined_status else sensor.combined_status }}">
+        {{ sensor.combined_status }}
+      </span>
+    </div>
+  </div>
+  <div class="sensor-card__meta mt-2">
+    Modbus: slave={{ sensor.modbus_slave_id }}, temp_addr={{ sensor.modbus_addr_temp }}, hum_addr={{ sensor.modbus_addr_hum }}
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">График (заглушка)</div>
+  <p class="text-muted">Здесь будет график температуры и влажности за выбранный период.</p>
+</div>
+{% else %}
+<h1 class="page-title">Датчик #{{ sensor_id }} не найден</h1>
+{% endif %}
+{% endblock %}

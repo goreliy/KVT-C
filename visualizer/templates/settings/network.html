@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Настройки сети{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Настройки сети (Ethernet)</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Веб-интерфейс (Visualizer)</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>IP-адрес / Хост</label>
+      <input type="text" id="net-web-host" value="{{ config.network.web_host }}">
+    </div>
+    <div class="form-group">
+      <label>Порт</label>
+      <input type="number" id="net-web-port" value="{{ config.network.web_port }}" min="1" max="65535">
+    </div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Modbus Poller</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>IP-адрес / Хост</label>
+      <input type="text" id="net-poller-host" value="{{ config.network.poller_host }}">
+    </div>
+    <div class="form-group">
+      <label>Порт</label>
+      <input type="number" id="net-poller-port" value="{{ config.network.poller_port }}" min="1" max="65535">
+    </div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Archive Manager</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>IP-адрес / Хост</label>
+      <input type="text" id="net-arch-host" value="{{ config.network.archiver_host }}">
+    </div>
+    <div class="form-group">
+      <label>Порт</label>
+      <input type="number" id="net-arch-port" value="{{ config.network.archiver_port }}" min="1" max="65535">
+    </div>
+  </div>
+</div>
+
+<button class="btn btn-primary" onclick="saveNetwork()">Сохранить сетевые настройки</button>
+<p class="text-muted mt-2">Изменения вступят в силу после перезапуска соответствующих подсистем.</p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveNetwork() {
+  const data = {
+    web_host: document.getElementById('net-web-host').value,
+    web_port: parseInt(document.getElementById('net-web-port').value),
+    poller_host: document.getElementById('net-poller-host').value,
+    poller_port: parseInt(document.getElementById('net-poller-port').value),
+    archiver_host: document.getElementById('net-arch-host').value,
+    archiver_port: parseInt(document.getElementById('net-arch-port').value)
+  };
+  await apiFetch('/api/network/config', { method: 'POST', body: JSON.stringify(data) });
+  showToast('Сетевые настройки сохранены');
+}
+</script>
+{% endblock %}

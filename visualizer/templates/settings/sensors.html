@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Настройки датчиков{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Настройки датчиков</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="form-section__title" style="margin-bottom:0;">
+      Датчики ({{ config.sensors|length }} из 256)
+    </div>
+    <button class="btn btn-success" onclick="openAddModal()">+ Добавить датчик</button>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Имя</th>
+          <th>Описание</th>
+          <th>Slave ID</th>
+          <th>Адрес T</th>
+          <th>Адрес H</th>
+          <th>T мин/макс</th>
+          <th>H мин/макс</th>
+          <th>Охрана</th>
+          <th>Вкл</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody id="sensors-tbody">
+        {% for s in config.sensors %}
+        <tr id="row-{{ s.id }}">
+          <td>{{ s.id }}</td>
+          <td>{{ s.name }}</td>
+          <td class="text-muted">{{ s.description or '—' }}</td>
+          <td>{{ s.modbus_slave_id }}</td>
+          <td>{{ s.modbus_addr_temp }}</td>
+          <td>{{ s.modbus_addr_hum }}</td>
+          <td>{{ s.temp_limits.min }}..{{ s.temp_limits.max }}°C</td>
+          <td>{{ s.hum_limits.min }}..{{ s.hum_limits.max }}%</td>
+          <td>{{ '✓' if s.guarded else '—' }}</td>
+          <td>{{ '✓' if s.enabled else '✗' }}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="openEditModal({{ s.id }})">✎</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteSensor({{ s.id }}, '{{ s.name }}')">✕</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="sensor-modal">
+  <div class="modal">
+    <div class="modal__title" id="modal-title">Добавить датчик</div>
+    <input type="hidden" id="edit-id">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Имя датчика *</label>
+        <input type="text" id="f-name" placeholder="ХРАН. № 11">
+      </div>
+      <div class="form-group">
+        <label>Описание</label>
+        <input type="text" id="f-desc" placeholder="Хранилище 11, зона C">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Modbus Slave ID *</label>
+        <input type="number" id="f-slave" value="16" min="1" max="247">
+      </div>
+      <div class="form-group">
+        <label>Адрес температуры *</label>
+        <input type="number" id="f-addr-temp" min="0" max="65535">
+      </div>
+      <div class="form-group">
+        <label>Адрес влажности *</label>
+        <input type="number" id="f-addr-hum" min="0" max="65535">
+      </div>
+    </div>
+
+    <div class="form-section__title mt-4">Границы температуры (°C)</div>
+    <div class="form-row">
+      <div class="form-group"><label>Мин</label><input type="number" id="f-tmin" step="0.1" value="-40"></div>
+      <div class="form-group"><label>Макс</label><input type="number" id="f-tmax" step="0.1" value="85"></div>
+      <div class="form-group"><label>Warning Δ</label><input type="number" id="f-twarn" step="0.1" value="3"></div>
+      <div class="form-group"><label>Alarm Δ</label><input type="number" id="f-talarm" step="0.1" value="5"></div>
+    </div>
+
+    <div class="form-section__title mt-4">Границы влажности (%)</div>
+    <div class="form-row">
+      <div class="form-group"><label>Мин</label><input type="number" id="f-hmin" step="0.1" value="0"></div>
+      <div class="form-group"><label>Макс</label><input type="number" id="f-hmax" step="0.1" value="100"></div>
+      <div class="form-group"><label>Warning Δ</label><input type="number" id="f-hwarn" step="0.1" value="5"></div>
+      <div class="form-group"><label>Alarm Δ</label><input type="number" id="f-halarm" step="0.1" value="10"></div>
+    </div>
+
+    <div class="form-row mt-4">
+      <div class="form-group">
+        <label><input type="checkbox" id="f-guarded" checked> На охране</label>
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" id="f-enabled" checked> Включён</label>
+      </div>
+    </div>
+
+    <div class="modal__actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="saveSensor()">Сохранить</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAddModal() {
+  document.getElementById('modal-title').textContent = 'Добавить датчик';
+  document.getElementById('edit-id').value = '';
+  clearForm();
+  // Suggest next address
+  suggestNextAddress();
+  document.getElementById('sensor-modal').classList.add('active');
+}
+
+async function openEditModal(id) {
+  const s = await apiFetch('/api/sensors/' + id);
+  document.getElementById('modal-title').textContent = 'Редактировать: ' + s.name;
+  document.getElementById('edit-id').value = s.id;
+  document.getElementById('f-name').value = s.name;
+  document.getElementById('f-desc').value = s.description || '';
+  document.getElementById('f-slave').value = s.modbus_slave_id;
+  document.getElementById('f-addr-temp').value = s.modbus_addr_temp;
+  document.getElementById('f-addr-hum').value = s.modbus_addr_hum;
+  document.getElementById('f-tmin').value = s.temp_limits.min;
+  document.getElementById('f-tmax').value = s.temp_limits.max;
+  document.getElementById('f-twarn').value = s.temp_limits.warning_delta;
+  document.getElementById('f-talarm').value = s.temp_limits.alarm_delta;
+  document.getElementById('f-hmin').value = s.hum_limits.min;
+  document.getElementById('f-hmax').value = s.hum_limits.max;
+  document.getElementById('f-hwarn').value = s.hum_limits.warning_delta;
+  document.getElementById('f-halarm').value = s.hum_limits.alarm_delta;
+  document.getElementById('f-guarded').checked = s.guarded;
+  document.getElementById('f-enabled').checked = s.enabled;
+  document.getElementById('sensor-modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('sensor-modal').classList.remove('active');
+}
+
+function clearForm() {
+  ['f-name','f-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-slave').value = 16;
+  document.getElementById('f-addr-temp').value = '';
+  document.getElementById('f-addr-hum').value = '';
+  document.getElementById('f-tmin').value = -40;
+  document.getElementById('f-tmax').value = 85;
+  document.getElementById('f-twarn').value = 3;
+  document.getElementById('f-talarm').value = 5;
+  document.getElementById('f-hmin').value = 0;
+  document.getElementById('f-hmax').value = 100;
+  document.getElementById('f-hwarn').value = 5;
+  document.getElementById('f-halarm').value = 10;
+  document.getElementById('f-guarded').checked = true;
+  document.getElementById('f-enabled').checked = true;
+}
+
+async function suggestNextAddress() {
+  const sensors = await apiFetch('/api/sensors');
+  let maxAddr = 0;
+  sensors.forEach(s => { if (s.modbus_addr_hum > maxAddr) maxAddr = s.modbus_addr_hum; });
+  document.getElementById('f-addr-temp').value = maxAddr + 1;
+  document.getElementById('f-addr-hum').value = maxAddr + 2;
+}
+
+// Auto-fill hum address when temp changes
+document.getElementById('f-addr-temp').addEventListener('input', function() {
+  document.getElementById('f-addr-hum').value = parseInt(this.value) + 1 || '';
+});
+
+function buildSensorData() {
+  return {
+    name: document.getElementById('f-name').value.trim(),
+    description: document.getElementById('f-desc').value.trim(),
+    modbus_slave_id: parseInt(document.getElementById('f-slave').value),
+    modbus_addr_temp: parseInt(document.getElementById('f-addr-temp').value),
+    modbus_addr_hum: parseInt(document.getElementById('f-addr-hum').value),
+    temp_limits: {
+      min: parseFloat(document.getElementById('f-tmin').value),
+      max: parseFloat(document.getElementById('f-tmax').value),
+      warning_delta: parseFloat(document.getElementById('f-twarn').value),
+      alarm_delta: parseFloat(document.getElementById('f-talarm').value)
+    },
+    hum_limits: {
+      min: parseFloat(document.getElementById('f-hmin').value),
+      max: parseFloat(document.getElementById('f-hmax').value),
+      warning_delta: parseFloat(document.getElementById('f-hwarn').value),
+      alarm_delta: parseFloat(document.getElementById('f-halarm').value)
+    },
+    guarded: document.getElementById('f-guarded').checked,
+    enabled: document.getElementById('f-enabled').checked
+  };
+}
+
+async function saveSensor() {
+  const editId = document.getElementById('edit-id').value;
+  const data = buildSensorData();
+  try {
+    if (editId) {
+      await apiFetch('/api/sensors/' + editId, { method: 'PUT', body: JSON.stringify(data) });
+      showToast('Датчик обновлён');
+    } else {
+      await apiFetch('/api/sensors', { method: 'POST', body: JSON.stringify(data) });
+      showToast('Датчик добавлен');
+    }
+    closeModal();
+    location.reload();
+  } catch(e) {}
+}
+
+async function deleteSensor(id, name) {
+  if (!confirm('Удалить датчик "' + name + '"?')) return;
+  try {
+    await apiFetch('/api/sensors/' + id, { method: 'DELETE' });
+    showToast('Датчик удалён');
+    document.getElementById('row-' + id).remove();
+  } catch(e) {}
+}
+</script>
+{% endblock %}

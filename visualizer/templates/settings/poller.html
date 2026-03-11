@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Настройки Modbus{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Настройки Modbus опросчика</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Параметры COM-порта</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>COM-порт</label>
+      <input type="text" id="p-com" value="{{ poller.com_port }}">
+    </div>
+    <div class="form-group">
+      <label>Скорость (бод)</label>
+      <select id="p-baud">
+        {% for b in [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200] %}
+        <option value="{{ b }}" {{ 'selected' if poller.baudrate == b }}>{{ b }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Биты данных</label>
+      <select id="p-bytesize">
+        <option value="7" {{ 'selected' if poller.bytesize == 7 }}>7</option>
+        <option value="8" {{ 'selected' if poller.bytesize == 8 }}>8</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Чётность</label>
+      <select id="p-parity">
+        <option value="N" {{ 'selected' if poller.parity == 'N' }}>None</option>
+        <option value="E" {{ 'selected' if poller.parity == 'E' }}>Even</option>
+        <option value="O" {{ 'selected' if poller.parity == 'O' }}>Odd</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Стоп-биты</label>
+      <select id="p-stopbits">
+        <option value="1" {{ 'selected' if poller.stopbits == 1 }}>1</option>
+        <option value="2" {{ 'selected' if poller.stopbits == 2 }}>2</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Параметры опроса</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Период опроса (мс)</label>
+      <input type="number" id="p-period" value="{{ poller.poll_period_ms }}" min="100" max="60000">
+    </div>
+    <div class="form-group">
+      <label>Таймаут (мс)</label>
+      <input type="number" id="p-timeout" value="{{ poller.timeout_ms }}" min="100" max="5000">
+    </div>
+    <div class="form-group">
+      <label>Повторы</label>
+      <input type="number" id="p-retry" value="{{ poller.retry_count }}" min="0" max="10">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Базовый адрес значений</label>
+      <input type="number" id="p-val-base" value="{{ poller.value_register_base }}">
+    </div>
+    <div class="form-group">
+      <label>Базовый адрес статусов</label>
+      <input type="number" id="p-stat-base" value="{{ poller.status_register_base }}">
+    </div>
+    <div class="form-group">
+      <label>Макс. записей лога</label>
+      <input type="number" id="p-log-max" value="{{ poller.log_max_entries }}" min="100" max="10000">
+    </div>
+  </div>
+</div>
+
+<button class="btn btn-primary" onclick="savePoller()">Сохранить</button>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function savePoller() {
+  const data = {
+    com_port: document.getElementById('p-com').value,
+    baudrate: parseInt(document.getElementById('p-baud').value),
+    bytesize: parseInt(document.getElementById('p-bytesize').value),
+    parity: document.getElementById('p-parity').value,
+    stopbits: parseInt(document.getElementById('p-stopbits').value),
+    poll_period_ms: parseInt(document.getElementById('p-period').value),
+    timeout_ms: parseInt(document.getElementById('p-timeout').value),
+    retry_count: parseInt(document.getElementById('p-retry').value),
+    value_register_base: parseInt(document.getElementById('p-val-base').value),
+    status_register_base: parseInt(document.getElementById('p-stat-base').value),
+    log_max_entries: parseInt(document.getElementById('p-log-max').value)
+  };
+  await apiFetch('/api/poller/config', { method: 'POST', body: JSON.stringify(data) });
+  showToast('Настройки Modbus сохранены');
+}
+</script>
+{% endblock %}

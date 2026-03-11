@@ -1,0 +1,9 @@
+<div class="settings-nav">
+  <a href="/settings" class="{{ 'active' if request.path == '/settings/' or request.path == '/settings' }}">Общие</a>
+  <a href="/settings/sensors" class="{{ 'active' if request.path == '/settings/sensors' }}">Датчики</a>
+  <a href="/settings/network" class="{{ 'active' if request.path == '/settings/network' }}">Сеть</a>
+  <a href="/settings/poller" class="{{ 'active' if request.path == '/settings/poller' }}">Modbus</a>
+  <a href="/settings/archive" class="{{ 'active' if request.path == '/settings/archive' }}">Архив</a>
+  <a href="/settings/notifications" class="{{ 'active' if request.path == '/settings/notifications' }}">Уведомления</a>
+  <a href="/settings/system" class="{{ 'active' if request.path == '/settings/system' }}">Система</a>
+</div>

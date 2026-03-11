@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Настройки уведомлений{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Настройки уведомлений</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Email</div>
+  <div class="form-group">
+    <label><input type="checkbox" id="n-email-on" {{ 'checked' if notif.email.enabled }}> Включено</label>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>SMTP сервер</label>
+      <input type="text" id="n-smtp-host" value="{{ notif.email.smtp_server }}">
+    </div>
+    <div class="form-group">
+      <label>Порт</label>
+      <input type="number" id="n-smtp-port" value="{{ notif.email.smtp_port }}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Пользователь</label>
+      <input type="text" id="n-smtp-user" value="{{ notif.email.smtp_user }}">
+    </div>
+    <div class="form-group">
+      <label>Получатели (через запятую)</label>
+      <input type="text" id="n-smtp-rcpt" value="{{ notif.email.recipients|join(', ') }}">
+    </div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Telegram</div>
+  <div class="form-group">
+    <label><input type="checkbox" id="n-tg-on" {{ 'checked' if notif.telegram.enabled }}> Включено</label>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Bot Token</label>
+      <input type="text" id="n-tg-token" value="{{ notif.telegram.bot_token }}">
+    </div>
+    <div class="form-group">
+      <label>Chat IDs (через запятую)</label>
+      <input type="text" id="n-tg-chats" value="{{ notif.telegram.chat_ids|join(', ') }}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label><input type="checkbox" id="n-tg-alarm" {{ 'checked' if notif.telegram.on_alarm }}> При тревоге</label>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="n-tg-warn" {{ 'checked' if notif.telegram.on_warning }}> При предупреждении</label>
+    </div>
+  </div>
+</div>
+
+<button class="btn btn-primary" onclick="saveNotif()">Сохранить</button>
+<p class="text-muted mt-2">Заглушка — полное сохранение будет реализовано с Notification Service.</p>
+{% endblock %}

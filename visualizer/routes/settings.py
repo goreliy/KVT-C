@@ -1,0 +1,50 @@
+"""Страницы настроек системы."""
+from flask import Blueprint, render_template
+from shared.config_manager import (
+    load_system_config, load_poller_config,
+    load_archive_config, load_notifications_config
+)
+
+settings_bp = Blueprint('settings', __name__)
+
+
+@settings_bp.route('/')
+def settings_index():
+    config = load_system_config()
+    return render_template('settings/index.html', config=config)
+
+
+@settings_bp.route('/sensors')
+def settings_sensors():
+    config = load_system_config()
+    return render_template('settings/sensors.html', config=config)
+
+
+@settings_bp.route('/poller')
+def settings_poller():
+    poller = load_poller_config()
+    return render_template('settings/poller.html', poller=poller)
+
+
+@settings_bp.route('/network')
+def settings_network():
+    config = load_system_config()
+    return render_template('settings/network.html', config=config)
+
+
+@settings_bp.route('/archive')
+def settings_archive():
+    archive = load_archive_config()
+    return render_template('settings/archive.html', archive=archive)
+
+
+@settings_bp.route('/notifications')
+def settings_notifications():
+    notif = load_notifications_config()
+    return render_template('settings/notifications.html', notif=notif)
+
+
+@settings_bp.route('/system')
+def settings_system():
+    config = load_system_config()
+    return render_template('settings/system.html', config=config)

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Настройки архива{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Настройки архивирования</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Режим забора данных</div>
+  <div class="form-group">
+    <label>Режим</label>
+    <select id="a-mode">
+      <option value="periodic" {{ 'selected' if archive.data_collection.mode == 'periodic' }}>По таймеру (periodic)</option>
+      <option value="watch" {{ 'selected' if archive.data_collection.mode == 'watch' }}>По изменению (watch)</option>
+      <option value="combined" {{ 'selected' if archive.data_collection.mode == 'combined' }}>Комбинированный (combined)</option>
+    </select>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Хранилище SQLite</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label><input type="checkbox" id="a-sqlite-on" {{ 'checked' if archive.storage.sqlite.enabled }}> Включено</label>
+    </div>
+    <div class="form-group">
+      <label>Макс. размер (МБ)</label>
+      <input type="number" id="a-sqlite-max" value="{{ archive.storage.sqlite.max_size_mb }}">
+    </div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Компрессия</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label><input type="checkbox" id="a-comp-on" {{ 'checked' if archive.compression.enabled }}> Включена</label>
+    </div>
+    <div class="form-group">
+      <label>Допуск T (°C)</label>
+      <input type="number" id="a-comp-t" step="0.01" value="{{ archive.compression.tolerance_temp }}">
+    </div>
+    <div class="form-group">
+      <label>Допуск H (%)</label>
+      <input type="number" id="a-comp-h" step="0.1" value="{{ archive.compression.tolerance_hum }}">
+    </div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Ротация</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Хранить (дней)</label>
+      <input type="number" id="a-ret-days" value="{{ archive.retention.max_days }}">
+    </div>
+    <div class="form-group">
+      <label>Мин. свободного места (МБ)</label>
+      <input type="number" id="a-ret-space" value="{{ archive.retention.min_free_space_mb }}">
+    </div>
+  </div>
+</div>
+
+<button class="btn btn-primary" onclick="saveArchive()">Сохранить</button>
+<p class="text-muted mt-2">Заглушка — полное сохранение будет реализовано с Archive Manager.</p>
+{% endblock %}

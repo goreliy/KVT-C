@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Настройки{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Настройки системы</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Общая информация</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Название системы</label>
+      <input type="text" id="sys-name" value="{{ config.system.name }}">
+    </div>
+    <div class="form-group">
+      <label>Расположение</label>
+      <input type="text" id="sys-location" value="{{ config.system.location }}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Описание</label>
+      <input type="text" id="sys-desc" value="{{ config.system.description }}">
+    </div>
+    <div class="form-group">
+      <label>Часовой пояс</label>
+      <input type="text" id="sys-tz" value="{{ config.system.timezone }}">
+    </div>
+  </div>
+  <button class="btn btn-primary mt-2" onclick="saveSystem()">Сохранить</button>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Информация о конфигурации</div>
+  <p class="text-muted">Версия: {{ config.config_version }} | Схема: {{ config.config_schema_version }}</p>
+  <p class="text-muted">Обновлено: {{ config.updated_at }}</p>
+  <p class="text-muted">Датчиков: {{ config.sensors|length }}</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveSystem() {
+  const config = await apiFetch('/api/config');
+  config.system.name = document.getElementById('sys-name').value;
+  config.system.location = document.getElementById('sys-location').value;
+  config.system.description = document.getElementById('sys-desc').value;
+  config.system.timezone = document.getElementById('sys-tz').value;
+  config._change_description = 'Обновлены общие настройки системы';
+  await apiFetch('/api/config', { method: 'POST', body: JSON.stringify(config) });
+  showToast('Настройки сохранены');
+}
+</script>
+{% endblock %}

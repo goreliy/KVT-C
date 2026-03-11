@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Системные настройки{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Системные настройки</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Версионность конфигурации</div>
+  <table>
+    <tr><td class="text-muted">Версия конфигурации</td><td>{{ config.config_version }}</td></tr>
+    <tr><td class="text-muted">Версия схемы</td><td>{{ config.config_schema_version }}</td></tr>
+    <tr><td class="text-muted">Создана</td><td>{{ config.created_at }}</td></tr>
+    <tr><td class="text-muted">Обновлена</td><td>{{ config.updated_at }}</td></tr>
+    <tr><td class="text-muted">Количество датчиков</td><td>{{ config.sensors|length }}</td></tr>
+    <tr><td class="text-muted">Следующий ID датчика</td><td>{{ config.next_sensor_id }}</td></tr>
+  </table>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">История изменений</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Версия</th><th>Дата</th><th>Изменения</th></tr>
+      </thead>
+      <tbody>
+        {% for h in config.update_history|reverse %}
+        <tr>
+          <td>{{ h.version }}</td>
+          <td class="text-muted">{{ h.timestamp }}</td>
+          <td>{{ h.changes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
