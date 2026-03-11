@@ -1,15 +1,56 @@
 {% extends "base.html" %}
 {% block title %}Мнемосхема{% endblock %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  .sensor-card__mini-chart { height: 50px; margin-top: 8px; }
+  .summary-bar {
+    display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;
+  }
+  .summary-bar__item {
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 100px;
+  }
+  .summary-bar__item .val { font-size: 24px; font-weight: 700; }
+  .summary-bar__item .lbl { font-size: 11px; color: var(--text-secondary); }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
   <h1 class="page-title" style="margin-bottom:0;">Текущие показания</h1>
   <span class="text-muted" id="last-update">{{ data.timestamp or '—' }}</span>
 </div>
 
+<!-- Summary bar -->
+<div class="summary-bar" id="summary-bar">
+  <div class="summary-bar__item">
+    <div class="val" id="sum-total">{{ data.sensors|length }}</div>
+    <div class="lbl">Датчиков</div>
+  </div>
+  <div class="summary-bar__item">
+    <div class="val" style="color:var(--color-normal)" id="sum-ok">{{ data.sensors|selectattr('combined_status','equalto','normal')|list|length }}</div>
+    <div class="lbl">В норме</div>
+  </div>
+  <div class="summary-bar__item">
+    <div class="val" style="color:var(--color-warning)" id="sum-warn">0</div>
+    <div class="lbl">Предупреждения</div>
+  </div>
+  <div class="summary-bar__item">
+    <div class="val" style="color:var(--color-alarm)" id="sum-alarm">0</div>
+    <div class="lbl">Тревоги</div>
+  </div>
+  <div class="summary-bar__item">
+    <div class="val" style="color:var(--color-offline)" id="sum-offline">0</div>
+    <div class="lbl">Нет связи</div>
+  </div>
+</div>
+
 <div class="sensor-grid" id="sensor-grid">
   {% for s in data.sensors %}
-  <a href="/sensor/{{ s.id }}" class="sensor-card sensor-card--{{ s.combined_status.split('_')[0] if '_' in s.combined_status else s.combined_status }}" style="text-decoration:none;color:inherit;">
+  <a href="/sensor/{{ s.id }}" class="sensor-card sensor-card--{{ s.combined_status.split('_')[0] if '_' in s.combined_status else s.combined_status }}" style="text-decoration:none;color:inherit;" id="card-{{ s.id }}">
     <div class="sensor-card__status status-{{ s.combined_status }}"></div>
     <div class="sensor-card__name">{{ s.name }}</div>
     <div class="sensor-card__values">
@@ -25,6 +66,9 @@
     <div class="sensor-card__meta">
       Modbus: slave={{ s.modbus_slave_id }}, addr={{ s.modbus_addr_temp }}/{{ s.modbus_addr_hum }}
     </div>
+    <div class="sensor-card__mini-chart">
+      <canvas id="mini-{{ s.id }}"></canvas>
+    </div>
   </a>
   {% endfor %}
 </div>
@@ -32,34 +76,109 @@
 
 {% block scripts %}
 <script>
-  // Auto-refresh every 2 seconds
-  setInterval(async () => {
+const miniCharts = {};
+
+function statusBase(status) {
+  return status.includes('_') ? status.split('_')[0] : status;
+}
+
+// Create mini sparkline charts
+function initMiniCharts(sensors) {
+  sensors.forEach(s => {
+    const canvas = document.getElementById('mini-' + s.id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    miniCharts[s.id] = new Chart(ctx, {
+      type: 'line',
+      data: { datasets: [
+        { data: [], borderColor: '#FF6384', borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false },
+        { data: [], borderColor: '#36A2EB', borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false, type: 'time' },
+          y: { display: false }
+        },
+        animation: false
+      }
+    });
+  });
+}
+
+// Load mini chart data for all sensors
+async function loadMiniCharts() {
+  const sensorIds = Object.keys(miniCharts);
+  for (const sid of sensorIds) {
     try {
-      const data = await apiFetch('/api/current');
-      document.getElementById('last-update').textContent = data.timestamp || '—';
-      const grid = document.getElementById('sensor-grid');
-      grid.innerHTML = data.sensors.map(s => {
-        const statusBase = s.combined_status.includes('_') ? s.combined_status.split('_')[0] : s.combined_status;
-        return `
-          <a href="/sensor/${s.id}" class="sensor-card sensor-card--${statusBase}" style="text-decoration:none;color:inherit;">
-            <div class="sensor-card__status status-${s.combined_status}"></div>
-            <div class="sensor-card__name">${s.name}</div>
-            <div class="sensor-card__values">
-              <div class="sensor-card__value">
-                ${s.temperature.value.toFixed(1)}°C
-                <small>Температура</small>
-              </div>
-              <div class="sensor-card__value">
-                ${s.humidity.value.toFixed(1)}%
-                <small>Влажность</small>
-              </div>
-            </div>
-            <div class="sensor-card__meta">
-              Modbus: slave=${s.modbus_slave_id}, addr=${s.modbus_addr_temp}/${s.modbus_addr_hum}
-            </div>
-          </a>`;
-      }).join('');
+      const resp = await fetch(`/api/archive/sensor/${sid}?period=6h`);
+      if (!resp.ok) continue;
+      const result = await resp.json();
+      const data = result.data || [];
+      if (!data.length || !miniCharts[sid]) continue;
+      miniCharts[sid].data.datasets[0].data = data.map(d => ({ x: d.timestamp, y: d.temperature.avg }));
+      miniCharts[sid].data.datasets[1].data = data.map(d => ({ x: d.timestamp, y: d.humidity.avg }));
+      miniCharts[sid].update('none');
     } catch(e) {}
-  }, 2000);
+  }
+}
+
+// Init
+const initialSensors = {{ data.sensors | tojson }};
+initMiniCharts(initialSensors);
+loadMiniCharts();
+
+// Auto-refresh current values
+setInterval(async () => {
+  try {
+    const data = await apiFetch('/api/current');
+    document.getElementById('last-update').textContent = data.timestamp || '—';
+
+    let ok = 0, warn = 0, alarm = 0, offline = 0;
+    const grid = document.getElementById('sensor-grid');
+
+    grid.innerHTML = data.sensors.map(s => {
+      const sb = statusBase(s.combined_status);
+      if (sb === 'normal') ok++;
+      else if (sb === 'warning') warn++;
+      else if (sb === 'alarm') alarm++;
+      else if (sb === 'no' || sb === 'offline') offline++;
+      else ok++;
+
+      return `
+        <a href="/sensor/${s.id}" class="sensor-card sensor-card--${sb}" style="text-decoration:none;color:inherit;" id="card-${s.id}">
+          <div class="sensor-card__status status-${s.combined_status}"></div>
+          <div class="sensor-card__name">${s.name}</div>
+          <div class="sensor-card__values">
+            <div class="sensor-card__value">
+              ${s.temperature.value.toFixed(1)}°C
+              <small>Температура</small>
+            </div>
+            <div class="sensor-card__value">
+              ${s.humidity.value.toFixed(1)}%
+              <small>Влажность</small>
+            </div>
+          </div>
+          <div class="sensor-card__meta">
+            Modbus: slave=${s.modbus_slave_id}, addr=${s.modbus_addr_temp}/${s.modbus_addr_hum}
+          </div>
+          <div class="sensor-card__mini-chart">
+            <canvas id="mini-${s.id}"></canvas>
+          </div>
+        </a>`;
+    }).join('');
+
+    document.getElementById('sum-total').textContent = data.sensors.length;
+    document.getElementById('sum-ok').textContent = ok;
+    document.getElementById('sum-warn').textContent = warn;
+    document.getElementById('sum-alarm').textContent = alarm;
+    document.getElementById('sum-offline').textContent = offline;
+
+    // Re-init mini charts after DOM rebuild
+    initMiniCharts(data.sensors);
+    loadMiniCharts();
+  } catch(e) {}
+}, 5000);
 </script>
 {% endblock %}

@@ -1,36 +1,568 @@
 {% extends "base.html" %}
 {% block title %}Датчик {{ sensor.name if sensor else sensor_id }}{% endblock %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<style>
+  .chart-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .chart-controls .period-btn {
+    padding: 6px 14px; border: 1px solid var(--border-color); background: var(--bg-input);
+    color: var(--text-secondary); border-radius: 6px; cursor: pointer; font-size: 13px; transition: all .15s;
+  }
+  .chart-controls .period-btn:hover, .chart-controls .period-btn.active {
+    background: var(--color-guarded); color: #fff; border-color: var(--color-guarded);
+  }
+  .chart-container { position: relative; height: 350px; margin-bottom: 8px; }
+  .chart-hint { font-size: 12px; color: var(--text-secondary); margin-bottom: 16px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--bg-input); border-radius: 8px; padding: 12px; text-align: center;
+  }
+  .stat-card__label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+  .stat-card__value { font-size: 22px; font-weight: 700; }
+  .stat-card__sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .events-list { max-height: 300px; overflow-y: auto; }
+  .event-item {
+    display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-color);
+    font-size: 13px; align-items: flex-start;
+  }
+  .event-item__icon { font-size: 16px; flex-shrink: 0; }
+  .event-item__time { color: var(--text-secondary); white-space: nowrap; min-width: 130px; }
+  .event-item__msg { flex: 1; }
+  .tab-btns { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab-btn {
+    padding: 6px 16px; background: var(--bg-input); border: 1px solid var(--border-color);
+    color: var(--text-secondary); border-radius: 6px 6px 0 0; cursor: pointer; font-size: 13px;
+  }
+  .tab-btn.active { background: var(--bg-card); color: var(--text-primary); border-bottom-color: var(--bg-card); }
+  .custom-range { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+  .custom-range input[type="datetime-local"] {
+    padding: 4px 8px; background: var(--bg-input); border: 1px solid var(--border-color);
+    border-radius: 4px; color: var(--text-primary); font-size: 12px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 {% if sensor %}
-<h1 class="page-title">{{ sensor.name }}</h1>
-<div class="form-section">
-  <div class="form-row">
-    <div class="form-group">
-      <label>Температура</label>
-      <div class="sensor-card__value" id="temp-val">{{ "%.1f"|format(sensor.temperature.value) }}°C</div>
-    </div>
-    <div class="form-group">
-      <label>Влажность</label>
-      <div class="sensor-card__value" id="hum-val">{{ "%.1f"|format(sensor.humidity.value) }}%</div>
-    </div>
-    <div class="form-group">
-      <label>Статус</label>
-      <span class="badge badge-{{ sensor.combined_status.split('_')[0] if '_' in sensor.combined_status else sensor.combined_status }}">
-        {{ sensor.combined_status }}
-      </span>
-    </div>
-  </div>
-  <div class="sensor-card__meta mt-2">
-    Modbus: slave={{ sensor.modbus_slave_id }}, temp_addr={{ sensor.modbus_addr_temp }}, hum_addr={{ sensor.modbus_addr_hum }}
-  </div>
+<!-- Current values header -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+  <h1 class="page-title" style="margin-bottom:0;">{{ sensor.name }}</h1>
+  <a href="/" class="btn btn-secondary btn-sm">← Назад</a>
 </div>
 
 <div class="form-section">
-  <div class="form-section__title">График (заглушка)</div>
-  <p class="text-muted">Здесь будет график температуры и влажности за выбранный период.</p>
+  <div style="display:flex; gap:40px; align-items:center; flex-wrap:wrap;">
+    <div>
+      <div style="font-size:12px; color:var(--text-secondary);">Температура</div>
+      <div id="live-temp" style="font-size:36px; font-weight:700;">{{ "%.1f"|format(sensor.temperature.value) }}°C</div>
+    </div>
+    <div>
+      <div style="font-size:12px; color:var(--text-secondary);">Влажность</div>
+      <div id="live-hum" style="font-size:36px; font-weight:700;">{{ "%.1f"|format(sensor.humidity.value) }}%</div>
+    </div>
+    <div>
+      <div style="font-size:12px; color:var(--text-secondary);">Статус</div>
+      <span class="badge badge-{{ sensor.combined_status.split('_')[0] if '_' in sensor.combined_status else sensor.combined_status }}" style="font-size:14px; padding:4px 12px;">
+        {{ sensor.combined_status }}
+      </span>
+    </div>
+    <div style="margin-left:auto;">
+      <div style="font-size:12px; color:var(--text-secondary);">Modbus</div>
+      <div style="font-size:13px;">slave={{ sensor.modbus_slave_id }}, addr={{ sensor.modbus_addr_temp }}/{{ sensor.modbus_addr_hum }}</div>
+    </div>
+  </div>
 </div>
+
+<!-- Period stats -->
+<div id="stats-section" class="stats-grid"></div>
+
+<!-- Chart controls -->
+<div class="form-section">
+  <div class="chart-controls">
+    <button class="period-btn" data-period="1h">1 час</button>
+    <button class="period-btn" data-period="6h">6 часов</button>
+    <button class="period-btn active" data-period="24h">24 часа</button>
+    <button class="period-btn" data-period="3d">3 дня</button>
+    <button class="period-btn" data-period="7d">7 дней</button>
+    <button class="period-btn" data-period="14d">14 дней</button>
+    <button class="period-btn" data-period="30d">30 дней</button>
+    <div class="custom-range">
+      <input type="datetime-local" id="range-from" title="От">
+      <span class="text-muted">—</span>
+      <input type="datetime-local" id="range-to" title="До">
+      <button class="period-btn" onclick="loadCustomRange()">Показать</button>
+    </div>
+  </div>
+
+  <!-- Tabs: Temperature / Humidity / Combined -->
+  <div class="tab-btns">
+    <button class="tab-btn active" data-tab="combined">Совмещённый</button>
+    <button class="tab-btn" data-tab="temperature">Температура</button>
+    <button class="tab-btn" data-tab="humidity">Влажность</button>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="mainChart"></canvas>
+  </div>
+  <div class="chart-hint">
+    Колёсико мыши — масштаб. Зажмите и тяните — выделение диапазона. Двойной клик — сброс масштаба.
+  </div>
+
+  <!-- Zoom controls -->
+  <div style="display:flex; gap:8px;">
+    <button class="btn btn-sm btn-secondary" onclick="mainChart.resetZoom()">Сбросить масштаб</button>
+    <button class="btn btn-sm btn-secondary" onclick="mainChart.zoom(1.2)">Приблизить +</button>
+    <button class="btn btn-sm btn-secondary" onclick="mainChart.zoom(0.8)">Отдалить −</button>
+  </div>
+</div>
+
+<!-- Min/Max range chart -->
+<div class="form-section">
+  <div class="form-section__title">Диапазоны значений (min / max)</div>
+  <div class="chart-container">
+    <canvas id="rangeChart"></canvas>
+  </div>
+</div>
+
+<!-- Events -->
+<div class="form-section">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div class="form-section__title" style="margin-bottom:0;">Журнал событий</div>
+    <span class="text-muted" id="events-count"></span>
+  </div>
+  <div class="events-list" id="events-list">
+    <p class="text-muted">Загрузка...</p>
+  </div>
+</div>
+
 {% else %}
 <h1 class="page-title">Датчик #{{ sensor_id }} не найден</h1>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if sensor %}
+<script>
+const SENSOR_ID = {{ sensor.id }};
+let currentPeriod = '24h';
+let mainChart, rangeChart;
+
+const COLORS = {
+  tempLine: '#FF6384',
+  tempFill: 'rgba(255,99,132,0.1)',
+  tempMin: 'rgba(255,99,132,0.15)',
+  humLine: '#36A2EB',
+  humFill: 'rgba(54,162,235,0.1)',
+  humMin: 'rgba(54,162,235,0.15)',
+  warnLine: '#FF9800',
+  alarmLine: '#F44336',
+  limitFill: 'rgba(76,175,80,0.06)',
+  grid: 'rgba(255,255,255,0.06)',
+  gridBorder: 'rgba(255,255,255,0.12)',
+};
+
+// --- Init charts ---
+function initCharts() {
+  const baseOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      zoom: {
+        pan: { enabled: true, mode: 'x' },
+        zoom: {
+          wheel: { enabled: true },
+          drag: { enabled: true, backgroundColor: 'rgba(33,150,243,0.15)', borderColor: '#2196F3', borderWidth: 1 },
+          mode: 'x',
+        }
+      },
+      legend: { labels: { color: '#e0e0e0', usePointStyle: true, padding: 16 } },
+      tooltip: {
+        backgroundColor: '#16213e', titleColor: '#e0e0e0', bodyColor: '#e0e0e0',
+        borderColor: '#2a2a4a', borderWidth: 1, padding: 10,
+        callbacks: {
+          title: (items) => {
+            if (!items.length) return '';
+            const d = new Date(items[0].parsed.x);
+            return d.toLocaleString('ru-RU');
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: { tooltipFormat: 'dd.MM.yyyy HH:mm', displayFormats: { hour: 'HH:mm', day: 'dd.MM', week: 'dd.MM' } },
+        grid: { color: COLORS.grid },
+        ticks: { color: '#a0a0a0', maxTicksLimit: 16 }
+      }
+    }
+  };
+
+  // Main chart
+  const mainCtx = document.getElementById('mainChart').getContext('2d');
+  mainChart = new Chart(mainCtx, {
+    type: 'line',
+    data: { datasets: [] },
+    options: {
+      ...baseOpts,
+      scales: {
+        ...baseOpts.scales,
+        yTemp: {
+          type: 'linear', position: 'left',
+          title: { display: true, text: 'Температура (°C)', color: COLORS.tempLine },
+          grid: { color: COLORS.grid },
+          ticks: { color: COLORS.tempLine }
+        },
+        yHum: {
+          type: 'linear', position: 'right',
+          title: { display: true, text: 'Влажность (%)', color: COLORS.humLine },
+          grid: { drawOnChartArea: false },
+          ticks: { color: COLORS.humLine }
+        }
+      }
+    }
+  });
+
+  // Range chart (min/max bands)
+  const rangeCtx = document.getElementById('rangeChart').getContext('2d');
+  rangeChart = new Chart(rangeCtx, {
+    type: 'line',
+    data: { datasets: [] },
+    options: {
+      ...baseOpts,
+      scales: {
+        ...baseOpts.scales,
+        yTemp: {
+          type: 'linear', position: 'left',
+          title: { display: true, text: '°C', color: COLORS.tempLine },
+          grid: { color: COLORS.grid },
+          ticks: { color: COLORS.tempLine }
+        },
+        yHum: {
+          type: 'linear', position: 'right',
+          title: { display: true, text: '%', color: COLORS.humLine },
+          grid: { drawOnChartArea: false },
+          ticks: { color: COLORS.humLine }
+        }
+      },
+      plugins: {
+        ...baseOpts.plugins,
+        zoom: {
+          pan: { enabled: true, mode: 'x' },
+          zoom: { wheel: { enabled: true }, mode: 'x' }
+        }
+      }
+    }
+  });
+}
+
+// --- Load data and update charts ---
+async function loadChartData(period, fromDt, toDt) {
+  let url = `/api/archive/sensor/${SENSOR_ID}?period=${period}`;
+  if (fromDt && toDt) {
+    url = `/api/archive/sensor/${SENSOR_ID}?from=${fromDt}&to=${toDt}`;
+  }
+
+  let resp;
+  try {
+    resp = await apiFetch(url);
+  } catch(e) { return; }
+
+  const data = resp.data || [];
+  const limits = resp.limits || {};
+  const tempLimits = limits.temp_limits || {};
+  const humLimits = limits.hum_limits || {};
+
+  updateStats(data, tempLimits, humLimits);
+  updateMainChart(data, tempLimits, humLimits);
+  updateRangeChart(data, tempLimits, humLimits);
+}
+
+function updateStats(data, tempLimits, humLimits) {
+  if (!data.length) {
+    document.getElementById('stats-section').innerHTML = '<p class="text-muted">Нет данных за выбранный период</p>';
+    return;
+  }
+
+  const temps = data.map(d => d.temperature);
+  const hums = data.map(d => d.humidity);
+
+  const tMin = Math.min(...temps.map(t => t.min));
+  const tMax = Math.max(...temps.map(t => t.max));
+  const tAvg = (temps.reduce((s, t) => s + t.avg, 0) / temps.length).toFixed(1);
+  const hMin = Math.min(...hums.map(h => h.min));
+  const hMax = Math.max(...hums.map(h => h.max));
+  const hAvg = (hums.reduce((s, h) => s + h.avg, 0) / hums.length).toFixed(1);
+  const samples = data.reduce((s, d) => s + (d.sample_count || 1), 0);
+
+  document.getElementById('stats-section').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-card__label">T мин</div>
+      <div class="stat-card__value" style="color:${COLORS.tempLine}">${tMin.toFixed(1)}°C</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">T макс</div>
+      <div class="stat-card__value" style="color:${COLORS.tempLine}">${tMax.toFixed(1)}°C</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">T среднее</div>
+      <div class="stat-card__value" style="color:${COLORS.tempLine}">${tAvg}°C</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">H мин</div>
+      <div class="stat-card__value" style="color:${COLORS.humLine}">${hMin.toFixed(1)}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">H макс</div>
+      <div class="stat-card__value" style="color:${COLORS.humLine}">${hMax.toFixed(1)}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">H среднее</div>
+      <div class="stat-card__value" style="color:${COLORS.humLine}">${hAvg}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">Точек данных</div>
+      <div class="stat-card__value">${data.length}</div>
+      <div class="stat-card__sub">${samples} измерений</div>
+    </div>
+  `;
+}
+
+function updateMainChart(data, tempLimits, humLimits) {
+  const labels = data.map(d => d.timestamp);
+  const datasets = [];
+
+  // Temperature avg line
+  datasets.push({
+    label: 'Температура (avg)',
+    data: data.map(d => ({ x: d.timestamp, y: d.temperature.avg })),
+    borderColor: COLORS.tempLine,
+    backgroundColor: COLORS.tempFill,
+    fill: false,
+    tension: 0.3,
+    pointRadius: data.length > 100 ? 0 : 2,
+    pointHoverRadius: 4,
+    borderWidth: 2,
+    yAxisID: 'yTemp',
+    order: 1
+  });
+
+  // Humidity avg line
+  datasets.push({
+    label: 'Влажность (avg)',
+    data: data.map(d => ({ x: d.timestamp, y: d.humidity.avg })),
+    borderColor: COLORS.humLine,
+    backgroundColor: COLORS.humFill,
+    fill: false,
+    tension: 0.3,
+    pointRadius: data.length > 100 ? 0 : 2,
+    pointHoverRadius: 4,
+    borderWidth: 2,
+    yAxisID: 'yHum',
+    order: 2
+  });
+
+  // Threshold lines for temperature
+  if (tempLimits.max != null) {
+    datasets.push({
+      label: `T макс (${tempLimits.max}°C)`,
+      data: data.map(d => ({ x: d.timestamp, y: tempLimits.max })),
+      borderColor: COLORS.warnLine, borderDash: [6, 4], borderWidth: 1.5,
+      pointRadius: 0, fill: false, yAxisID: 'yTemp', order: 10
+    });
+  }
+  if (tempLimits.min != null) {
+    datasets.push({
+      label: `T мин (${tempLimits.min}°C)`,
+      data: data.map(d => ({ x: d.timestamp, y: tempLimits.min })),
+      borderColor: COLORS.warnLine, borderDash: [6, 4], borderWidth: 1.5,
+      pointRadius: 0, fill: false, yAxisID: 'yTemp', order: 10
+    });
+  }
+
+  // Alarm lines
+  if (tempLimits.max != null && tempLimits.alarm_delta) {
+    const alarmHigh = tempLimits.max + tempLimits.alarm_delta;
+    datasets.push({
+      label: `T авария (${alarmHigh}°C)`,
+      data: data.map(d => ({ x: d.timestamp, y: alarmHigh })),
+      borderColor: COLORS.alarmLine, borderDash: [3, 3], borderWidth: 1,
+      pointRadius: 0, fill: false, yAxisID: 'yTemp', order: 11
+    });
+  }
+  if (tempLimits.min != null && tempLimits.alarm_delta) {
+    const alarmLow = tempLimits.min - tempLimits.alarm_delta;
+    datasets.push({
+      label: `T авария (${alarmLow}°C)`,
+      data: data.map(d => ({ x: d.timestamp, y: alarmLow })),
+      borderColor: COLORS.alarmLine, borderDash: [3, 3], borderWidth: 1,
+      pointRadius: 0, fill: false, yAxisID: 'yTemp', order: 11
+    });
+  }
+
+  // Humidity limits
+  if (humLimits.max != null) {
+    datasets.push({
+      label: `H макс (${humLimits.max}%)`,
+      data: data.map(d => ({ x: d.timestamp, y: humLimits.max })),
+      borderColor: 'rgba(54,162,235,0.5)', borderDash: [6, 4], borderWidth: 1,
+      pointRadius: 0, fill: false, yAxisID: 'yHum', order: 10
+    });
+  }
+  if (humLimits.min != null) {
+    datasets.push({
+      label: `H мин (${humLimits.min}%)`,
+      data: data.map(d => ({ x: d.timestamp, y: humLimits.min })),
+      borderColor: 'rgba(54,162,235,0.5)', borderDash: [6, 4], borderWidth: 1,
+      pointRadius: 0, fill: false, yAxisID: 'yHum', order: 10
+    });
+  }
+
+  mainChart.data.datasets = datasets;
+  mainChart.resetZoom();
+  mainChart.update('none');
+  applyTabFilter();
+}
+
+function updateRangeChart(data, tempLimits, humLimits) {
+  const datasets = [];
+
+  // Temperature band (min-max)
+  datasets.push({
+    label: 'T max',
+    data: data.map(d => ({ x: d.timestamp, y: d.temperature.max })),
+    borderColor: COLORS.tempLine, backgroundColor: COLORS.tempMin,
+    fill: '+1', tension: 0.3, pointRadius: 0, borderWidth: 1, yAxisID: 'yTemp', order: 1
+  });
+  datasets.push({
+    label: 'T min',
+    data: data.map(d => ({ x: d.timestamp, y: d.temperature.min })),
+    borderColor: COLORS.tempLine, backgroundColor: 'transparent',
+    fill: false, tension: 0.3, pointRadius: 0, borderWidth: 1, yAxisID: 'yTemp', order: 2
+  });
+  // Temperature avg
+  datasets.push({
+    label: 'T avg',
+    data: data.map(d => ({ x: d.timestamp, y: d.temperature.avg })),
+    borderColor: COLORS.tempLine, borderWidth: 2,
+    fill: false, tension: 0.3, pointRadius: 0, yAxisID: 'yTemp', order: 0
+  });
+
+  // Humidity band
+  datasets.push({
+    label: 'H max',
+    data: data.map(d => ({ x: d.timestamp, y: d.humidity.max })),
+    borderColor: COLORS.humLine, backgroundColor: COLORS.humMin,
+    fill: '+1', tension: 0.3, pointRadius: 0, borderWidth: 1, yAxisID: 'yHum', order: 3
+  });
+  datasets.push({
+    label: 'H min',
+    data: data.map(d => ({ x: d.timestamp, y: d.humidity.min })),
+    borderColor: COLORS.humLine, backgroundColor: 'transparent',
+    fill: false, tension: 0.3, pointRadius: 0, borderWidth: 1, yAxisID: 'yHum', order: 4
+  });
+  datasets.push({
+    label: 'H avg',
+    data: data.map(d => ({ x: d.timestamp, y: d.humidity.avg })),
+    borderColor: COLORS.humLine, borderWidth: 2,
+    fill: false, tension: 0.3, pointRadius: 0, yAxisID: 'yHum', order: 3
+  });
+
+  rangeChart.data.datasets = datasets;
+  rangeChart.resetZoom();
+  rangeChart.update('none');
+}
+
+// --- Tab switching (show/hide datasets) ---
+let currentTab = 'combined';
+
+function applyTabFilter() {
+  mainChart.data.datasets.forEach(ds => {
+    if (currentTab === 'temperature') {
+      ds.hidden = ds.yAxisID === 'yHum';
+    } else if (currentTab === 'humidity') {
+      ds.hidden = ds.yAxisID === 'yTemp';
+    } else {
+      ds.hidden = false;
+    }
+  });
+  // Show/hide axes
+  mainChart.options.scales.yTemp.display = currentTab !== 'humidity';
+  mainChart.options.scales.yHum.display = currentTab !== 'temperature';
+  mainChart.update('none');
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTab = btn.dataset.tab;
+    applyTabFilter();
+  });
+});
+
+// --- Period buttons ---
+document.querySelectorAll('.period-btn[data-period]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.period-btn[data-period]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPeriod = btn.dataset.period;
+    loadChartData(currentPeriod);
+  });
+});
+
+function loadCustomRange() {
+  const from = document.getElementById('range-from').value;
+  const to = document.getElementById('range-to').value;
+  if (!from || !to) { showToast('Укажите обе даты', 'error'); return; }
+  document.querySelectorAll('.period-btn[data-period]').forEach(b => b.classList.remove('active'));
+  loadChartData('custom', from, to);
+}
+
+// --- Events ---
+async function loadEvents() {
+  try {
+    const resp = await apiFetch(`/api/events?sensor_id=${SENSOR_ID}&limit=30`);
+    const events = resp.events || [];
+    document.getElementById('events-count').textContent = `${events.length} событий`;
+    if (!events.length) {
+      document.getElementById('events-list').innerHTML = '<p class="text-muted">Нет событий</p>';
+      return;
+    }
+    document.getElementById('events-list').innerHTML = events.map(e => {
+      const icon = e.event_type.includes('alarm') ? '🚨' : '⚠️';
+      const dt = new Date(e.timestamp).toLocaleString('ru-RU');
+      const ack = e.acknowledged ? ' <span style="color:var(--color-normal)">✓ квитировано</span>' : '';
+      return `<div class="event-item">
+        <span class="event-item__icon">${icon}</span>
+        <span class="event-item__time">${dt}</span>
+        <span class="event-item__msg">${e.message}${ack}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+// --- Live update ---
+async function updateLive() {
+  try {
+    const data = await apiFetch('/api/current');
+    const s = (data.sensors || []).find(s => s.id === SENSOR_ID);
+    if (s) {
+      document.getElementById('live-temp').textContent = s.temperature.value.toFixed(1) + '°C';
+      document.getElementById('live-hum').textContent = s.humidity.value.toFixed(1) + '%';
+    }
+  } catch(e) {}
+}
+
+// --- Init ---
+initCharts();
+loadChartData(currentPeriod);
+loadEvents();
+setInterval(updateLive, 2000);
+</script>
 {% endif %}
 {% endblock %}

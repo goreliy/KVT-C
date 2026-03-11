@@ -10,7 +10,8 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 from collections import deque
 
-from pymodbus.server import StartTcpServer, ServerStop
+"""from pymodbus.server import StartTcpServer, ServerStop"""
+from pymodbus.server.sync import StartTcpServer, ServerStop
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
 from pymodbus.datastore.store import ModbusSequentialDataBlock
 

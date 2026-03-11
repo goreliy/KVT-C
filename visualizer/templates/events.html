@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Журнал событий{% endblock %}
+
+{% block head %}
+<style>
+  .filter-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-bar select, .filter-bar input {
+    padding: 6px 10px; background: var(--bg-input); border: 1px solid var(--border-color);
+    border-radius: 6px; color: var(--text-primary); font-size: 13px;
+  }
+  .event-row { display: flex; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border-color); align-items: flex-start; font-size: 13px; }
+  .event-row:hover { background: rgba(255,255,255,.03); }
+  .event-icon { font-size: 18px; flex-shrink: 0; width: 28px; text-align: center; }
+  .event-time { color: var(--text-secondary); min-width: 150px; white-space: nowrap; }
+  .event-sensor { min-width: 100px; color: var(--color-guarded); }
+  .event-msg { flex: 1; }
+  .event-ack { min-width: 100px; text-align: right; }
+  .event-val { font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Журнал событий</h1>
+
+<div class="form-section">
+  <div class="filter-bar">
+    <select id="f-sensor">
+      <option value="">Все датчики</option>
+    </select>
+    <select id="f-type">
+      <option value="">Все типы</option>
+      <option value="alarm">Тревоги</option>
+      <option value="warning">Предупреждения</option>
+    </select>
+    <select id="f-limit">
+      <option value="30">30 записей</option>
+      <option value="50" selected>50 записей</option>
+      <option value="100">100 записей</option>
+    </select>
+    <button class="btn btn-primary btn-sm" onclick="loadEvents()">Обновить</button>
+  </div>
+</div>
+
+<div class="form-section">
+  <div id="events-container">
+    <p class="text-muted">Загрузка...</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load sensor list for filter
+async function loadSensorFilter() {
+  try {
+    const sensors = await apiFetch('/api/sensors');
+    const sel = document.getElementById('f-sensor');
+    sensors.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      sel.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+async function loadEvents() {
+  const sensorId = document.getElementById('f-sensor').value;
+  const type = document.getElementById('f-type').value;
+  const limit = document.getElementById('f-limit').value;
+
+  let url = `/api/events?limit=${limit}`;
+  if (sensorId) url += `&sensor_id=${sensorId}`;
+  if (type) url += `&type=${type}`;
+
+  try {
+    const resp = await apiFetch(url);
+    const events = resp.events || [];
+    const container = document.getElementById('events-container');
+
+    if (!events.length) {
+      container.innerHTML = '<p class="text-muted">Нет событий по заданным фильтрам</p>';
+      return;
+    }
+
+    container.innerHTML = events.map(e => {
+      const icon = e.event_type.includes('alarm') ? '🚨' : '⚠️';
+      const dt = new Date(e.timestamp).toLocaleString('ru-RU');
+      const ack = e.acknowledged
+        ? `<span style="color:var(--color-normal)">✓ ${new Date(e.acknowledged_at).toLocaleString('ru-RU')}</span>`
+        : '<span style="color:var(--color-warning)">Не квитировано</span>';
+      const priorityColor = e.priority === 'high' ? 'var(--color-alarm)' : 'var(--color-warning)';
+
+      return `<div class="event-row">
+        <span class="event-icon">${icon}</span>
+        <span class="event-time">${dt}</span>
+        <span class="event-sensor">Датчик ${e.sensor_id}</span>
+        <span class="event-msg">
+          ${e.message}
+          <span class="event-val" style="color:${priorityColor}"> ${e.value != null ? e.value + '°C' : ''}</span>
+        </span>
+        <span class="event-ack">${ack}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+loadSensorFilter();
+loadEvents();
+</script>
+{% endblock %}
