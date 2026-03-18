@@ -1,8 +1,8 @@
 {
-  "config_version": "1.0.6",
+  "config_version": "1.0.4",
   "config_schema_version": "1.0",
   "created_at": "2026-03-11T00:00:00",
-  "updated_at": "2026-03-17T17:28:52.622665",
+  "updated_at": "2026-03-17T17:28:23.389141",
   "update_history": [
     {
       "version": "1.0.0",
@@ -28,16 +28,6 @@
       "version": "1.0.4",
       "timestamp": "2026-03-17T17:28:23.389141",
       "changes": "Добавлен датчик \"ываываыва\""
-    },
-    {
-      "version": "1.0.5",
-      "timestamp": "2026-03-17T17:28:47.910484",
-      "changes": "Обновлён датчик \"выаа\""
-    },
-    {
-      "version": "1.0.6",
-      "timestamp": "2026-03-17T17:28:52.622665",
-      "changes": "Обновлён датчик \"ываываыва\""
     }
   ],
   "system": {
@@ -337,7 +327,7 @@
     },
     {
       "name": "выаа",
-      "description": "ываыв",
+      "description": "",
       "modbus_slave_id": 10,
       "modbus_addr_temp": 21,
       "modbus_addr_hum": 22,
@@ -365,7 +355,7 @@
     },
     {
       "name": "ываываыва",
-      "description": "ывава",
+      "description": "",
       "modbus_slave_id": 16,
       "modbus_addr_temp": 23,
       "modbus_addr_hum": 24,

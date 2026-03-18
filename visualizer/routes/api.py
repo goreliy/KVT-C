@@ -7,6 +7,7 @@ from shared.config_manager import (
     load_system_config, save_system_config,
     load_poller_config, save_poller_config,
     load_notifications_config, save_notifications_config,
+    load_theme_config, save_theme_config,
     get_sensors, get_sensor_by_id, add_sensor, update_sensor, delete_sensor,
     validate_sensor
 )
@@ -287,3 +288,28 @@ def api_archive_summary():
             }
 
     return jsonify(summary)
+
+
+# --- Theme config ---
+
+@api_bp.route('/theme')
+def api_theme():
+    return jsonify(load_theme_config())
+
+
+@api_bp.route('/theme', methods=['POST'])
+def api_save_theme():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Нет данных'}), 400
+    # Validate theme name
+    if data.get('theme') not in ('dark', 'light'):
+        return jsonify({'error': 'Тема должна быть "dark" или "light"'}), 400
+    # Validate app_title
+    title = data.get('app_title', '').strip()
+    if not title:
+        return jsonify({'error': 'Название приложения не может быть пустым'}), 400
+    if len(title) > 50:
+        return jsonify({'error': 'Название приложения не более 50 символов'}), 400
+    config = save_theme_config(data)
+    return jsonify(config)

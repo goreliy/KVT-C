@@ -10,6 +10,8 @@
   --text-primary: #e0e0e0;
   --text-secondary: #a0a0a0;
   --border-color: #2a2a4a;
+  --navbar-bg: #16213e;
+  --navbar-brand-color: #2196F3;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,7 +28,7 @@ a:hover { text-decoration: underline; }
 
 /* --- NAV --- */
 .navbar {
-  background: var(--bg-card);
+  background: var(--navbar-bg);
   border-bottom: 1px solid var(--border-color);
   padding: 0 24px;
   display: flex;
@@ -37,7 +39,7 @@ a:hover { text-decoration: underline; }
 .navbar__brand {
   font-size: 18px;
   font-weight: 700;
-  color: var(--color-guarded);
+  color: var(--navbar-brand-color);
   white-space: nowrap;
 }
 .navbar__links { display: flex; gap: 16px; }
@@ -52,6 +54,39 @@ a:hover { text-decoration: underline; }
   background: var(--bg-input);
   color: var(--text-primary);
   text-decoration: none;
+}
+.navbar__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+.theme-toggle {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: background .15s;
+}
+.theme-toggle:hover {
+  background: var(--border-color);
+}
+
+/* --- Light theme shadow adjustments --- */
+[data-theme="light"] .sensor-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,.1);
+}
+[data-theme="light"] .modal {
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
+}
+[data-theme="light"] .form-group input,
+[data-theme="light"] .form-group select,
+[data-theme="light"] .form-group textarea {
+  background: var(--bg-input);
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }
 
 /* --- LAYOUT --- */

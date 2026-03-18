@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Оформление{% endblock %}
+
+{% block head %}
+<style>
+  .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .color-item { display: flex; align-items: center; gap: 10px; }
+  .color-item label { font-size: 13px; color: var(--text-secondary); flex: 1; }
+  .color-item input[type="color"] {
+    width: 44px; height: 32px; border: 1px solid var(--border-color);
+    border-radius: 6px; cursor: pointer; padding: 2px; background: var(--bg-input);
+  }
+  .color-item .hex-val { font-size: 12px; color: var(--text-secondary); font-family: monospace; min-width: 64px; }
+  .theme-switch { display: flex; gap: 12px; margin-bottom: 16px; }
+  .theme-switch button {
+    padding: 10px 24px; border: 2px solid var(--border-color); border-radius: 8px;
+    cursor: pointer; font-size: 14px; transition: all .15s;
+    background: var(--bg-input); color: var(--text-primary);
+  }
+  .theme-switch button.active {
+    border-color: var(--color-guarded); background: var(--color-guarded); color: #fff;
+  }
+  .preview-box {
+    border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;
+    margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .preview-swatch {
+    width: 60px; height: 40px; border-radius: 6px; border: 1px solid var(--border-color);
+    display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,.5);
+  }
+  .title-input { max-width: 400px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Оформление</h1>
+
+{% include "settings/_nav.html" %}
+
+<!-- App title -->
+<div class="form-section">
+  <div class="form-section__title">Название приложения</div>
+  <div class="form-group">
+    <label>Отображается в навигации и заголовке вкладки (макс. 50 символов)</label>
+    <input type="text" id="app-title" class="title-input" value="{{ theme.app_title }}" maxlength="50">
+  </div>
+</div>
+
+<!-- Theme selection -->
+<div class="form-section">
+  <div class="form-section__title">Тема оформления</div>
+  <div class="theme-switch">
+    <button id="btn-dark" class="{{ 'active' if theme.theme == 'dark' }}" onclick="selectTheme('dark')">🌙 Тёмная</button>
+    <button id="btn-light" class="{{ 'active' if theme.theme == 'light' }}" onclick="selectTheme('light')">☀️ Светлая</button>
+  </div>
+</div>
+
+<!-- Colors for dark theme -->
+<div class="form-section" id="section-dark">
+  <div class="form-section__title">Цвета тёмной темы</div>
+  <div class="color-grid" id="colors-dark"></div>
+  <button class="btn btn-secondary btn-sm mt-4" onclick="resetColors('dark')">Сбросить по умолчанию</button>
+</div>
+
+<!-- Colors for light theme -->
+<div class="form-section" id="section-light">
+  <div class="form-section__title">Цвета светлой темы</div>
+  <div class="color-grid" id="colors-light"></div>
+  <button class="btn btn-secondary btn-sm mt-4" onclick="resetColors('light')">Сбросить по умолчанию</button>
+</div>
+
+<!-- Preview -->
+<div class="form-section">
+  <div class="form-section__title">Предпросмотр статусных цветов</div>
+  <div class="preview-box" id="preview-box"></div>
+</div>
+
+<!-- Save -->
+<div style="display:flex; gap:12px; margin-top:16px;">
+  <button class="btn btn-primary" onclick="saveAppearance()">Сохранить и применить</button>
+  <button class="btn btn-secondary" onclick="location.reload()">Отменить</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const COLOR_LABELS = {
+  bg_dark: 'Фон страницы',
+  bg_card: 'Фон карточек',
+  bg_input: 'Фон полей ввода',
+  text_primary: 'Основной текст',
+  text_secondary: 'Вторичный текст',
+  border_color: 'Границы',
+  color_normal: 'Норма (зелёный)',
+  color_guarded: 'На охране / акцент',
+  color_warning: 'Предупреждение',
+  color_alarm: 'Тревога',
+  color_offline: 'Нет связи',
+  navbar_bg: 'Фон навигации',
+  navbar_brand_color: 'Цвет логотипа'
+};
+
+const DEFAULTS = {{ theme_config.colors | default({}) | tojson }};
+
+let themeData = JSON.parse(JSON.stringify({{ theme | tojson }}));
+let selectedTheme = themeData.theme;
+
+function selectTheme(t) {
+  selectedTheme = t;
+  document.getElementById('btn-dark').classList.toggle('active', t === 'dark');
+  document.getElementById('btn-light').classList.toggle('active', t === 'light');
+  updatePreview();
+}
+
+function renderColorGrid(themeName) {
+  const container = document.getElementById('colors-' + themeName);
+  const colors = themeData.colors[themeName] || {};
+  container.innerHTML = '';
+  for (const [key, label] of Object.entries(COLOR_LABELS)) {
+    const val = colors[key] || '#000000';
+    const item = document.createElement('div');
+    item.className = 'color-item';
+    item.innerHTML = `
+      <label>${label}</label>
+      <input type="color" value="${val}" data-theme="${themeName}" data-key="${key}"
+             onchange="onColorChange(this)">
+      <span class="hex-val" id="hex-${themeName}-${key}">${val}</span>
+    `;
+    container.appendChild(item);
+  }
+}
+
+function onColorChange(input) {
+  const t = input.dataset.theme;
+  const k = input.dataset.key;
+  themeData.colors[t][k] = input.value;
+  document.getElementById(`hex-${t}-${k}`).textContent = input.value;
+  updatePreview();
+}
+
+function resetColors(themeName) {
+  const defaultCfg = {{ theme_config | tojson }};
+  const orig = defaultCfg.colors || {};
+  // Use hardcoded defaults from the initial config
+  const hardDefaults = {
+    dark: {
+      bg_dark: "#1a1a2e", bg_card: "#16213e", bg_input: "#0f3460",
+      text_primary: "#e0e0e0", text_secondary: "#a0a0a0", border_color: "#2a2a4a",
+      color_normal: "#4CAF50", color_guarded: "#2196F3", color_warning: "#FF9800",
+      color_alarm: "#F44336", color_offline: "#9E9E9E",
+      navbar_bg: "#16213e", navbar_brand_color: "#2196F3"
+    },
+    light: {
+      bg_dark: "#f0f2f5", bg_card: "#ffffff", bg_input: "#f5f7fa",
+      text_primary: "#1a1a2e", text_secondary: "#6b7280", border_color: "#d1d5db",
+      color_normal: "#16a34a", color_guarded: "#2563eb", color_warning: "#ea580c",
+      color_alarm: "#dc2626", color_offline: "#9ca3af",
+      navbar_bg: "#ffffff", navbar_brand_color: "#2563eb"
+    }
+  };
+  themeData.colors[themeName] = JSON.parse(JSON.stringify(hardDefaults[themeName]));
+  renderColorGrid(themeName);
+  updatePreview();
+  showToast('Цвета сброшены');
+}
+
+function updatePreview() {
+  const c = themeData.colors[selectedTheme] || {};
+  const box = document.getElementById('preview-box');
+  box.innerHTML = [
+    { label: 'Норма', color: c.color_normal },
+    { label: 'Охрана', color: c.color_guarded },
+    { label: 'Предупр.', color: c.color_warning },
+    { label: 'Тревога', color: c.color_alarm },
+    { label: 'Оффлайн', color: c.color_offline },
+    { label: 'Фон', color: c.bg_dark },
+    { label: 'Карточка', color: c.bg_card },
+  ].map(s => `<div class="preview-swatch" style="background:${s.color}">${s.label}</div>`).join('');
+}
+
+async function saveAppearance() {
+  themeData.theme = selectedTheme;
+  themeData.app_title = document.getElementById('app-title').value.trim();
+  if (!themeData.app_title) {
+    showToast('Введите название приложения', 'error');
+    return;
+  }
+  try {
+    await apiFetch('/api/theme', { method: 'POST', body: JSON.stringify(themeData) });
+    showToast('Оформление сохранено');
+    setTimeout(() => location.reload(), 500);
+  } catch(e) {}
+}
+
+// Init
+renderColorGrid('dark');
+renderColorGrid('light');
+updatePreview();
+</script>
+{% endblock %}

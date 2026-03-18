@@ -14,6 +14,7 @@ POLLER_CONFIG_PATH = os.path.join(CONFIG_DIR, 'poller_config.json')
 ARCHIVE_CONFIG_PATH = os.path.join(CONFIG_DIR, 'archive_config.json')
 NOTIFICATIONS_CONFIG_PATH = os.path.join(CONFIG_DIR, 'notifications.json')
 LAYOUT_CONFIG_PATH = os.path.join(CONFIG_DIR, 'layout.json')
+THEME_CONFIG_PATH = os.path.join(CONFIG_DIR, 'theme_config.json')
 BACKUP_DIR = os.path.join(CONFIG_DIR, 'backups')
 
 
@@ -95,6 +96,59 @@ def load_layout_config():
 
 def save_layout_config(config):
     save_json(LAYOUT_CONFIG_PATH, config)
+
+
+def _default_theme_config():
+    return {
+        "theme": "dark",
+        "app_title": "КВТ Мониторинг",
+        "colors": {
+            "dark": {
+                "bg_dark": "#1a1a2e",
+                "bg_card": "#16213e",
+                "bg_input": "#0f3460",
+                "text_primary": "#e0e0e0",
+                "text_secondary": "#a0a0a0",
+                "border_color": "#2a2a4a",
+                "color_normal": "#4CAF50",
+                "color_guarded": "#2196F3",
+                "color_warning": "#FF9800",
+                "color_alarm": "#F44336",
+                "color_offline": "#9E9E9E",
+                "navbar_bg": "#16213e",
+                "navbar_brand_color": "#2196F3"
+            },
+            "light": {
+                "bg_dark": "#f0f2f5",
+                "bg_card": "#ffffff",
+                "bg_input": "#f5f7fa",
+                "text_primary": "#1a1a2e",
+                "text_secondary": "#6b7280",
+                "border_color": "#d1d5db",
+                "color_normal": "#16a34a",
+                "color_guarded": "#2563eb",
+                "color_warning": "#ea580c",
+                "color_alarm": "#dc2626",
+                "color_offline": "#9ca3af",
+                "navbar_bg": "#ffffff",
+                "navbar_brand_color": "#2563eb"
+            }
+        }
+    }
+
+
+def load_theme_config():
+    try:
+        return load_json(THEME_CONFIG_PATH)
+    except (FileNotFoundError, json.JSONDecodeError):
+        default = _default_theme_config()
+        save_json(THEME_CONFIG_PATH, default)
+        return default
+
+
+def save_theme_config(config):
+    save_json(THEME_CONFIG_PATH, config)
+    return config
 
 
 # --- Sensor CRUD ---

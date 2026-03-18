@@ -1,19 +1,41 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="{{ active_theme }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}КВТ{% endblock %} — Система мониторинга</title>
+  <title>{% block title %}КВТ{% endblock %} — {{ app_title }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    :root {
+      --bg-dark: {{ theme_colors.bg_dark | default('#1a1a2e') }};
+      --bg-card: {{ theme_colors.bg_card | default('#16213e') }};
+      --bg-input: {{ theme_colors.bg_input | default('#0f3460') }};
+      --text-primary: {{ theme_colors.text_primary | default('#e0e0e0') }};
+      --text-secondary: {{ theme_colors.text_secondary | default('#a0a0a0') }};
+      --border-color: {{ theme_colors.border_color | default('#2a2a4a') }};
+      --color-normal: {{ theme_colors.color_normal | default('#4CAF50') }};
+      --color-guarded: {{ theme_colors.color_guarded | default('#2196F3') }};
+      --color-warning: {{ theme_colors.color_warning | default('#FF9800') }};
+      --color-alarm: {{ theme_colors.color_alarm | default('#F44336') }};
+      --color-offline: {{ theme_colors.color_offline | default('#9E9E9E') }};
+      --navbar-bg: {{ theme_colors.navbar_bg | default(theme_colors.bg_card | default('#16213e')) }};
+      --navbar-brand-color: {{ theme_colors.navbar_brand_color | default(theme_colors.color_guarded | default('#2196F3')) }};
+    }
+  </style>
   {% block head %}{% endblock %}
 </head>
 <body>
   <nav class="navbar">
-    <a href="/" class="navbar__brand">КВТ Мониторинг</a>
+    <a href="/" class="navbar__brand">{{ app_title }}</a>
     <div class="navbar__links">
       <a href="/" class="{{ 'active' if request.path == '/' }}">Мнемосхема</a>
       <a href="/settings" class="{{ 'active' if request.path.startswith('/settings') }}">Настройки</a>
       <a href="/events" class="{{ 'active' if request.path == '/events' }}">Журнал</a>
+    </div>
+    <div class="navbar__right">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Переключить тему" aria-label="Переключить тему">
+        <span class="theme-toggle__icon">{{ '☀️' if active_theme == 'dark' else '🌙' }}</span>
+      </button>
     </div>
   </nav>
 
@@ -41,6 +63,15 @@
         throw new Error(err);
       }
       return data;
+    }
+
+    async function toggleTheme() {
+      try {
+        const cfg = await apiFetch('/api/theme');
+        cfg.theme = cfg.theme === 'dark' ? 'light' : 'dark';
+        await apiFetch('/api/theme', { method: 'POST', body: JSON.stringify(cfg) });
+        location.reload();
+      } catch(e) { showToast('Ошибка смены темы', 'error'); }
     }
   </script>
   {% block scripts %}{% endblock %}

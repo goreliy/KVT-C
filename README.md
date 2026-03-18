@@ -180,6 +180,8 @@ docker-compose logs -f
 | DELETE | `/api/sensors/{id}` | Удалить датчик |
 | GET | `/api/config` | Конфигурация |
 | GET | `/api/config/history` | История изменений |
+| GET | `/api/theme` | Настройки оформления |
+| POST | `/api/theme` | Сохранить оформление |
 
 ---
 
@@ -193,6 +195,7 @@ data/config/
 ├── poller_config.json      # Параметры Modbus
 ├── archive_config.json     # Настройки архивирования
 ├── layout.json             # Расположение плашек
+├── theme_config.json       # Оформление (темы, цвета, название)
 ├── notifications.json      # Email/Telegram
 └── backups/                # Резервные копии
 ```
