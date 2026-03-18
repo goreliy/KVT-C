@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+{% block title %}План помещения{% endblock %}
+
+{% block head %}
+<style>
+  .fp-layout { display: flex; gap: 16px; height: calc(100vh - 120px); }
+  .fp-sidebar {
+    width: 280px; min-width: 280px;
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 10px; padding: 16px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .fp-sidebar__title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .fp-plan-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .fp-plan-item {
+    padding: 8px 12px; border-radius: 6px; cursor: pointer;
+    font-size: 14px; display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg-input); border: 1px solid transparent; transition: .15s;
+  }
+  .fp-plan-item:hover { border-color: var(--border-color); }
+  .fp-plan-item.active { border-color: var(--color-guarded); background: var(--bg-dark); }
+  .fp-plan-item__name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fp-plan-item__sub { font-size: 11px; color: var(--text-secondary); margin-left: 8px; }
+  .fp-plan-item__actions { display: flex; gap: 4px; }
+  .fp-plan-item__actions button {
+    background: none; border: none; color: var(--text-secondary); cursor: pointer;
+    font-size: 14px; padding: 2px 4px; border-radius: 4px;
+  }
+  .fp-plan-item__actions button:hover { color: var(--color-alarm); background: var(--bg-card); }
+  .fp-plan-children { margin-left: 16px; }
+
+  .fp-sensor-palette {
+    border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 4px;
+  }
+  .fp-sensor-chip {
+    padding: 6px 10px; background: var(--bg-input); border: 1px solid var(--border-color);
+    border-radius: 6px; font-size: 12px; cursor: grab; margin-bottom: 4px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .fp-sensor-chip.placed { opacity: .5; }
+  .fp-sensor-chip:active { cursor: grabbing; }
+
+  .fp-canvas-wrap {
+    flex: 1; background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 10px; position: relative; overflow: hidden;
+  }
+  .fp-canvas-toolbar {
+    position: absolute; top: 8px; right: 8px; z-index: 10;
+    display: flex; gap: 6px;
+  }
+  .fp-canvas-toolbar button, .fp-canvas-toolbar label {
+    padding: 6px 12px; background: var(--bg-input); border: 1px solid var(--border-color);
+    border-radius: 6px; color: var(--text-primary); font-size: 12px; cursor: pointer;
+  }
+  .fp-canvas-toolbar label:hover, .fp-canvas-toolbar button:hover {
+    background: var(--border-color);
+  }
+  .fp-canvas-toolbar input[type="file"] { display: none; }
+
+  .fp-canvas {
+    width: 100%; height: 100%; position: relative;
+    background-size: contain; background-repeat: no-repeat; background-position: center;
+  }
+  .fp-canvas svg.fp-bg-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+  .fp-marker {
+    position: absolute; min-width: 80px; padding: 6px 10px;
+    background: var(--bg-card); border: 2px solid var(--color-normal);
+    border-radius: 8px; font-size: 11px; cursor: move; z-index: 5;
+    box-shadow: 0 2px 8px rgba(0,0,0,.3); user-select: none;
+    text-align: center; transform: translate(-50%, -50%);
+  }
+  .fp-marker__name { font-weight: 600; font-size: 12px; white-space: nowrap; }
+  .fp-marker__vals { display: flex; gap: 8px; justify-content: center; margin-top: 2px; }
+  .fp-marker__val { font-size: 13px; font-weight: 700; }
+  .fp-marker__remove {
+    position: absolute; top: -8px; right: -8px; width: 18px; height: 18px;
+    background: var(--color-alarm); color: #fff; border: none; border-radius: 50%;
+    font-size: 11px; cursor: pointer; display: none; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .fp-marker:hover .fp-marker__remove { display: flex; }
+
+  .fp-empty {
+    display: flex; align-items: center; justify-content: center;
+    height: 100%; color: var(--text-secondary); font-size: 16px;
+    flex-direction: column; gap: 12px;
+  }
+
+  /* --- View / Edit mode --- */
+  .fp-mode-toggle {
+    padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary);
+    transition: .15s;
+  }
+  .fp-mode-toggle:hover { background: var(--border-color); }
+  .fp-mode-toggle.active-edit {
+    background: var(--color-guarded); color: #fff; border-color: var(--color-guarded);
+  }
+
+  /* Hide editing controls in view mode */
+  body.fp-view-mode .fp-edit-only { display: none !important; }
+  body.fp-view-mode .fp-marker { cursor: default; }
+  body.fp-view-mode .fp-marker__remove { display: none !important; }
+  body.fp-view-mode .fp-sensor-chip { cursor: default; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fp-layout">
+  <!-- Sidebar -->
+  <div class="fp-sidebar">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+      <div class="fp-sidebar__title">Планы</div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="fp-mode-toggle" id="mode-toggle" onclick="toggleEditMode()">✏️ Редактировать</button>
+        <button class="btn btn-primary btn-sm fp-edit-only" onclick="createPlan()">+ План</button>
+      </div>
+    </div>
+    <ul class="fp-plan-list" id="plan-list"></ul>
+
+    <div class="fp-sensor-palette fp-edit-only" id="sensor-palette">
+      <div class="fp-sidebar__title">Датчики</div>
+      <div id="sensor-chips"></div>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="fp-canvas-wrap" id="canvas-wrap">
+    <div class="fp-canvas-toolbar fp-edit-only" id="canvas-toolbar" style="display:none;">
+      <label>
+        📷 Подложка
+        <input type="file" id="bg-upload" accept=".png,.jpg,.jpeg,.gif,.bmp,.webp,.svg" onchange="uploadBackground(this)">
+      </label>
+      <button onclick="addSubPlan()">+ Подплан</button>
+      <button onclick="saveSensors()">💾 Сохранить</button>
+    </div>
+    <div class="fp-canvas" id="fp-canvas">
+      <div class="fp-empty" id="fp-empty">
+        <div>Выберите или создайте план</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ALL_SENSORS = {{ sensors | tojson }};
+let plans = {{ plans | tojson }};
+let activePlanId = null;
+let currentData = {};  // live sensor data
+let editMode = false;  // view mode by default
+
+// --- Edit mode toggle ---
+function toggleEditMode() {
+  editMode = !editMode;
+  document.body.classList.toggle('fp-view-mode', !editMode);
+  const btn = document.getElementById('mode-toggle');
+  if (editMode) {
+    btn.textContent = '👁️ Просмотр';
+    btn.classList.add('active-edit');
+  } else {
+    btn.textContent = '✏️ Редактировать';
+    btn.classList.remove('active-edit');
+  }
+  // Re-show toolbar if plan is selected and in edit mode
+  if (activePlanId) {
+    document.getElementById('canvas-toolbar').style.display = editMode ? 'flex' : 'none';
+  }
+}
+
+// Start in view mode
+document.body.classList.add('fp-view-mode');
+
+// --- Plan list rendering ---
+function renderPlanList() {
+  const list = document.getElementById('plan-list');
+  const roots = plans.filter(p => !p.parent_id);
+  list.innerHTML = roots.map(p => planItemHTML(p)).join('');
+}
+
+function planItemHTML(plan) {
+  const children = plans.filter(p => p.parent_id === plan.id);
+  const isActive = plan.id === activePlanId;
+  let html = `
+    <li>
+      <div class="fp-plan-item ${isActive ? 'active' : ''}" onclick="selectPlan('${plan.id}')">
+        <span class="fp-plan-item__name">${plan.name}</span>
+        ${children.length ? `<span class="fp-plan-item__sub">(${children.length})</span>` : ''}
+        <span class="fp-plan-item__actions fp-edit-only">
+          <button onclick="event.stopPropagation();deletePlan('${plan.id}')" title="Удалить">✕</button>
+        </span>
+      </div>`;
+  if (children.length) {
+    html += `<ul class="fp-plan-list fp-plan-children">${children.map(c => planItemHTML(c)).join('')}</ul>`;
+  }
+  html += '</li>';
+  return html;
+}
+
+// --- Plan CRUD ---
+async function createPlan(parentId) {
+  const name = prompt('Название плана:');
+  if (!name) return;
+  const body = { name, parent_id: parentId || null };
+  const plan = await apiFetch('/floorplan/api/plans', { method: 'POST', body: JSON.stringify(body) });
+  plans.push(plan);
+  renderPlanList();
+  selectPlan(plan.id);
+}
+
+function addSubPlan() {
+  if (!activePlanId) return;
+  createPlan(activePlanId);
+}
+
+async function deletePlan(planId) {
+  if (!confirm('Удалить план и все подпланы?')) return;
+  const result = await apiFetch(`/floorplan/api/plans/${planId}`, { method: 'DELETE' });
+  const removed = new Set(result.deleted || []);
+  plans = plans.filter(p => !removed.has(p.id));
+  if (removed.has(activePlanId)) {
+    activePlanId = null;
+    clearCanvas();
+  }
+  renderPlanList();
+}
+
+// --- Select plan ---
+function selectPlan(planId) {
+  activePlanId = planId;
+  renderPlanList();
+  const plan = plans.find(p => p.id === planId);
+  if (!plan) { clearCanvas(); return; }
+
+  document.getElementById('canvas-toolbar').style.display = editMode ? 'flex' : 'none';
+  document.getElementById('fp-empty').style.display = 'none';
+
+  const canvas = document.getElementById('fp-canvas');
+  // Set background
+  canvas.style.backgroundImage = '';
+  const oldSvg = canvas.querySelector('.fp-bg-svg');
+  if (oldSvg) oldSvg.remove();
+
+  if (plan.background) {
+    if (plan.bg_type === 'svg') {
+      fetch(plan.background).then(r => r.text()).then(svgText => {
+        const div = document.createElement('div');
+        div.innerHTML = svgText;
+        const svg = div.querySelector('svg');
+        if (svg) {
+          svg.classList.add('fp-bg-svg');
+          svg.style.position = 'absolute';
+          svg.style.inset = '0';
+          svg.style.width = '100%';
+          svg.style.height = '100%';
+          svg.style.pointerEvents = 'none';
+          canvas.prepend(svg);
+        }
+      });
+    } else {
+      canvas.style.backgroundImage = `url(${plan.background})`;
+    }
+  }
+
+  // Remove old markers
+  canvas.querySelectorAll('.fp-marker').forEach(m => m.remove());
+
+  // Place sensors
+  (plan.sensors || []).forEach(ps => {
+    const sensor = ALL_SENSORS.find(s => s.id === ps.sensor_id);
+    if (sensor) placeSensorMarker(ps.sensor_id, sensor.name, ps.x, ps.y);
+  });
+
+  renderSensorChips();
+}
+
+function clearCanvas() {
+  const canvas = document.getElementById('fp-canvas');
+  canvas.style.backgroundImage = '';
+  const oldSvg = canvas.querySelector('.fp-bg-svg');
+  if (oldSvg) oldSvg.remove();
+  canvas.querySelectorAll('.fp-marker').forEach(m => m.remove());
+  document.getElementById('fp-empty').style.display = 'flex';
+  document.getElementById('canvas-toolbar').style.display = 'none';
+  renderSensorChips();
+}
+
+// --- Background upload ---
+async function uploadBackground(input) {
+  if (!activePlanId || !input.files.length) return;
+  const form = new FormData();
+  form.append('file', input.files[0]);
+  const resp = await fetch(`/floorplan/api/plans/${activePlanId}/background`, { method: 'POST', body: form });
+  const data = await resp.json();
+  if (!resp.ok) { showToast(data.error || 'Ошибка загрузки', 'error'); return; }
+  const plan = plans.find(p => p.id === activePlanId);
+  if (plan) { plan.background = data.background; plan.bg_type = data.bg_type; }
+  selectPlan(activePlanId);
+  showToast('Подложка загружена');
+  input.value = '';
+}
+
+// --- Sensor chips (palette) ---
+function renderSensorChips() {
+  const container = document.getElementById('sensor-chips');
+  const plan = plans.find(p => p.id === activePlanId);
+  const placedIds = new Set((plan?.sensors || []).map(s => s.sensor_id));
+
+  container.innerHTML = ALL_SENSORS.map(s => {
+    const placed = placedIds.has(s.id);
+    return `<div class="fp-sensor-chip ${placed ? 'placed' : ''}"
+                 draggable="${!placed}"
+                 ondragstart="dragSensor(event, ${s.id}, '${s.name.replace(/'/g, "\\'")}')"
+                 data-sid="${s.id}">
+              <span>${s.name}</span>
+              <span style="color:var(--text-secondary)">#${s.id}</span>
+            </div>`;
+  }).join('');
+}
+
+// --- Drag & Drop ---
+function dragSensor(e, sensorId, sensorName) {
+  e.dataTransfer.setData('sensor_id', sensorId);
+  e.dataTransfer.setData('sensor_name', sensorName);
+}
+
+const canvasWrap = document.getElementById('fp-canvas');
+canvasWrap.addEventListener('dragover', e => { if (editMode) e.preventDefault(); });
+canvasWrap.addEventListener('drop', e => {
+  if (!editMode) return;
+  e.preventDefault();
+  const sensorId = parseInt(e.dataTransfer.getData('sensor_id'));
+  const sensorName = e.dataTransfer.getData('sensor_name');
+  if (!sensorId || !activePlanId) return;
+
+  const rect = canvasWrap.getBoundingClientRect();
+  const xPct = ((e.clientX - rect.left) / rect.width * 100).toFixed(2);
+  const yPct = ((e.clientY - rect.top) / rect.height * 100).toFixed(2);
+
+  // Add to plan config
+  const plan = plans.find(p => p.id === activePlanId);
+  if (!plan) return;
+  if (!plan.sensors) plan.sensors = [];
+  // Don't duplicate
+  if (plan.sensors.find(s => s.sensor_id === sensorId)) return;
+  plan.sensors.push({ sensor_id: sensorId, x: parseFloat(xPct), y: parseFloat(yPct) });
+
+  placeSensorMarker(sensorId, sensorName, xPct, yPct);
+  renderSensorChips();
+});
+
+// --- Marker creation & dragging ---
+function placeSensorMarker(sensorId, name, xPct, yPct) {
+  const canvas = document.getElementById('fp-canvas');
+  const marker = document.createElement('div');
+  marker.className = 'fp-marker';
+  marker.dataset.sensorId = sensorId;
+  marker.style.left = xPct + '%';
+  marker.style.top = yPct + '%';
+  marker.innerHTML = `
+    <div class="fp-marker__name">${name}</div>
+    <div class="fp-marker__vals">
+      <span class="fp-marker__val" data-temp="${sensorId}">--°C</span>
+      <span class="fp-marker__val" data-hum="${sensorId}">--%</span>
+    </div>
+    <button class="fp-marker__remove" onclick="removeSensorMarker(${sensorId})" title="Убрать">✕</button>
+  `;
+  makeDraggable(marker);
+  canvas.appendChild(marker);
+}
+
+function removeSensorMarker(sensorId) {
+  const plan = plans.find(p => p.id === activePlanId);
+  if (plan) plan.sensors = (plan.sensors || []).filter(s => s.sensor_id !== sensorId);
+  const marker = document.querySelector(`.fp-marker[data-sensor-id="${sensorId}"]`);
+  if (marker) marker.remove();
+  renderSensorChips();
+}
+
+function makeDraggable(el) {
+  let startX, startY, origLeft, origTop;
+  el.addEventListener('mousedown', e => {
+    if (!editMode) return;
+    if (e.target.classList.contains('fp-marker__remove')) return;
+    e.preventDefault();
+    const canvas = document.getElementById('fp-canvas');
+    const rect = canvas.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    origLeft = parseFloat(el.style.left);
+    origTop = parseFloat(el.style.top);
+
+    function onMove(ev) {
+      const dx = (ev.clientX - startX) / rect.width * 100;
+      const dy = (ev.clientY - startY) / rect.height * 100;
+      el.style.left = Math.max(0, Math.min(100, origLeft + dx)) + '%';
+      el.style.top = Math.max(0, Math.min(100, origTop + dy)) + '%';
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      // Update plan data
+      const sensorId = parseInt(el.dataset.sensorId);
+      const plan = plans.find(p => p.id === activePlanId);
+      if (plan) {
+        const ps = (plan.sensors || []).find(s => s.sensor_id === sensorId);
+        if (ps) { ps.x = parseFloat(el.style.left); ps.y = parseFloat(el.style.top); }
+      }
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+// --- Save sensors ---
+async function saveSensors() {
+  if (!activePlanId) return;
+  const plan = plans.find(p => p.id === activePlanId);
+  if (!plan) return;
+  await apiFetch(`/floorplan/api/plans/${activePlanId}/sensors`, {
+    method: 'POST',
+    body: JSON.stringify({ sensors: plan.sensors || [] })
+  });
+  showToast('Расположение датчиков сохранено');
+}
+
+// --- Live data update ---
+async function updateLiveData() {
+  try {
+    const resp = await fetch('/api/current');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    (data.sensors || []).forEach(s => {
+      const tempEl = document.querySelector(`[data-temp="${s.id}"]`);
+      const humEl = document.querySelector(`[data-hum="${s.id}"]`);
+      if (tempEl) tempEl.textContent = s.temperature.value.toFixed(1) + '°C';
+      if (humEl) humEl.textContent = s.humidity.value.toFixed(1) + '%';
+      // Update marker border color based on status
+      const marker = document.querySelector(`.fp-marker[data-sensor-id="${s.id}"]`);
+      if (marker) {
+        const colors = { normal: 'var(--color-normal)', guarded: 'var(--color-guarded)',
+          alarm: 'var(--color-alarm)', no_connection: 'var(--color-offline)' };
+        const base = s.combined_status.includes('warning') ? 'warning' : s.combined_status.split('_')[0];
+        marker.style.borderColor = colors[base] || (base === 'warning' ? 'var(--color-warning)' : 'var(--color-normal)');
+      }
+    });
+  } catch(e) {}
+}
+
+// --- Init ---
+renderPlanList();
+renderSensorChips();
+// Auto-select first root plan if available
+const firstRoot = plans.find(p => !p.parent_id);
+if (firstRoot) selectPlan(firstRoot.id);
+updateLiveData();
+setInterval(updateLiveData, 5000);
+</script>
+{% endblock %}

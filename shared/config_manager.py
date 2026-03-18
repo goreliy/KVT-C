@@ -15,6 +15,7 @@ ARCHIVE_CONFIG_PATH = os.path.join(CONFIG_DIR, 'archive_config.json')
 NOTIFICATIONS_CONFIG_PATH = os.path.join(CONFIG_DIR, 'notifications.json')
 LAYOUT_CONFIG_PATH = os.path.join(CONFIG_DIR, 'layout.json')
 THEME_CONFIG_PATH = os.path.join(CONFIG_DIR, 'theme_config.json')
+FLOORPLAN_CONFIG_PATH = os.path.join(CONFIG_DIR, 'floorplan_config.json')
 BACKUP_DIR = os.path.join(CONFIG_DIR, 'backups')
 
 
@@ -148,6 +149,28 @@ def load_theme_config():
 
 def save_theme_config(config):
     save_json(THEME_CONFIG_PATH, config)
+    return config
+
+
+# --- Floor Plan Config ---
+
+def _default_floorplan_config():
+    return {
+        "plans": []
+    }
+
+
+def load_floorplan_config():
+    try:
+        return load_json(FLOORPLAN_CONFIG_PATH)
+    except (FileNotFoundError, json.JSONDecodeError):
+        default = _default_floorplan_config()
+        save_json(FLOORPLAN_CONFIG_PATH, default)
+        return default
+
+
+def save_floorplan_config(config):
+    save_json(FLOORPLAN_CONFIG_PATH, config)
     return config
 
 

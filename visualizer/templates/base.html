@@ -29,6 +29,7 @@
     <a href="/" class="navbar__brand">{{ app_title }}</a>
     <div class="navbar__links">
       <a href="/" class="{{ 'active' if request.path == '/' }}">Мнемосхема</a>
+      <a href="/floorplan" class="{{ 'active' if request.path.startswith('/floorplan') }}">План помещения</a>
       <a href="/settings" class="{{ 'active' if request.path.startswith('/settings') }}">Настройки</a>
       <a href="/events" class="{{ 'active' if request.path == '/events' }}">Журнал</a>
     </div>

@@ -1,0 +1,98 @@
+{
+  "plans": [
+    {
+      "id": "d40f167a",
+      "name": "первый",
+      "description": "",
+      "parent_id": null,
+      "background": "/static/floorplans/d40f167a_01bec5.jpg",
+      "bg_type": "image",
+      "canvas_width": 1200,
+      "canvas_height": 800,
+      "sensors": [
+        {
+          "sensor_id": 4,
+          "x": 28.46,
+          "y": 12.27
+        },
+        {
+          "sensor_id": 3,
+          "x": 47.7225,
+          "y": 23.3286
+        },
+        {
+          "sensor_id": 5,
+          "x": 68.69,
+          "y": 17.93
+        },
+        {
+          "sensor_id": 7,
+          "x": 22.9575,
+          "y": 21.58
+        },
+        {
+          "sensor_id": 8,
+          "x": 55.22,
+          "y": 9.23
+        },
+        {
+          "sensor_id": 9,
+          "x": 12.71,
+          "y": 70.06
+        },
+        {
+          "sensor_id": 10,
+          "x": 73.34,
+          "y": 77.63
+        },
+        {
+          "sensor_id": 1,
+          "x": 9.58,
+          "y": 13.05
+        }
+      ]
+    },
+    {
+      "id": "7e39a1a0",
+      "name": "тест2",
+      "description": "",
+      "parent_id": "d40f167a",
+      "background": "/static/floorplans/7e39a1a0_2c5935.png",
+      "bg_type": "image",
+      "canvas_width": 1200,
+      "canvas_height": 800,
+      "sensors": [
+        {
+          "sensor_id": 1,
+          "x": 35.01,
+          "y": 47.43
+        },
+        {
+          "sensor_id": 2,
+          "x": 13.95,
+          "y": 22.63
+        },
+        {
+          "sensor_id": 4,
+          "x": 39.47,
+          "y": 24.19
+        },
+        {
+          "sensor_id": 6,
+          "x": 47.53,
+          "y": 31.07
+        },
+        {
+          "sensor_id": 8,
+          "x": 33.97,
+          "y": 75.02
+        },
+        {
+          "sensor_id": 7,
+          "x": 50.19,
+          "y": 66.58
+        }
+      ]
+    }
+  ]
+}

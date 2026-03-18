@@ -31,10 +31,12 @@ def create_app():
     from visualizer.routes.main import main_bp
     from visualizer.routes.settings import settings_bp
     from visualizer.routes.api import api_bp
+    from visualizer.routes.floorplan import floorplan_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(settings_bp, url_prefix='/settings')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(floorplan_bp, url_prefix='/floorplan')
 
     return app
 
