@@ -1,210 +1,289 @@
-# Requirements Document
+# Документ требований
 
-## Introduction
+## Введение
 
-Система КВТ (Комплект контроля температуры и влажности) предназначена для автоматического измерения, архивирования и визуализации данных температуры и влажности с датчиков С2000-ВТ/С2000-ВТИ (Болид) через преобразователь С2000-ПП по протоколу Modbus RTU. Система состоит из четырёх независимых подсистем: Modbus Poller, Archive Manager, Web Visualizer и Telegram Bot.
+Система КВТ (Комплект контроля температуры и влажности) предназначена для автоматического измерения, архивирования и визуализации данных температуры и влажности с датчиков С2000-ВТ/С2000-ВТИ (Болид) через преобразователь С2000-ПП по протоколу Modbus RTU. Система состоит из шести независимых подсистем: Modbus Poller, Archive Manager, Web Visualizer, Telegram Bot, Report Generator и OPC UA Server. Целевая платформа — ARM v7 4-ядерный контроллер, с совместимостью Linux x86_64 и Windows. Развёртывание осуществляется через Docker-контейнеры.
 
-## Glossary
+## Глоссарий
 
 - **КВТ (KVT_System)**: Комплект контроля температуры и влажности — полная система мониторинга
-- **Modbus_Poller**: Подсистема опроса датчиков по протоколу Modbus RTU через RS-485
-- **Archive_Manager**: Подсистема архивирования, компрессии и хранения измерений
-- **Web_Visualizer**: Подсистема веб-интерфейса для визуализации данных и управления настройками
+- **Modbus_Poller**: Подсистема опроса датчиков по протоколу Modbus RTU через RS-485 (порт 5001)
+- **Archive_Manager**: Подсистема архивирования, компрессии и хранения измерений (порт 5002)
+- **Web_Visualizer**: Подсистема веб-интерфейса для визуализации данных и управления настройками (порт 5000)
 - **Telegram_Bot**: Подсистема Telegram-бота для уведомлений, команд и регулярных отчётов
+- **Report_Generator**: Подсистема автоматической генерации и сохранения отчётов по расписанию (PDF/HTML/CSV) на диск (порт 5003)
+- **OPC_UA_Server**: Подсистема OPC UA 2.0, предоставляющая текущие и архивные данные внешним клиентам по протоколу OPC UA (порт 4840)
 - **С2000-ВТ**: Датчик температуры и влажности производства Болид
+- **С2000-ВТИ**: Датчик температуры и влажности с индикацией производства Болид
 - **С2000-ПП**: Преобразователь интерфейсов RS-485 / Modbus RTU производства Болид
 - **current.json**: Файл с текущими значениями датчиков, обновляемый Modbus_Poller
-- **archive.json**: Файл JSON-архива измерений
-- **system_config.json**: Главный конфигурационный файл системы с описанием датчиков и настроек
-- **Компрессия данных**: Алгоритм схлопывания последовательных одинаковых значений для экономии места
+- **modbus_log.json**: Файл лога Modbus-обмена (кольцевой буфер, макс. 1000 записей)
+- **archive.json**: Файл JSON-архива измерений в сокращённом формате
+- **system_config.json**: Главный конфигурационный файл системы — единственный источник истины для списка датчиков и настроек, используемый всеми подсистемами
+- **poller_config.json**: Конфигурация параметров COM-порта и опроса (без списка датчиков)
+- **archive_config.json**: Конфигурация режимов сбора, хранилищ, компрессии и ротации данных
+- **notifications.json**: Конфигурация Email SMTP, Telegram-уведомлений, per-sensor настроек и расписания отчётов
+- **report_config.json**: Конфигурация расписания генерации отчётов, форматов и директории сохранения
+- **opcua_config.json**: Конфигурация OPC UA endpoint, порта, security и аутентификации
+- **layout.json**: Конфигурация расположения плашек датчиков на мнемосхеме
+- **floorplan_config.json**: Конфигурация планов помещений и позиций датчиков на планах
+- **theme_config.json**: Конфигурация тем оформления, цветов и названия приложения
+- **Компрессия данных**: Алгоритм схлопывания последовательных одинаковых значений (в пределах tolerance) для экономии места
 - **Квитирование**: Подтверждение оператором факта ознакомления с событием или тревогой
 - **Мнемосхема**: Главный экран Web_Visualizer с плашками датчиков на фоновой подложке
 - **Плашка датчика**: Визуальный элемент на мнемосхеме, отображающий текущие значения и статус датчика
 - **План помещения**: Страница с размещением маркеров датчиков на загруженном изображении/SVG плана
-- **Превышение границ (violation)**: Событие выхода измеренного значения за установленные пределы
-- **Report_Generator**: Подсистема автоматической генерации и сохранения отчётов по расписанию (PDF/HTML/CSV) на диск
-- **OPC_UA_Server**: Подсистема OPC UA 2.0, предоставляющая текущие и архивные данные внешним клиентам по протоколу OPC UA
+- **Превышение границ (violation)**: Событие выхода измеренного значения за установленные пределы (warning или alarm)
+- **combined_status**: Комбинированный статус датчика: normal, warning_high_temp, warning_low_temp, warning_high_hum, warning_low_hum, alarm, no_connection, guarded
+- **Коммуникационный статус**: Статус связи с датчиком: ok (0), timeout (1), crc_error (2), exception (3), offline (4)
 
-## Requirements
+## Требования
 
-### Requirement 1: Опрос датчиков по Modbus RTU
+### Требование 1: Опрос датчиков по Modbus RTU
 
-**User Story:** As an operator, I want the system to automatically poll temperature and humidity sensors via Modbus RTU, so that I always have up-to-date measurement data.
+**Пользовательская история:** Как оператор, я хочу, чтобы система автоматически опрашивала датчики температуры и влажности по Modbus RTU, чтобы я всегда имел актуальные данные измерений.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. WHEN the operator starts the Modbus_Poller, THE Modbus_Poller SHALL begin cyclic polling of all configured sensors using Modbus function 0x04 (Read Input Registers) with a configurable period from 100 ms to 60000 ms.
-2. WHILE the Modbus_Poller is running, THE Modbus_Poller SHALL read value registers at base address 30000+N (even address for temperature, odd for humidity) and status registers at base address 40000+N for each configured sensor.
-3. WHEN the Modbus_Poller receives a valid response from a sensor, THE Modbus_Poller SHALL convert raw 16-bit register values to physical units (temperature = raw / 10 °C, humidity = raw / 10 %) and write the result to current.json within 50 ms.
-4. IF a sensor does not respond within the configured timeout (100–5000 ms), THEN THE Modbus_Poller SHALL mark the sensor status as "timeout" and retry up to the configured retry count (default 3) before marking the sensor as "offline".
-5. WHILE the Modbus_Poller is running, THE Modbus_Poller SHALL log each Modbus TX/RX frame with timestamp, direction, raw hex data, and parsed description to modbus_log.json, maintaining a maximum of 1000 entries in a circular buffer.
+1. КОГДА оператор запускает Modbus_Poller, Modbus_Poller ДОЛЖЕН начать циклический опрос всех настроенных датчиков из system_config.json функцией Modbus 0x04 (Read Input Registers) с настраиваемым периодом от 100 мс до 60000 мс.
+2. ПОКА Modbus_Poller работает, Modbus_Poller ДОЛЖЕН читать регистры значений по базовому адресу 30000+N (чётный адрес — температура как знаковое 16-бит, нечётный — влажность как беззнаковое 16-бит) и регистры статусов по базовому адресу 40000+N для каждого настроенного датчика.
+3. КОГДА Modbus_Poller получает валидный ответ от датчика, Modbus_Poller ДОЛЖЕН конвертировать сырые 16-битные значения регистров в физические единицы (температура = raw / 10 °C, влажность = raw / 10 %) и записать результат в current.json в течение 50 мс.
+4. ЕСЛИ датчик не отвечает в пределах настроенного таймаута (100–5000 мс), ТО Modbus_Poller ДОЛЖЕН пометить статус датчика как "timeout" и повторить запрос до настроенного количества попыток (по умолчанию 3), после чего пометить датчик как "offline".
+5. ПОКА Modbus_Poller работает, Modbus_Poller ДОЛЖЕН логировать каждый Modbus TX/RX фрейм с меткой времени, направлением, сырыми HEX-данными и разобранным описанием в modbus_log.json, поддерживая кольцевой буфер с максимумом 1000 записей.
+6. КОГДА Modbus_Poller записывает данные в current.json, Modbus_Poller ДОЛЖЕН включить в файл: метку времени опроса, параметры подключения (COM-порт, скорость), массив датчиков (id, name, modbus_slave_id, адреса, значения температуры и влажности с raw-данными и статусами, combined_status) и статистику опроса (total_polls, successful_polls, failed_polls, last_error).
+7. ПОКА Modbus_Poller работает, Modbus_Poller ДОЛЖЕН вычислять combined_status каждого датчика на основе границ из system_config.json: "normal" при значениях в пределах нормы, "warning_high_temp"/"warning_low_temp"/"warning_high_hum"/"warning_low_hum" при выходе за warning-границу, "alarm" при выходе за alarm-границу, "no_connection" при отсутствии связи, "guarded" при активном мониторинге границ.
 
-### Requirement 2: Настройка параметров подключения Modbus
+### Требование 2: Настройка параметров подключения Modbus
 
-**User Story:** As an operator, I want to configure Modbus connection parameters (COM port, baud rate, parity, timeout), so that the system works with my specific hardware setup.
+**Пользовательская история:** Как оператор, я хочу настраивать параметры подключения Modbus (COM-порт, скорость, чётность, таймаут), чтобы система работала с моей конкретной аппаратной конфигурацией.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. THE Modbus_Poller SHALL support configuration of COM port, baud rate (1200–115200), data bits (7 or 8), parity (None, Even, Odd), stop bits (1 or 2), poll period (100–60000 ms), and timeout (100–5000 ms) via poller_config.json.
-2. WHEN the operator changes Modbus connection parameters via the REST API (POST /api/poller/config), THE Modbus_Poller SHALL apply the new parameters and restart the polling cycle within 2 seconds.
-3. WHEN the operator requests available COM ports (GET /api/poller/ports), THE Modbus_Poller SHALL return a list of all detected serial ports on the host system.
+1. Modbus_Poller ДОЛЖЕН поддерживать настройку COM-порта, скорости (1200–115200), битов данных (7 или 8), чётности (None, Even, Odd), стоп-битов (1 или 2), периода опроса (100–60000 мс), таймаута (100–5000 мс) и количества повторов (по умолчанию 3) через poller_config.json.
+2. КОГДА оператор изменяет параметры подключения Modbus через REST API (POST /api/poller/config), Modbus_Poller ДОЛЖЕН применить новые параметры и перезапустить цикл опроса в течение 2 секунд.
+3. КОГДА оператор запрашивает доступные COM-порты (GET /api/poller/ports), Modbus_Poller ДОЛЖЕН вернуть список всех обнаруженных последовательных портов на хост-системе.
+4. КОГДА оператор отправляет команду запуска (POST /api/poller/start), Modbus_Poller ДОЛЖЕН начать циклический опрос датчиков.
+5. КОГДА оператор отправляет команду остановки (POST /api/poller/stop), Modbus_Poller ДОЛЖЕН прекратить циклический опрос датчиков.
+6. КОГДА оператор отправляет команду перезагрузки конфигурации (POST /api/poller/reload), Modbus_Poller ДОЛЖЕН перечитать список датчиков из system_config.json и применить изменения без перезапуска подсистемы.
 
-### Requirement 3: Архивирование данных
+### Требование 3: Архивирование данных
 
-**User Story:** As an operator, I want measurement data to be automatically archived, so that I can review historical trends and generate reports.
+**Пользовательская история:** Как оператор, я хочу, чтобы данные измерений автоматически архивировались, чтобы я мог просматривать исторические тренды и генерировать отчёты.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. WHILE the Archive_Manager is running, THE Archive_Manager SHALL periodically read current.json and store measurements in the configured storage backend (SQLite, PostgreSQL, or JSON file).
-2. THE Archive_Manager SHALL support three data collection modes: periodic (timer-based), watch (file-change-based), and combined (file-change with minimum/maximum interval constraints).
-3. WHEN compression is enabled, THE Archive_Manager SHALL collapse consecutive measurements with identical values (within configured tolerance: 0.1 °C for temperature, 0.5 % for humidity) into a single record with start timestamp, end timestamp, duration, and sample count.
-4. WHILE the archive storage exceeds the configured maximum size, THE Archive_Manager SHALL apply retention policies: raw data for 24 hours, 1-minute aggregation for 1–7 days, 5-minute aggregation for 7–30 days, 1-hour aggregation for 30–365 days, and 1-day aggregation beyond 1 year.
-5. IF the free disk space falls below the configured minimum (default 200 MB), THEN THE Archive_Manager SHALL delete the oldest archived data until sufficient space is recovered.
+1. ПОКА Archive_Manager работает, Archive_Manager ДОЛЖЕН периодически читать current.json и сохранять измерения в настроенное хранилище данных (SQLite, PostgreSQL или JSON-файл).
+2. Archive_Manager ДОЛЖЕН поддерживать три режима сбора данных: periodic (по таймеру с настраиваемым интервалом 100–60000 мс), watch (по изменению файла с debounce) и combined (по изменению файла с ограничениями минимального и максимального интервала).
+3. КОГДА компрессия включена, Archive_Manager ДОЛЖЕН схлопывать последовательные измерения с одинаковыми значениями (в пределах настроенного допуска: 0.1 °C для температуры, 0.5 % для влажности) в одну запись с меткой начала, меткой конца, длительностью и количеством выборок.
+4. ПОКА объём архивного хранилища превышает настроенный максимум, Archive_Manager ДОЛЖЕН применять политики хранения: сырые данные за 24 часа, агрегация по 1 минуте за 1–7 дней, агрегация по 5 минут за 7–30 дней, агрегация по 1 часу за 30–365 дней, агрегация по 1 дню свыше 1 года.
+5. ЕСЛИ свободное дисковое пространство падает ниже настроенного минимума (по умолчанию 200 МБ), ТО Archive_Manager ДОЛЖЕН удалить старейшие архивные данные до восстановления достаточного объёма.
 
-### Requirement 4: Управление датчиками
+### Требование 4: Управление датчиками
 
-**User Story:** As an operator, I want to add, edit, and remove sensors through the web interface, so that I can manage the monitoring configuration without editing files manually.
+**Пользовательская история:** Как оператор, я хочу добавлять, редактировать и удалять датчики через веб-интерфейс, чтобы управлять конфигурацией мониторинга без ручного редактирования файлов.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. WHEN the operator submits a new sensor via POST /api/sensors, THE Web_Visualizer SHALL validate the sensor data (unique ID, unique Modbus addresses, valid slave ID 1–247, min < max for limits) and add the sensor to system_config.json.
-2. WHEN the operator updates a sensor via PUT /api/sensors/{id}, THE Web_Visualizer SHALL validate the changes and update the sensor record in system_config.json.
-3. WHEN the operator deletes a sensor via DELETE /api/sensors/{id}, THE Web_Visualizer SHALL remove the sensor from system_config.json.
-4. WHEN any sensor configuration change is saved, THE Web_Visualizer SHALL increment the config_version, record the change in update_history, and create a backup copy in data/config/backups/.
-5. THE KVT_System SHALL support up to 256 sensors on a single С2000-ПП, each occupying 2 Modbus addresses (temperature + humidity).
+1. КОГДА оператор отправляет нового датчика через POST /api/sensors, Web_Visualizer ДОЛЖЕН валидировать данные датчика (уникальный ID, уникальные адреса Modbus, валидный slave ID 1–247, min < max для границ, обязательные поля: name, modbus_slave_id, адреса) и добавить датчик в system_config.json.
+2. КОГДА оператор обновляет датчик через PUT /api/sensors/{id}, Web_Visualizer ДОЛЖЕН валидировать изменения и обновить запись датчика в system_config.json.
+3. КОГДА оператор удаляет датчик через DELETE /api/sensors/{id}, Web_Visualizer ДОЛЖЕН удалить датчик из system_config.json.
+4. КОГДА оператор добавляет несколько датчиков через POST /api/sensors/batch, Web_Visualizer ДОЛЖЕН валидировать каждый датчик и добавить все датчики в system_config.json одной операцией.
+5. КОГДА оператор удаляет несколько датчиков через DELETE /api/sensors/batch, Web_Visualizer ДОЛЖЕН удалить указанные датчики из system_config.json одной операцией.
+6. КОГДА любое изменение конфигурации датчиков сохраняется, Web_Visualizer ДОЛЖЕН инкрементировать config_version, записать изменение в update_history и создать резервную копию в data/config/backups/.
+7. KVT_System ДОЛЖНА поддерживать до 256 датчиков на одном С2000-ПП, каждый из которых занимает 2 адреса Modbus (температура + влажность).
 
-### Requirement 5: Мнемосхема (главный экран)
+### Требование 5: Мнемосхема (главный экран)
 
-**User Story:** As an operator, I want to see all sensors on a visual dashboard with real-time values and status indicators, so that I can quickly assess the state of the monitored environment.
+**Пользовательская история:** Как оператор, я хочу видеть все датчики на визуальной панели с текущими значениями и индикаторами статуса, чтобы быстро оценивать состояние контролируемой среды.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. THE Web_Visualizer SHALL display a main screen (mnemonic diagram) with draggable sensor tiles showing sensor name, current temperature, current humidity, combined status, and Modbus addresses.
-2. WHEN the operator drags a sensor tile to a new position, THE Web_Visualizer SHALL save the new coordinates to layout.json.
-3. THE Web_Visualizer SHALL apply color coding to sensor tiles based on combined_status: green for "normal", blue for "guarded", yellow/orange for "warning_*", red for "alarm", and grey for "no_connection".
-4. WHEN the operator uploads a background image, THE Web_Visualizer SHALL display the image as the mnemonic diagram backdrop and save the reference in layout.json.
-5. WHILE the main screen is open, THE Web_Visualizer SHALL refresh sensor data from current.json at a regular interval to display near-real-time values.
+1. Web_Visualizer ДОЛЖЕН отображать главный экран (мнемосхему) с перетаскиваемыми плашками датчиков, показывающими: название датчика, текущую температуру, текущую влажность, комбинированный статус, адреса Modbus и мини-график за последний час.
+2. КОГДА оператор перетаскивает плашку датчика на новую позицию, Web_Visualizer ДОЛЖЕН сохранить новые координаты в layout.json.
+3. Web_Visualizer ДОЛЖЕН применять цветовую индикацию к плашкам датчиков на основе combined_status: зелёный для "normal", синий для "guarded", жёлтый/оранжевый для "warning_*", красный для "alarm" и серый для "no_connection".
+4. КОГДА оператор загружает фоновое изображение, Web_Visualizer ДОЛЖЕН отобразить изображение как подложку мнемосхемы и сохранить ссылку в layout.json.
+5. ПОКА главный экран открыт, Web_Visualizer ДОЛЖЕН обновлять данные датчиков из current.json с настраиваемым интервалом (по умолчанию 3 секунды, диапазон 1–60 секунд) для отображения значений в режиме, близком к реальному времени.
 
-### Requirement 6: Детальный просмотр датчика
+### Требование 5a: Страницы настроек системы
 
-**User Story:** As an operator, I want to view detailed historical charts for a specific sensor, so that I can analyze temperature and humidity trends over time.
+**Пользовательская история:** Как оператор, я хочу управлять всеми настройками системы через веб-интерфейс, чтобы конфигурировать опросчик, архив, уведомления и отчёты из одного места.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. WHEN the operator navigates to /sensor/{id}, THE Web_Visualizer SHALL display temperature and humidity charts for the selected sensor.
-2. THE Web_Visualizer SHALL support chart time scales: 1 hour, 6 hours, 24 hours, 7 days, 30 days, and custom date range.
-3. WHEN the operator views a sensor detail page, THE Web_Visualizer SHALL display the sensor event log, current threshold settings, and a button to acknowledge active alarms.
+1. Web_Visualizer ДОЛЖЕН предоставлять страницу настроек Modbus (/settings/poller) для конфигурации параметров COM-порта и периода опроса.
+2. Web_Visualizer ДОЛЖЕН предоставлять страницу управления датчиками (/settings/sensors) с таблицей датчиков и формами добавления/редактирования/удаления.
+3. Web_Visualizer ДОЛЖЕН предоставлять страницу настроек архива (/settings/archive) для конфигурации режима сбора, хранилищ, компрессии и ротации.
+4. Web_Visualizer ДОЛЖЕН предоставлять страницу настроек уведомлений (/settings/notifications) для конфигурации Email SMTP, Telegram и per-sensor настроек.
+5. Web_Visualizer ДОЛЖЕН предоставлять страницу настроек отчётов (/settings/reports) для конфигурации расписания генерации, форматов и директории сохранения.
 
-### Requirement 7: План помещения
+### Требование 6: Детальный просмотр датчика
 
-**User Story:** As an operator, I want to place sensors on a floor plan image, so that I can see their physical location and current readings in context.
+**Пользовательская история:** Как оператор, я хочу просматривать детальные исторические графики для конкретного датчика, чтобы анализировать тренды температуры и влажности во времени.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. THE Web_Visualizer SHALL provide a "Floor Plan" page (/floorplan) supporting multiple plans with a parent-child hierarchy (sub-plans).
-2. WHEN the operator creates a new plan, THE Web_Visualizer SHALL generate a unique plan ID and store the plan metadata in floorplan_config.json.
-3. WHEN the operator uploads a background image (PNG, JPG, BMP, WebP, or SVG), THE Web_Visualizer SHALL save the file to static/floorplans/ and associate it with the plan.
-4. WHEN the operator drags a sensor marker onto the plan, THE Web_Visualizer SHALL save the sensor position (as percentage of canvas dimensions) in floorplan_config.json.
-5. WHILE the floor plan page is open, THE Web_Visualizer SHALL display current temperature, humidity, and status color on each placed sensor marker, updated in near-real-time.
-6. WHEN the operator deletes a plan, THE Web_Visualizer SHALL cascade-delete all child sub-plans and their associated data from floorplan_config.json.
+1. КОГДА оператор переходит на /sensor/{id}, Web_Visualizer ДОЛЖЕН отобразить графики температуры и влажности для выбранного датчика.
+2. Web_Visualizer ДОЛЖЕН поддерживать масштабы графиков: 1 час, 6 часов, 24 часа, 7 дней, 30 дней и произвольный диапазон дат.
+3. КОГДА оператор просматривает страницу детального просмотра датчика, Web_Visualizer ДОЛЖЕН отобразить журнал событий датчика, текущие настройки границ и кнопку квитирования активных тревог.
 
-### Requirement 8: Настройки оформления и темы
+### Требование 7: План помещения
 
-**User Story:** As an operator, I want to customize the application appearance (theme, colors, title), so that the interface matches my organization's preferences.
+**Пользовательская история:** Как оператор, я хочу размещать датчики на плане помещения, чтобы видеть их физическое расположение и текущие показания в контексте.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. THE Web_Visualizer SHALL support two themes: dark (default) and light, switchable via a button in the navigation bar with immediate visual effect.
-2. WHEN the operator changes theme colors on the /settings/appearance page, THE Web_Visualizer SHALL save the updated colors to theme_config.json for the selected theme independently.
-3. THE Web_Visualizer SHALL allow the operator to set a custom application title (1–50 characters) displayed in the navigation bar and browser tab title.
-4. WHEN the operator clicks "Reset to defaults" for a theme, THE Web_Visualizer SHALL restore all color values for that theme to the predefined defaults.
+1. Web_Visualizer ДОЛЖЕН предоставлять страницу «План помещения» (/floorplan) с поддержкой нескольких планов с иерархией родитель-потомок (подпланы).
+2. КОГДА оператор создаёт новый план, Web_Visualizer ДОЛЖЕН сгенерировать уникальный ID плана и сохранить метаданные плана в floorplan_config.json.
+3. КОГДА оператор загружает фоновое изображение (PNG, JPG, BMP, WebP или SVG), Web_Visualizer ДОЛЖЕН сохранить файл в static/floorplans/ и связать его с планом.
+4. КОГДА оператор перетаскивает маркер датчика на план, Web_Visualizer ДОЛЖЕН сохранить позицию датчика (в процентах от размеров холста) в floorplan_config.json.
+5. ПОКА страница плана помещения открыта, Web_Visualizer ДОЛЖЕН отображать текущую температуру, влажность и цвет статуса на каждом размещённом маркере датчика, обновляя данные с настраиваемым интервалом (по умолчанию 3 секунды, диапазон 1–60 секунд).
+6. КОГДА оператор удаляет план, Web_Visualizer ДОЛЖЕН каскадно удалить все дочерние подпланы и связанные с ними данные из floorplan_config.json.
 
-### Requirement 9: Уведомления по Email
+### Требование 8: Настройки оформления и темы
 
-**User Story:** As an operator, I want to receive email notifications when sensor values exceed thresholds, so that I can respond to abnormal conditions promptly.
+**Пользовательская история:** Как оператор, я хочу настраивать внешний вид приложения (тему, цвета, название), чтобы интерфейс соответствовал предпочтениям моей организации.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. WHEN a sensor value crosses a configured warning or alarm threshold, THE Web_Visualizer SHALL send an email notification to all configured recipients via the SMTP server defined in notifications.json.
-2. THE Web_Visualizer SHALL support per-sensor notification settings (enable/disable email on warning, email on alarm) stored in system_config.json.
-3. WHERE daily email reports are enabled, THE Web_Visualizer SHALL send a summary report at the configured time (default 08:00) containing temperature/humidity ranges and violation counts for each sensor.
+1. Web_Visualizer ДОЛЖЕН поддерживать две темы: тёмную (по умолчанию) и светлую, переключаемые кнопкой в навигационной панели с мгновенным визуальным эффектом.
+2. КОГДА оператор изменяет цвета темы на странице /settings/appearance, Web_Visualizer ДОЛЖЕН сохранить обновлённые цвета в theme_config.json для выбранной темы независимо.
+3. Web_Visualizer ДОЛЖЕН позволять оператору задавать пользовательское название приложения (1–50 символов), отображаемое в навигационной панели и заголовке вкладки браузера.
+4. КОГДА оператор нажимает «Сброс к умолчаниям» для темы, Web_Visualizer ДОЛЖЕН восстановить все значения цветов для этой темы к предустановленным значениям по умолчанию.
+5. Web_Visualizer ДОЛЖЕН поддерживать настройку следующих цветов для каждой темы независимо: фон страницы, фон карточек, фон полей ввода, основной текст, вторичный текст, цвет границ, статусные цвета (норма, охрана, предупреждение, тревога, нет связи), фон навигации и цвет логотипа.
 
-### Requirement 10: Telegram Bot — уведомления и команды
+### Требование 9: Уведомления по Email
 
-**User Story:** As an operator, I want to receive Telegram notifications and query sensor data via bot commands, so that I can monitor the system remotely from my phone.
+**Пользовательская история:** Как оператор, я хочу получать email-уведомления при выходе значений датчиков за пороговые значения, чтобы оперативно реагировать на аномальные условия.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. WHEN a sensor value crosses a configured warning or alarm threshold, THE Telegram_Bot SHALL send a notification message to all configured chat IDs, including sensor name, parameter, value, threshold, violation type, and timestamp.
-2. WHEN a violation ends (value returns to normal), THE Telegram_Bot SHALL send a resolution message including duration and peak value.
-3. WHEN the operator sends the /status command, THE Telegram_Bot SHALL reply with current values and statuses of all sensors.
-4. WHEN the operator sends the /chart {sensor} {period} command, THE Telegram_Bot SHALL generate a PNG chart of temperature and humidity using matplotlib and send it as an image.
-5. WHEN the operator sends the /mute {minutes} command, THE Telegram_Bot SHALL suppress all notifications for the specified duration, and the /unmute command SHALL resume notifications immediately.
+1. КОГДА значение датчика пересекает настроенный порог warning или alarm, Web_Visualizer ДОЛЖЕН отправить email-уведомление всем настроенным получателям через SMTP-сервер, определённый в notifications.json.
+2. Web_Visualizer ДОЛЖЕН поддерживать per-sensor настройки уведомлений (включение/выключение email при warning, email при alarm), хранимые в system_config.json.
+3. ГДЕ ежедневные email-отчёты включены, Web_Visualizer ДОЛЖЕН отправлять сводный отчёт в настроенное время (по умолчанию 08:00), содержащий диапазоны температуры/влажности и количество превышений для каждого датчика.
 
-### Requirement 11: Telegram Bot — регулярные отчёты
+### Требование 10: Telegram Bot — уведомления и команды
 
-**User Story:** As an operator, I want to receive periodic summary reports via Telegram with charts, so that I stay informed about system trends without manual checks.
+**Пользовательская история:** Как оператор, я хочу получать Telegram-уведомления и запрашивать данные датчиков через команды бота, чтобы контролировать систему удалённо с телефона.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. THE Telegram_Bot SHALL support four report schedules: hourly, daily, weekly, and monthly, each independently configurable (enabled/disabled, time, day of week/month) via notifications.json.
-2. WHEN a scheduled report triggers, THE Telegram_Bot SHALL generate a text summary (temperature/humidity ranges, violation counts per sensor) and PNG charts for the report period, then send them to all configured chat IDs.
-3. WHEN the operator sends the /schedule command, THE Telegram_Bot SHALL display the current report schedule configuration.
-4. WHEN the operator sends /schedule {type} {on|off}, THE Telegram_Bot SHALL enable or disable the specified report type and persist the change to notifications.json.
+1. КОГДА значение датчика пересекает настроенный порог warning или alarm, Telegram_Bot ДОЛЖЕН отправить уведомление во все настроенные chat ID, включая: имя датчика, параметр, значение, порог, тип превышения и метку времени.
+2. КОГДА превышение завершается (значение возвращается в норму), Telegram_Bot ДОЛЖЕН отправить сообщение о разрешении, включая длительность превышения и пиковое значение.
+3. КОГДА оператор отправляет команду /status, Telegram_Bot ДОЛЖЕН ответить текущими значениями и статусами всех датчиков.
+4. КОГДА оператор отправляет команду /chart {sensor} {period}, Telegram_Bot ДОЛЖЕН сгенерировать PNG-график температуры и влажности с помощью matplotlib (с отображением границ warning/alarm горизонтальными линиями и подсветкой зон превышений) и отправить его как изображение.
+5. КОГДА оператор отправляет команду /mute {minutes}, Telegram_Bot ДОЛЖЕН подавить все уведомления на указанную длительность, а команда /unmute ДОЛЖНА возобновить уведомления немедленно.
+6. КОГДА оператор отправляет команду /sensor {id|name}, Telegram_Bot ДОЛЖЕН ответить текущими значениями конкретного датчика.
+7. КОГДА оператор отправляет команду /violations [period], Telegram_Bot ДОЛЖЕН ответить списком превышений за указанный период.
+8. КОГДА оператор отправляет команду /report, Telegram_Bot ДОЛЖЕН немедленно сгенерировать и отправить сводный отчёт.
+9. КОГДА оператор отправляет команду /journal [period], Telegram_Bot ДОЛЖЕН ответить сводкой min/max/avg температур и влажности за указанный период.
+10. КОГДА оператор отправляет команду /start, Telegram_Bot ДОЛЖЕН зарегистрировать чат и отправить приветственное сообщение.
+11. КОГДА оператор отправляет команду /help, Telegram_Bot ДОЛЖЕН ответить списком всех доступных команд с описаниями.
 
-### Requirement 12: Журналы и экспорт данных
+### Требование 11: Telegram Bot — регулярные отчёты
 
-**User Story:** As an operator, I want to view event logs, temperature journals, and violation records, and export data in CSV/JSON, so that I can perform analysis and generate compliance reports.
+**Пользовательская история:** Как оператор, я хочу получать периодические сводные отчёты через Telegram с графиками, чтобы быть в курсе трендов системы без ручных проверок.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. THE Web_Visualizer SHALL provide an events page (/events) displaying alarm and warning events with filtering by sensor, event type, and date range, and support acknowledgment of individual events.
-2. THE Web_Visualizer SHALL provide a temperature journal page (/journal/temperatures) showing aggregated min/max/avg temperature and humidity per sensor for selectable periods (hour, day, week).
-3. THE Web_Visualizer SHALL provide a violations journal page (/journal/violations) showing threshold violation records with start time, end time, duration, peak value, and acknowledgment status.
-4. WHEN the operator requests data export (GET /api/archive/export), THE Archive_Manager SHALL generate a downloadable file in CSV or JSON format for the specified sensor(s) and date range.
+1. Telegram_Bot ДОЛЖЕН поддерживать четыре расписания отчётов: ежечасно, ежедневно, еженедельно и ежемесячно, каждое независимо настраиваемое (включено/выключено, время, день недели/месяца) через notifications.json.
+2. КОГДА запланированный отчёт срабатывает, Telegram_Bot ДОЛЖЕН сгенерировать текстовую сводку (диапазоны температуры/влажности, количество превышений по каждому датчику) и PNG-графики за период отчёта, затем отправить их во все настроенные chat ID.
+3. КОГДА оператор отправляет команду /schedule, Telegram_Bot ДОЛЖЕН отобразить текущую конфигурацию расписания отчётов.
+4. КОГДА оператор отправляет /schedule {type} {on|off}, Telegram_Bot ДОЛЖЕН включить или выключить указанный тип отчёта и сохранить изменение в notifications.json.
 
-### Requirement 13: Конфигурация и версионность
+### Требование 12: Журналы и экспорт данных
 
-**User Story:** As an administrator, I want the system to version all configuration changes and maintain backups, so that I can audit changes and restore previous configurations if needed.
+**Пользовательская история:** Как оператор, я хочу просматривать журналы событий, журналы температур и записи превышений, а также экспортировать данные в CSV/JSON, чтобы выполнять анализ и формировать отчёты для соответствия нормативам.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. WHEN any configuration change is saved, THE KVT_System SHALL increment config_version, record the change description and timestamp in update_history, and create a backup file in data/config/backups/.
-2. WHEN the administrator requests configuration history (GET /api/config/history), THE Web_Visualizer SHALL return the list of all recorded configuration changes with version, timestamp, and description.
-3. WHEN the administrator requests a restore (POST /api/config/restore/{version}), THE Web_Visualizer SHALL replace the current system_config.json with the specified backup version and record the restore action in update_history.
-4. THE KVT_System SHALL validate all configuration changes against defined rules (unique sensor IDs, unique Modbus addresses, valid ranges) before persisting them.
+1. Web_Visualizer ДОЛЖЕН предоставлять страницу событий (/events), отображающую события тревог и предупреждений с фильтрацией по датчику, типу события и диапазону дат, а также поддержкой квитирования отдельных событий.
+2. Web_Visualizer ДОЛЖЕН предоставлять страницу журнала температур (/journal/temperatures), показывающую агрегированные min/max/avg температуры и влажности по каждому датчику для выбираемых периодов (час, день, неделя).
+3. Web_Visualizer ДОЛЖЕН предоставлять страницу журнала превышений (/journal/violations), показывающую записи превышений с временем начала, временем окончания, длительностью, пиковым значением и статусом квитирования.
+4. КОГДА оператор запрашивает экспорт данных (GET /api/archive/export), Archive_Manager ДОЛЖЕН сгенерировать скачиваемый файл в формате CSV или JSON для указанных датчиков и диапазона дат.
+5. Web_Visualizer ДОЛЖЕН предоставлять страницу экспорта данных (/export) с выбором датчиков, периода и формата (CSV/JSON) для скачивания файла.
 
-### Requirement 14: Автоматическая генерация и сохранение отчётов
+### Требование 13: Конфигурация и версионность
 
-**User Story:** As an operator, I want the system to automatically generate and save reports to disk on a configurable schedule, so that I have a local archive of reports for compliance and auditing without relying on Telegram or email.
+**Пользовательская история:** Как администратор, я хочу, чтобы система версионировала все изменения конфигурации и поддерживала резервные копии, чтобы я мог проводить аудит изменений и восстанавливать предыдущие конфигурации при необходимости.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. THE Report_Generator SHALL support configurable report schedules: hourly, daily, weekly, and monthly, each independently enabled/disabled with configurable time and day parameters via report_config.json.
-2. WHEN a scheduled report triggers, THE Report_Generator SHALL generate a report file containing a text summary (temperature/humidity ranges per sensor, violation counts, duration statistics) and embedded PNG charts for the report period.
-3. THE Report_Generator SHALL support output formats: PDF, HTML, and CSV, configurable per schedule entry in report_config.json.
-4. THE Report_Generator SHALL save generated reports to a configurable directory (default: data/reports/) with a naming convention including report type, period, and timestamp (e.g., daily_2026-01-14_080000.pdf).
-5. WHILE the report storage directory exceeds the configured maximum size or file count, THE Report_Generator SHALL delete the oldest report files according to the configured retention policy (default: keep reports for 365 days).
-6. WHEN the operator requests a manual report generation via the Web_Visualizer (/settings/reports) or REST API (POST /api/reports/generate), THE Report_Generator SHALL immediately generate a report for the specified period and format.
+1. КОГДА любое изменение конфигурации сохраняется, KVT_System ДОЛЖНА инкрементировать config_version, записать описание изменения и метку времени в update_history и создать файл резервной копии в data/config/backups/.
+2. КОГДА администратор запрашивает историю конфигурации (GET /api/config/history), Web_Visualizer ДОЛЖЕН вернуть список всех записанных изменений конфигурации с версией, меткой времени и описанием.
+3. КОГДА администратор запрашивает восстановление (POST /api/config/restore/{version}), Web_Visualizer ДОЛЖЕН заменить текущий system_config.json указанной версией резервной копии и записать действие восстановления в update_history.
+4. KVT_System ДОЛЖНА валидировать все изменения конфигурации по определённым правилам (уникальные ID датчиков, уникальные адреса Modbus, валидные диапазоны, обязательные поля) перед сохранением.
+5. KVT_System ДОЛЖНА использовать system_config.json как единственный источник истины для списка датчиков — все подсистемы (Modbus_Poller, Archive_Manager, Web_Visualizer, Telegram_Bot, Report_Generator, OPC_UA_Server) ДОЛЖНЫ читать список датчиков из этого файла.
 
-### Requirement 15: OPC UA сервер
+### Требование 14: Автоматическая генерация и сохранение отчётов
 
-**User Story:** As a system integrator, I want the KVT system to expose current and historical sensor data via OPC UA 2.0, so that external SCADA systems and other OPC UA clients can consume the data.
+**Пользовательская история:** Как оператор, я хочу, чтобы система автоматически генерировала и сохраняла отчёты на диск по настраиваемому расписанию, чтобы иметь локальный архив отчётов для соответствия нормативам и аудита без зависимости от Telegram или email.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. THE OPC_UA_Server SHALL expose an OPC UA address space containing a node for each configured sensor with variables for current temperature, current humidity, combined status, and last update timestamp.
-2. WHILE the OPC_UA_Server is running, THE OPC_UA_Server SHALL update sensor variable values from current.json within 2 seconds of a new measurement.
-3. THE OPC_UA_Server SHALL support OPC UA Historical Access (HA) interface, allowing clients to read archived temperature and humidity data for a specified sensor and time range from the Archive_Manager storage.
-4. THE OPC_UA_Server SHALL support configurable endpoint URL, port (default: 4840), security policy (None, Basic256Sha256), and authentication mode (Anonymous, Username/Password) via opcua_config.json.
-5. WHEN a new sensor is added or removed from system_config.json, THE OPC_UA_Server SHALL dynamically update the OPC UA address space to reflect the change within 5 seconds.
+1. Report_Generator ДОЛЖЕН поддерживать настраиваемые расписания отчётов: ежечасно, ежедневно, еженедельно и ежемесячно, каждое независимо включаемое/выключаемое с настраиваемыми параметрами времени и дня через report_config.json.
+2. КОГДА запланированный отчёт срабатывает, Report_Generator ДОЛЖЕН сгенерировать файл отчёта, содержащий текстовую сводку (диапазоны температуры/влажности по каждому датчику, количество превышений, статистику длительности) и встроенные PNG-графики за период отчёта.
+3. Report_Generator ДОЛЖЕН поддерживать форматы вывода: PDF, HTML и CSV, настраиваемые для каждой записи расписания в report_config.json.
+4. Report_Generator ДОЛЖЕН сохранять сгенерированные отчёты в настраиваемую директорию (по умолчанию: data/reports/) с соглашением об именовании, включающим тип отчёта, период и метку времени (например, daily_2026-01-14_080000.pdf).
+5. ПОКА директория хранения отчётов превышает настроенный максимальный размер или количество файлов, Report_Generator ДОЛЖЕН удалять старейшие файлы отчётов согласно настроенной политике хранения (по умолчанию: хранить отчёты 365 дней).
+6. КОГДА оператор запрашивает ручную генерацию отчёта через Web_Visualizer (/settings/reports) или REST API (POST /api/reports/generate), Report_Generator ДОЛЖЕН немедленно сгенерировать отчёт за указанный период и в указанном формате.
 
-### Requirement 16: Docker-контейнеризация
+### Требование 15: OPC UA сервер
 
-**User Story:** As a system administrator, I want to deploy the KVT system using Docker containers, so that installation and updates are simple and reproducible.
+**Пользовательская история:** Как системный интегратор, я хочу, чтобы система КВТ предоставляла текущие и исторические данные датчиков через OPC UA 2.0, чтобы внешние SCADA-системы и другие OPC UA клиенты могли потреблять данные.
 
-#### Acceptance Criteria
+#### Критерии приёмки
 
-1. THE KVT_System SHALL provide a Dockerfile and docker-compose.yml that build and run all four subsystems (Modbus_Poller, Archive_Manager, Web_Visualizer, Telegram_Bot) as separate containers.
-2. THE KVT_System SHALL mount the data/ directory as a Docker volume shared between all containers for configuration and data exchange.
-3. WHILE running in Docker, THE Modbus_Poller container SHALL have access to host serial ports (via privileged mode or device mapping) for RS-485 communication.
+1. OPC_UA_Server ДОЛЖЕН предоставлять адресное пространство OPC UA, содержащее узел для каждого настроенного датчика с переменными: текущая температура, текущая влажность, комбинированный статус и метка времени последнего обновления.
+2. ПОКА OPC_UA_Server работает, OPC_UA_Server ДОЛЖЕН обновлять значения переменных датчиков из current.json в течение 2 секунд после нового измерения.
+3. OPC_UA_Server ДОЛЖЕН поддерживать интерфейс OPC UA Historical Access (HA), позволяющий клиентам читать архивные данные температуры и влажности для указанного датчика и временного диапазона из хранилища Archive_Manager.
+4. OPC_UA_Server ДОЛЖЕН поддерживать настраиваемый URL endpoint, порт (по умолчанию: 4840), политику безопасности (None, Basic256Sha256) и режим аутентификации (Anonymous, Username/Password) через opcua_config.json.
+5. КОГДА новый датчик добавляется или удаляется из system_config.json, OPC_UA_Server ДОЛЖЕН динамически обновить адресное пространство OPC UA для отражения изменения в течение 5 секунд.
+
+### Требование 16: Docker-контейнеризация
+
+**Пользовательская история:** Как системный администратор, я хочу развёртывать систему КВТ с помощью Docker-контейнеров, чтобы установка и обновления были простыми и воспроизводимыми.
+
+#### Критерии приёмки
+
+1. KVT_System ДОЛЖНА предоставлять Dockerfile и docker-compose.yml, которые собирают и запускают все шесть подсистем (Modbus_Poller, Archive_Manager, Web_Visualizer, Telegram_Bot, Report_Generator, OPC_UA_Server) как отдельные контейнеры.
+2. KVT_System ДОЛЖНА монтировать директорию data/ как Docker volume, общий для всех контейнеров, для обмена конфигурацией и данными.
+3. ПОКА система работает в Docker, контейнер Modbus_Poller ДОЛЖЕН иметь доступ к последовательным портам хоста (через privileged mode или маппинг устройств) для RS-485 коммуникации.
+
+### Требование 17: Мониторинг состояния подсистем
+
+**Пользовательская история:** Как администратор, я хочу проверять состояние каждой подсистемы через единый endpoint, чтобы быстро диагностировать проблемы в работе системы.
+
+#### Критерии приёмки
+
+1. Modbus_Poller ДОЛЖЕН предоставлять endpoint GET /api/poller/health, возвращающий текущее состояние подсистемы (running/stopped/error) и базовую статистику.
+2. Archive_Manager ДОЛЖЕН предоставлять endpoint GET /api/archive/health, возвращающий текущее состояние подсистемы и информацию о хранилище.
+3. Report_Generator ДОЛЖЕН предоставлять endpoint GET /api/reports/health, возвращающий текущее состояние подсистемы и информацию о последних сгенерированных отчётах.
+4. ПОКА KVT_System работает, все подсистемы ДОЛЖНЫ использовать Python logging с ротацией файлов (максимум 10 МБ, 5 файлов) для записи диагностической информации.
+
+### Требование 18: Безопасность и защита данных
+
+**Пользовательская история:** Как администратор, я хочу, чтобы система обеспечивала базовую защиту от несанкционированного доступа и утечки данных, чтобы конфигурация и данные мониторинга были защищены.
+
+#### Критерии приёмки
+
+1. Web_Visualizer ДОЛЖЕН поддерживать опциональную HTTP Basic Authentication для доступа к веб-интерфейсу и REST API, настраиваемую через system_config.json.
+2. KVT_System ДОЛЖНА хранить пароли и токены (SMTP password, Telegram bot token, PostgreSQL password, OPC UA password) в конфигурационных файлах в зашифрованном виде или через переменные окружения, а REST API ДОЛЖЕН маскировать эти значения при выдаче конфигурации (заменять на "****").
+3. КОГДА оператор загружает файл изображения через Web_Visualizer (фон мнемосхемы, план помещения), Web_Visualizer ДОЛЖЕН валидировать тип файла по содержимому (magic bytes), ограничивать размер файла (максимум 10 МБ) и сохранять файл с сгенерированным именем для предотвращения path traversal атак.
+4. Web_Visualizer ДОЛЖЕН устанавливать HTTP-заголовки безопасности: X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Content-Security-Policy с ограничением источников скриптов.
+5. КОГДА Modbus_Poller записывает current.json, Modbus_Poller ДОЛЖЕН использовать атомарную запись (запись во временный файл с последующим переименованием) для предотвращения чтения неполных данных другими подсистемами.
+6. KVT_System ДОЛЖНА валидировать все входные данные REST API (JSON-схемы, диапазоны значений, длины строк) и возвращать HTTP 400 с описанием ошибки при невалидных данных.
+7. ПОКА система работает в Docker, контейнер Modbus_Poller ДОЛЖЕН использовать маппинг конкретных устройств (--device) вместо privileged mode, когда это возможно, для минимизации привилегий.
+
+### Требование 19: Целостность данных и обработка ошибок
+
+**Пользовательская история:** Как оператор, я хочу, чтобы система корректно обрабатывала ошибки и сбои, чтобы данные мониторинга оставались целостными и система продолжала работать при частичных отказах.
+
+#### Критерии приёмки
+
+1. ЕСЛИ Modbus_Poller теряет соединение с COM-портом, ТО Modbus_Poller ДОЛЖЕН перейти в состояние "error" и пытаться переподключиться каждые 5 секунд до восстановления связи.
+2. ЕСЛИ Archive_Manager не может записать данные в основное хранилище (SQLite/PostgreSQL) после 3 попыток с экспоненциальной задержкой, ТО Archive_Manager ДОЛЖЕН переключиться на JSON-хранилище как fallback.
+3. ЕСЛИ Web_Visualizer не может получить данные от Modbus_Poller API, ТО Web_Visualizer ДОЛЖЕН отобразить последние известные данные с индикатором «данные устарели» и меткой времени последнего успешного обновления.
+4. ЕСЛИ Telegram_Bot не может отправить сообщение через Telegram API, ТО Telegram_Bot ДОЛЖЕН повторить отправку с экспоненциальной задержкой (1 с, 2 с, 4 с, максимум 60 с).
+5. ЕСЛИ Report_Generator не может сгенерировать PDF, ТО Report_Generator ДОЛЖЕН переключиться на HTML-формат как fallback и записать ошибку в лог.
+6. ЕСЛИ OPC_UA_Server не может прочитать current.json, ТО OPC_UA_Server ДОЛЖЕН вернуть последние известные значения с OPC UA StatusCode Bad_OutOfDate.
+7. КОГДА Archive_Manager обнаруживает повреждённый current.json (невалидный JSON), Archive_Manager ДОЛЖЕН пропустить текущий цикл архивации и записать ошибку в лог без прерывания работы.

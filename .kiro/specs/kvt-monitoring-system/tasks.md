@@ -6,7 +6,7 @@
     - Создать requirements.txt со всеми зависимостями
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
   - [ ] 1.2 Реализовать общие модели данных (shared/models.py)
-    - Создать dataclass-модели: SensorConfig, SensorReading, Measurement, Event, Violation, TemperatureLogEntry
+    - Создать dataclass-модели: SensorConfig, SensorReading, Measurement, Event, Violation (с полями acknowledged_at, acknowledged_by, comment), TemperatureLogEntry
     - _Requirements: 1.1, 3.1, 4.1, 12.1, 12.2, 12.3_
   - [x] 1.3 Реализовать менеджер конфигурации (shared/config_manager.py)
 
@@ -21,11 +21,12 @@
   - [ ] 1.4 Реализовать утилиты (shared/utils.py)
     - Конвертация raw → физические единицы (temperature = raw / 10, humidity = raw / 10)
     - Форматирование дат, валидация HEX-цветов
-    - _Requirements: 1.3_
+    - Настройка Python logging с ротацией файлов (max 10 MB, 5 файлов) для всех подсистем
+    - _Requirements: 1.3, 17.4_
   - [x] 1.5 Создать конфигурационные файлы по умолчанию в data/config/
 
     - data/config/system_config.json — ЕДИНЫЙ конфиг датчиков для всех подсистем: список датчиков (id, name, modbus_slave_id, modbus_addr_temp, modbus_addr_hum, temp_limits, hum_limits, guarded, notifications), системные настройки, config_version, update_history. Poller, Archive Manager, Telegram Bot, Report Generator, OPC UA Server — все читают датчики отсюда
-    - data/config/poller_config.json — только параметры COM-порта и опроса (com_port, baudrate, parity, timeout, poll_period, retry_count). Список датчиков НЕ дублируется, берётся из system_config.json
+    - data/config/poller_config.json — только параметры COM-порта и опроса (com_port, baudrate, data_bits, parity, stop_bits, timeout, poll_period, retry_count). Список датчиков НЕ дублируется, берётся из system_config.json
     - data/config/archive_config.json — режим сбора, хранилища, компрессия, ротация
     - data/config/telegram_config.json — токен бота, chat_ids, настройки графиков
     - data/config/notifications.json — Email SMTP, Telegram уведомления, per-sensor настройки, расписание отчётов
@@ -35,7 +36,7 @@
     - data/config/floorplan_config.json — планы помещений, позиции датчиков
     - data/config/theme_config.json — темы, цвета, название приложения
     - _Requirements: 2.1, 3.2, 4.5, 8.1, 8.2, 8.3, 9.1, 11.1, 14.1, 15.4_
-  - [ ]* 1.6 Написать unit-тесты для config_manager и utils
+  - [ ] 1.6 Написать unit-тесты для config_manager и utils
     - Тесты версионности, бэкапов, валидации
     - _Requirements: 13.1, 13.4_
 
@@ -53,14 +54,15 @@
     - Логирование TX/RX фреймов в modbus_log.json (circular buffer, max 1000)
     - Вычисление combined_status на основе границ из system_config.json
     - Retry логика: до retry_count попыток, затем статус "offline"
-    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
   - [ ] 2.3 Реализовать Flask API (poller/app.py)
     - GET /api/poller/status, /current, /log
     - POST /api/poller/config — применение новых параметров с перезапуском опроса в течение 2 секунд
     - POST /api/poller/start, /stop, /reload
     - GET /api/poller/ports — список доступных COM-портов
-    - _Requirements: 2.1, 2.2, 2.3_
-  - [ ]* 2.4 Написать unit-тесты для modbus_client
+    - GET /api/poller/health — проверка состояния подсистемы
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 17.1_
+  - [ ] 2.4 Написать unit-тесты для modbus_client
     - Mock pymodbus, тесты парсинга регистров, обработки ошибок
     - _Requirements: 1.1, 1.3, 1.4_
 
@@ -101,9 +103,10 @@
   - [ ] 3.9 Реализовать Flask API (archiver/app.py)
     - GET /api/archive/status, /query, /events, /temperature-log, /violations, /export
     - POST /api/archive/events/{id}/ack, /violations/{id}/ack, /cleanup, /config
+    - GET /api/archive/health — проверка состояния подсистемы
     - Экспорт CSV/JSON
-    - _Requirements: 12.1, 12.2, 12.3, 12.4_
-  - [ ]* 3.10 Написать unit-тесты для compressor и violation_tracker
+    - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 17.2_
+  - [ ] 3.10 Написать unit-тесты для compressor и violation_tracker
     - Тесты схлопывания, tolerance, детекции превышений
     - _Requirements: 3.3, 10.1, 10.2_
 
@@ -120,7 +123,7 @@
     - Валидация: уникальность ID, уникальность Modbus-адресов, slave_id 1-247, min < max
     - Версионность: инкремент config_version, update_history, бэкап
     - Batch-операции: POST /api/sensors/batch, DELETE /api/sensors/batch
-    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 13.1, 13.2, 13.3, 13.4_
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 13.1, 13.2, 13.3, 13.4, 13.5_
   - [x] 4.3 Реализовать API конфигурации (visualizer/routes/config_api.py)
 
     - GET /api/config, /api/config/version, /api/config/history
@@ -132,7 +135,7 @@
     - GET /api/theme — текущие настройки оформления
     - POST /api/theme — сохранение настроек (тема, цвета, название)
     - Сброс к значениям по умолчанию
-    - _Requirements: 8.1, 8.2, 8.3, 8.4_
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
   - [ ] 4.5 Реализовать сервис уведомлений (visualizer/services/notification_service.py)
     - Отправка email через SMTP при превышениях
     - Per-sensor настройки уведомлений
@@ -146,14 +149,14 @@
     - POST /floorplan/api/plans/{id}/sensors — сохранение позиций датчиков (% от canvas)
     - Каскадное удаление подпланов
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
-  - [ ]* 4.7 Написать unit-тесты для config_service
+  - [ ] 4.7 Написать unit-тесты для config_service
     - Тесты CRUD датчиков, валидации, версионности
     - _Requirements: 4.1, 4.2, 4.3, 13.1_
 
 - [ ] 5. Реализовать подсистему Web Visualizer — фронтенд
   - [x] 5.1 Реализовать главную страницу — мнемосхему (templates/index.html, static/js/dashboard.js)
 
-    - Отображение плашек датчиков: имя, температура, влажность, статус, адреса Modbus
+    - Отображение плашек датчиков: имя, температура, влажность, статус, адреса Modbus, мини-график за последний час
     - Drag & drop плашек, сохранение координат в layout.json
     - Цветовая индикация combined_status (green/blue/yellow/red/grey)
     - Загрузка фонового изображения
@@ -188,10 +191,10 @@
     - /settings/reports — расписание отчётов, форматы, директория
     - /settings/appearance — темы, цвета, название приложения, сброс к умолчаниям
     - /settings/system — версия конфигурации, история изменений, восстановление
-    - _Requirements: 2.1, 2.2, 8.1, 8.2, 8.3, 8.4, 9.1, 9.2, 13.2, 13.3, 14.1, 14.6_
+    - _Requirements: 2.1, 2.2, 8.1, 8.2, 8.3, 8.4, 9.1, 9.2, 13.2, 13.3, 14.1, 14.6, 5a.1, 5a.2, 5a.3, 5a.4, 5a.5_
   - [ ] 5.6 Реализовать страницу экспорта данных
     - /export — выбор датчиков, периода, формата (CSV/JSON), скачивание файла
-    - _Requirements: 12.4_
+    - _Requirements: 12.4, 12.5_
 
 - [ ] 6. Реализовать подсистему Telegram Bot
   - [ ] 6.1 Реализовать основной модуль бота (telegram_bot/bot.py, config.py)
@@ -207,7 +210,7 @@
     - /report — немедленная генерация отчёта
     - /journal [period] — сводка min/max/avg
     - /mute {minutes}, /unmute — управление уведомлениями
-    - _Requirements: 10.3, 10.4, 10.5_
+    - _Requirements: 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 10.9, 10.10, 10.11_
   - [ ] 6.3 Реализовать уведомления (telegram_bot/notifications.py)
     - Отправка сообщений при превышении warning/alarm (имя датчика, параметр, значение, порог, тип, время)
     - Отправка сообщения при возврате в норму (длительность, пиковое значение)
@@ -226,7 +229,7 @@
     - Отправка в настроенные chat_ids
     - Команды /schedule, /schedule {type} {on|off}
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
-  - [ ]* 6.6 Написать unit-тесты для chart_generator
+  - [ ] 6.6 Написать unit-тесты для chart_generator
     - Тесты генерации PNG, корректности данных
     - _Requirements: 10.4_
 
@@ -249,8 +252,9 @@
     - GET /api/reports/status, /list, /download/{filename}
     - POST /api/reports/generate — ручная генерация
     - POST /api/reports/config
-    - _Requirements: 14.6_
-  - [ ]* 7.5 Написать unit-тесты для форматтеров
+    - GET /api/reports/health — проверка состояния подсистемы
+    - _Requirements: 14.6, 17.3_
+  - [ ] 7.5 Написать unit-тесты для форматтеров
     - Тесты генерации PDF/HTML/CSV
     - _Requirements: 14.2, 14.3_
 
@@ -272,7 +276,7 @@
   - [ ] 8.4 Реализовать Historical Access (opcua_server/ha_provider.py)
     - Интерфейс OPC UA HA: чтение архивных данных из storage по sensor_id и time range
     - _Requirements: 15.3_
-  - [ ]* 8.5 Написать unit-тесты для address_space
+  - [ ] 8.5 Написать unit-тесты для address_space
     - Тесты построения адресного пространства, динамического обновления
     - _Requirements: 15.1, 15.5_
 
@@ -294,6 +298,6 @@
     - Проверить CRUD датчиков: Web → system_config.json → Poller reload → OPC UA update
     - Проверить цепочку уведомлений: violation_tracker → Telegram Bot
     - _Requirements: 1.1, 3.1, 4.4, 10.1, 15.5_
-  - [ ]* 10.2 Написать интеграционные тесты
+  - [ ] 10.2 Написать интеграционные тесты
     - test_poller_to_archive.py, test_violation_notification.py, test_config_crud.py
     - _Requirements: 1.1, 3.1, 10.1, 13.1_

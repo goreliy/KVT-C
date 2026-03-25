@@ -201,6 +201,14 @@ flowchart LR
 
 Отвечает за циклический опрос датчиков С2000-ВТ/С2000-ВТИ через С2000-ПП по Modbus RTU.
 
+Ограничения: система поддерживает до 256 датчиков на одном С2000-ПП, каждый датчик занимает 2 Modbus-адреса (температура + влажность) (Req 4.5).
+
+Протокол опроса:
+- Функция Modbus 0x04 (Read Input Registers)
+- Регистры значений: base address 30000+N (чётный адрес — температура, нечётный — влажность)
+- Регистры статусов: base address 40000+N
+- Конвертация: raw 16-bit / 10 → физические единицы (°C, %)
+
 Модули:
 - `poller/app.py` — Flask-приложение, REST API (порт 5001)
 - `poller/poller_service.py` — основной цикл опроса в отдельном потоке
@@ -220,6 +228,12 @@ REST API:
 | POST | /api/poller/stop | Остановить опрос |
 | GET | /api/poller/ports | Список доступных COM-портов |
 | POST | /api/poller/reload | Перезагрузить конфигурацию датчиков |
+| GET | /api/poller/health | Проверка состояния подсистемы |
+
+Конфигурация подключения (poller_config.json):
+- com_port, baudrate (1200–115200), data_bits (7 или 8), parity (None, Even, Odd), stop_bits (1 или 2)
+- poll_period (100–60000 мс), timeout (100–5000 мс), retry_count (default 3)
+- Список датчиков НЕ хранится — берётся из system_config.json
 
 ### Подсистема 2: Archive Manager
 
@@ -251,6 +265,7 @@ REST API:
 | POST | /api/archive/cleanup | Принудительная очистка |
 | GET | /api/archive/export | Экспорт CSV/JSON |
 | POST | /api/archive/config | Обновить конфигурацию |
+| GET | /api/archive/health | Проверка состояния подсистемы |
 
 ### Подсистема 3: Web Visualizer
 
@@ -258,15 +273,16 @@ REST API:
 
 Модули:
 - `visualizer/app.py` — Flask-приложение (порт 5000)
-- `visualizer/routes/main.py` — главная страница (мнемосхема)
+- `visualizer/routes/main.py` — главная страница (мнемосхема с плашками датчиков, включая мини-график за последний час)
 - `visualizer/routes/sensor.py` — детальный просмотр датчика, графики
-- `visualizer/routes/journal.py` — журналы температур и превышений
+- `visualizer/routes/journal.py` — журналы событий (/events), температур (/journal/temperatures) и превышений (/journal/violations) с фильтрацией по датчику, типу события, диапазону дат; квитирование событий и превышений
 - `visualizer/routes/settings.py` — страницы настроек (poller, sensors, archive, notifications, reports, appearance, system)
 - `visualizer/routes/config_api.py` — REST API конфигурации и датчиков
 - `visualizer/routes/floorplan.py` — план помещения (страница + API)
+- `visualizer/routes/export.py` — страница экспорта данных (/export): выбор датчиков, периода, формата (CSV/JSON), проксирование запроса к Archive Manager API
 - `visualizer/routes/api.py` — общий API для фронтенда (текущие данные, тема)
 - `visualizer/services/config_service.py` — CRUD датчиков, версионность, бэкапы
-- `visualizer/services/notification_service.py` — отправка email-уведомлений через SMTP
+- `visualizer/services/notification_service.py` — отправка email-уведомлений через SMTP (при превышениях + ежедневный отчёт по расписанию, default 08:00)
 - `visualizer/services/report_service.py` — генерация отчётов по запросу
 
 Страницы:
@@ -279,6 +295,7 @@ REST API:
 | /events | events.html | Журнал событий |
 | /journal/temperatures | temperatures.html | Журнал температур |
 | /journal/violations | violations.html | Журнал превышений |
+| /export | export.html | Экспорт данных (CSV/JSON) |
 | /settings | settings/index.html | Общие настройки |
 | /settings/poller | settings/poller.html | Настройки Modbus |
 | /settings/sensors | settings/sensors.html | Управление датчиками |
@@ -340,6 +357,16 @@ REST API:
 | GET | /api/reports/list | Список сгенерированных отчётов |
 | GET | /api/reports/download/{filename} | Скачать отчёт |
 | POST | /api/reports/config | Обновить конфигурацию |
+| GET | /api/reports/health | Проверка состояния подсистемы |
+
+Именование файлов отчётов:
+- Формат: `{type}_{date}_{time}.{format}` (например, `daily_2026-01-14_080000.pdf`)
+- Директория по умолчанию: `data/reports/`
+
+Политика хранения отчётов:
+- Ротация по двум критериям: максимальный размер директории (настраивается) и максимальное количество файлов (настраивается)
+- Срок хранения по умолчанию: 365 дней
+- При превышении любого из лимитов удаляются старейшие файлы
 
 ### Подсистема 6: OPC UA Server
 
@@ -373,7 +400,7 @@ Root
 
 ### Общие модули (shared/)
 
-- `shared/models.py` — dataclass-модели: SensorConfig, SensorReading, Measurement, Event, Violation, TemperatureLogEntry
+- `shared/models.py` — dataclass-модели: SensorConfig, SensorReading, Measurement, Event, Violation (с полями квитирования), TemperatureLogEntry
 - `shared/config_manager.py` — загрузка/сохранение JSON-конфигов с версионностью и бэкапами
 - `shared/utils.py` — утилиты: форматирование дат, конвертация единиц, валидация
 
@@ -444,6 +471,9 @@ class Violation:
     value_peak: float
     threshold: float
     acknowledged: bool
+    acknowledged_at: Optional[datetime]
+    acknowledged_by: Optional[str]
+    comment: Optional[str]
 
 @dataclass
 class TemperatureLogEntry:
@@ -553,7 +583,7 @@ CREATE TABLE archive_stats (
 | notifications.json | Web Visualizer, Telegram Bot | Email SMTP, Telegram уведомления, расписание |
 | report_config.json | Report Generator | Расписание, форматы, директория сохранения |
 | opcua_config.json | OPC UA Server | Endpoint, порт, security, аутентификация |
-| layout.json | Web Visualizer | Расположение плашек на мнемосхеме |
+| layout.json | Web Visualizer | Расположение плашек на мнемосхеме, ссылка на фоновое изображение |
 | floorplan_config.json | Web Visualizer | Планы помещений, позиции датчиков |
 | theme_config.json | Web Visualizer | Темы, цвета, название приложения |
 
@@ -589,7 +619,7 @@ CREATE TABLE archive_stats (
 #### Report Generator
 - Ошибка генерации PDF → fallback на HTML формат
 - Ошибка записи на диск → логирование, уведомление через Telegram (если настроен)
-- Превышение лимита хранения → удаление старейших отчётов по retention policy
+- Превышение лимита хранения (по размеру директории или количеству файлов) → удаление старейших отчётов по retention policy
 
 #### OPC UA Server
 - Ошибка чтения current.json → возврат последних известных значений с StatusCode Bad_OutOfDate
