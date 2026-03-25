@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-18T17:45:16.876468",
+  "timestamp": "2026-03-18T17:46:20.743087",
   "config": {
     "sensor_count": 10,
     "history_days": 30,
@@ -13,17 +13,17 @@
         {
           "timestamp": "2026-02-16T17:00:00",
           "temperature": {
-            "avg": 21.7,
+            "avg": 21.8,
             "min": 19.5,
             "max": 24.6
           },
           "humidity": {
-            "avg": 44.9,
+            "avg": 44.8,
             "min": 39.9,
             "max": 48.9
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
@@ -10759,8 +10759,8 @@
         {
           "timestamp": "2026-02-16T17:00:00",
           "temperature": {
-            "avg": 22.4,
-            "min": 19.6,
+            "avg": 22.6,
+            "min": 19.8,
             "max": 25.4
           },
           "humidity": {
@@ -10769,7 +10769,7 @@
             "max": 49.5
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
@@ -21505,7 +21505,7 @@
         {
           "timestamp": "2026-02-16T17:00:00",
           "temperature": {
-            "avg": 22.6,
+            "avg": 22.7,
             "min": 20.6,
             "max": 25.1
           },
@@ -21515,7 +21515,7 @@
             "max": 49.2
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
@@ -32251,7 +32251,7 @@
         {
           "timestamp": "2026-02-16T17:00:00",
           "temperature": {
-            "avg": 24.1,
+            "avg": 24.0,
             "min": 20.9,
             "max": 26.4
           },
@@ -32261,7 +32261,7 @@
             "max": 49.6
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
@@ -42997,17 +42997,17 @@
         {
           "timestamp": "2026-02-16T17:00:00",
           "temperature": {
-            "avg": 24.6,
+            "avg": 24.7,
             "min": 21.7,
             "max": 26.1
           },
           "humidity": {
-            "avg": 44.6,
+            "avg": 44.8,
             "min": 39.7,
             "max": 49.1
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
@@ -53743,17 +53743,17 @@
         {
           "timestamp": "2026-02-16T17:00:00",
           "temperature": {
-            "avg": 24.6,
+            "avg": 24.5,
             "min": 22.2,
             "max": 27.3
           },
           "humidity": {
-            "avg": 45.2,
+            "avg": 45.5,
             "min": 39.9,
             "max": 48.7
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
@@ -64489,17 +64489,17 @@
         {
           "timestamp": "2026-02-16T17:00:00",
           "temperature": {
-            "avg": 25.4,
+            "avg": 25.3,
             "min": 22.3,
             "max": 27.4
           },
           "humidity": {
-            "avg": 43.9,
+            "avg": 43.5,
             "min": 39.8,
-            "max": 49.1
+            "max": 47.1
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
@@ -75235,17 +75235,17 @@
         {
           "timestamp": "2026-02-16T17:00:00",
           "temperature": {
-            "avg": 25.7,
+            "avg": 25.5,
             "min": 22.7,
             "max": 28.5
           },
           "humidity": {
-            "avg": 45.2,
+            "avg": 45.5,
             "min": 40.6,
             "max": 49.7
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
@@ -85981,17 +85981,17 @@
         {
           "timestamp": "2026-02-16T17:00:00",
           "temperature": {
-            "avg": 25.5,
+            "avg": 25.3,
             "min": 23.1,
-            "max": 28.7
+            "max": 27.4
           },
           "humidity": {
-            "avg": 44.7,
+            "avg": 44.5,
             "min": 39.8,
             "max": 49.0
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
@@ -96732,12 +96732,12 @@
             "max": 29.3
           },
           "humidity": {
-            "avg": 45.7,
-            "min": 40.2,
+            "avg": 46.1,
+            "min": 40.4,
             "max": 49.2
           },
           "status": "normal",
-          "sample_count": 14
+          "sample_count": 13
         },
         {
           "timestamp": "2026-02-16T18:00:00",
