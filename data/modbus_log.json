@@ -2,2906 +2,6 @@
   "max_entries": 1000,
   "entries": [
     {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 30 00 02 21 DC",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30000,
-        "quantity": 2,
-        "description": "Запрос значений датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.423781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 ED 01 D1 75 96",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          237,
-          465
-        ],
-        "description": "Ответ: T=23.7°C, H=46.5%"
-      },
-      "response_time_ms": 21.48
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.438781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 40 00 02 4D 07",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40000,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.443781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 74 35",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 20.96
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 32 00 02 68 D3",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30002,
-        "quantity": 2,
-        "description": "Запрос значений датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.421781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 D8 01 AD D4 45",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          216,
-          429
-        ],
-        "description": "Ответ: T=21.6°C, H=42.9%"
-      },
-      "response_time_ms": 20.2
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.446781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 42 00 02 27 5A",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40002,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.457781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 67 81",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 18.35
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 34 00 02 8E 90",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30004,
-        "quantity": 2,
-        "description": "Запрос значений датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.427781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E0 01 E3 43 BA",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          224,
-          483
-        ],
-        "description": "Ответ: T=22.4°C, H=48.3%"
-      },
-      "response_time_ms": 26.26
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.446781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 44 00 02 1C 49",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40004,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.466781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 0F 5D",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 22.6
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 36 00 02 01 DC",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30006,
-        "quantity": 2,
-        "description": "Запрос значений датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.424781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 DC 01 DA 00 9B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          220,
-          474
-        ],
-        "description": "Ответ: T=22.0°C, H=47.4%"
-      },
-      "response_time_ms": 18.67
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.447781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 46 00 02 B9 C0",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40006,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.469781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 8C 9C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 24.2
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 38 00 02 9D 0D",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30008,
-        "quantity": 2,
-        "description": "Запрос значений датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.419781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 FB 01 A3 DD 85",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          251,
-          419
-        ],
-        "description": "Ответ: T=25.1°C, H=41.9%"
-      },
-      "response_time_ms": 16.86
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.439781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 48 00 02 ED 2B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40008,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.446781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 CE D9",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 19.94
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3A 00 02 F0 E8",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30010,
-        "quantity": 2,
-        "description": "Запрос значений датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.420781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 EE 01 AD 79 10",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          238,
-          429
-        ],
-        "description": "Ответ: T=23.8°C, H=42.9%"
-      },
-      "response_time_ms": 24.4
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.437781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4A 00 02 50 9F",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40010,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.447781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 FA 36",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 15.75
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3C 00 02 FB 3D",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30012,
-        "quantity": 2,
-        "description": "Запрос значений датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.422781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E4 01 EB F1 D9",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          228,
-          491
-        ],
-        "description": "Ответ: T=22.8°C, H=49.1%"
-      },
-      "response_time_ms": 23.24
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.446781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4C 00 02 14 29",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40012,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.469781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 DA CE",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 24.53
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3E 00 02 72 23",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30014,
-        "quantity": 2,
-        "description": "Запрос значений датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.421781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E5 01 DE 7D 30",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          229,
-          478
-        ],
-        "description": "Ответ: T=22.9°C, H=47.8%"
-      },
-      "response_time_ms": 27.58
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.444781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4E 00 02 41 A2",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40014,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.461781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 00 39",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 27.84
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 40 00 02 B3 91",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30016,
-        "quantity": 2,
-        "description": "Запрос значений датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.417781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 01 02 01 E9 B7 90",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          258,
-          489
-        ],
-        "description": "Ответ: T=25.8°C, H=48.9%"
-      },
-      "response_time_ms": 9.85
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.433781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 50 00 02 71 32",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40016,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.439781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 FB FC",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 27.78
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.407781",
-      "direction": "TX",
-      "raw_hex": "10 04 75 42 00 02 11 59",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30018,
-        "quantity": 2,
-        "description": "Запрос значений датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.417781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F0 01 B5 6A 63",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          240,
-          437
-        ],
-        "description": "Ответ: T=24.0°C, H=43.7%"
-      },
-      "response_time_ms": 14.87
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.447781",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 52 00 02 5A 47",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40018,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:42.452781",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 63 66",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 13.76
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.446752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 30 00 02 17 66",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30000,
-        "quantity": 2,
-        "description": "Запрос значений датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.468752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 DB 01 CB 40 F3",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          219,
-          459
-        ],
-        "description": "Ответ: T=21.9°C, H=45.9%"
-      },
-      "response_time_ms": 19.69
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.486752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 40 00 02 B3 D2",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40000,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.499752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 E1 31",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 21.46
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.446752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 32 00 02 27 7C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30002,
-        "quantity": 2,
-        "description": "Запрос значений датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.464752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E8 01 9B 31 72",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          232,
-          411
-        ],
-        "description": "Ответ: T=23.2°C, H=41.1%"
-      },
-      "response_time_ms": 27.31
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.483752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 42 00 02 29 3C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40002,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.489752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 D2 E0",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 8.29
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.446752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 34 00 02 7D 7C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30004,
-        "quantity": 2,
-        "description": "Запрос значений датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.453752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E9 01 96 BA 09",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          233,
-          406
-        ],
-        "description": "Ответ: T=23.3°C, H=40.6%"
-      },
-      "response_time_ms": 25.61
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.470752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 44 00 02 96 10",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40004,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.488752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 E7 8A",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 21.43
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.446752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 36 00 02 E8 84",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30006,
-        "quantity": 2,
-        "description": "Запрос значений датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.460752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E6 01 BE D3 A9",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          230,
-          446
-        ],
-        "description": "Ответ: T=23.0°C, H=44.6%"
-      },
-      "response_time_ms": 7.31
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.473752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 46 00 02 08 FD",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40006,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.491752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 15 2B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 21.73
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.446752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 38 00 02 B3 90",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30008,
-        "quantity": 2,
-        "description": "Запрос значений датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.467752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F0 01 BA 0D E3",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          240,
-          442
-        ],
-        "description": "Ответ: T=24.0°C, H=44.2%"
-      },
-      "response_time_ms": 23.17
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.497752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 48 00 02 1F F9",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40008,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.514752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 8E 75",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 16.93
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.447752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3A 00 02 3A 9B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30010,
-        "quantity": 2,
-        "description": "Запрос значений датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.472752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 DB 01 BF 2A 97",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          219,
-          447
-        ],
-        "description": "Ответ: T=21.9°C, H=44.7%"
-      },
-      "response_time_ms": 27.97
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.493752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4A 00 02 49 4D",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40010,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.509752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 1C 80",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 18.26
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.447752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3C 00 02 77 A0",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30012,
-        "quantity": 2,
-        "description": "Запрос значений датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.453752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E9 01 D2 D5 B5",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          233,
-          466
-        ],
-        "description": "Ответ: T=23.3°C, H=46.6%"
-      },
-      "response_time_ms": 5.47
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.480752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4C 00 02 C8 1F",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40012,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.485752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 32 5E",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 24.73
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.447752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3E 00 02 11 26",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30014,
-        "quantity": 2,
-        "description": "Запрос значений датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.460752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E1 01 EF 33 AE",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          225,
-          495
-        ],
-        "description": "Ответ: T=22.5°C, H=49.5%"
-      },
-      "response_time_ms": 26.96
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.474752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4E 00 02 BE 8A",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40014,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.494752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 50 A1",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 18.34
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.447752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 40 00 02 73 F6",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30016,
-        "quantity": 2,
-        "description": "Запрос значений датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.466752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 01 03 01 A5 78 5E",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          259,
-          421
-        ],
-        "description": "Ответ: T=25.9°C, H=42.1%"
-      },
-      "response_time_ms": 14.33
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.478752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 50 00 02 58 75",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40016,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.500752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 CB B7",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 21.89
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.447752",
-      "direction": "TX",
-      "raw_hex": "10 04 75 42 00 02 35 3B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30018,
-        "quantity": 2,
-        "description": "Запрос значений датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.465752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 FB 01 E2 63 48",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          251,
-          482
-        ],
-        "description": "Ответ: T=25.1°C, H=48.2%"
-      },
-      "response_time_ms": 5.44
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.485752",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 52 00 02 CD CE",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40018,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:43.496752",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 90 B2",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 27.66
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.482131",
-      "direction": "TX",
-      "raw_hex": "10 04 75 30 00 02 8B 88",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30000,
-        "quantity": 2,
-        "description": "Запрос значений датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.498131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E9 01 E1 38 50",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          233,
-          481
-        ],
-        "description": "Ответ: T=23.3°C, H=48.1%"
-      },
-      "response_time_ms": 12.34
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.519131",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 40 00 02 9A C0",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40000,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.543131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 84 C2",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 22.5
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.482131",
-      "direction": "TX",
-      "raw_hex": "10 04 75 32 00 02 F8 1E",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30002,
-        "quantity": 2,
-        "description": "Запрос значений датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.500131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 D3 01 9A 20 85",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          211,
-          410
-        ],
-        "description": "Ответ: T=21.1°C, H=41.0%"
-      },
-      "response_time_ms": 28.09
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.528131",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 42 00 02 4B 75",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40002,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.540131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 C0 E5",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 16.67
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.482131",
-      "direction": "TX",
-      "raw_hex": "10 04 75 34 00 02 4C B5",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30004,
-        "quantity": 2,
-        "description": "Запрос значений датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.506131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 DA 01 DD 5F A6",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          218,
-          477
-        ],
-        "description": "Ответ: T=21.8°C, H=47.7%"
-      },
-      "response_time_ms": 6.14
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.530131",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 44 00 02 38 1E",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40004,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.537131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 5F C6",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 7.84
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.482131",
-      "direction": "TX",
-      "raw_hex": "10 04 75 36 00 02 D2 50",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30006,
-        "quantity": 2,
-        "description": "Запрос значений датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.498131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F0 01 AC AC 34",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          240,
-          428
-        ],
-        "description": "Ответ: T=24.0°C, H=42.8%"
-      },
-      "response_time_ms": 15.52
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.522131",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 46 00 02 31 3B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40006,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.534131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 00 37",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 13.21
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.482131",
-      "direction": "TX",
-      "raw_hex": "10 04 75 38 00 02 8C AF",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30008,
-        "quantity": 2,
-        "description": "Запрос значений датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.500131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 D9 01 CC B9 CB",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          217,
-          460
-        ],
-        "description": "Ответ: T=21.7°C, H=46.0%"
-      },
-      "response_time_ms": 12.3
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.510131",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 48 00 02 3D BB",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40008,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.527131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 97 E6",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 28.88
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.482131",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3A 00 02 E5 E4",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30010,
-        "quantity": 2,
-        "description": "Запрос значений датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.494131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E7 01 D1 38 F3",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          231,
-          465
-        ],
-        "description": "Ответ: T=23.1°C, H=46.5%"
-      },
-      "response_time_ms": 22.32
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.512131",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4A 00 02 09 94",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40010,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.527131",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 51 7C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 19.49
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.483130",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3C 00 02 FA 9A",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30012,
-        "quantity": 2,
-        "description": "Запрос значений датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.497130",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E7 01 C7 D3 84",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          231,
-          455
-        ],
-        "description": "Ответ: T=23.1°C, H=45.5%"
-      },
-      "response_time_ms": 28.54
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.509130",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4C 00 02 DD 9C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40012,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.530130",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 82 D4",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 28.75
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.483130",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3E 00 02 83 58",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30014,
-        "quantity": 2,
-        "description": "Запрос значений датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.499130",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 FB 01 D4 90 9F",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          251,
-          468
-        ],
-        "description": "Ответ: T=25.1°C, H=46.8%"
-      },
-      "response_time_ms": 19.08
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.526130",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4E 00 02 4B 5B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40014,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.536130",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 E0 00",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 29.66
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.483130",
-      "direction": "TX",
-      "raw_hex": "10 04 75 40 00 02 92 9E",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30016,
-        "quantity": 2,
-        "description": "Запрос значений датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.494130",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 FB 01 DA 7A 5B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          251,
-          474
-        ],
-        "description": "Ответ: T=25.1°C, H=47.4%"
-      },
-      "response_time_ms": 16.22
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.521130",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 50 00 02 CD C6",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40016,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.528130",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 5C AA",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 9.34
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.483130",
-      "direction": "TX",
-      "raw_hex": "10 04 75 42 00 02 78 3E",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30018,
-        "quantity": 2,
-        "description": "Запрос значений датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.497130",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F7 01 EE 04 B6",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          247,
-          494
-        ],
-        "description": "Ответ: T=24.7°C, H=49.4%"
-      },
-      "response_time_ms": 22.04
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.527130",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 52 00 02 1B BB",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40018,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:44.535130",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 8B 5D",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 9.7
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.509147",
-      "direction": "TX",
-      "raw_hex": "10 04 75 30 00 02 54 03",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30000,
-        "quantity": 2,
-        "description": "Запрос значений датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.523147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 CF 01 E4 8A 45",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          207,
-          484
-        ],
-        "description": "Ответ: T=20.7°C, H=48.4%"
-      },
-      "response_time_ms": 22.24
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.549147",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 40 00 02 B1 79",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40000,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.566147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 3B 42",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 14.95
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.509147",
-      "direction": "TX",
-      "raw_hex": "10 04 75 32 00 02 36 35",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30002,
-        "quantity": 2,
-        "description": "Запрос значений датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.516147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 CE 01 A4 C6 58",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          206,
-          420
-        ],
-        "description": "Ответ: T=20.6°C, H=42.0%"
-      },
-      "response_time_ms": 10.16
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.536147",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 42 00 02 E6 7C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40002,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.552147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 0A CC",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 28.37
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.509147",
-      "direction": "TX",
-      "raw_hex": "10 04 75 34 00 02 D7 F9",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30004,
-        "quantity": 2,
-        "description": "Запрос значений датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.523147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E4 01 DC 21 06",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          228,
-          476
-        ],
-        "description": "Ответ: T=22.8°C, H=47.6%"
-      },
-      "response_time_ms": 22.44
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.552147",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 44 00 02 2E B1",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40004,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.561147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 D6 21",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 10.05
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.509147",
-      "direction": "TX",
-      "raw_hex": "10 04 75 36 00 02 B7 2F",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30006,
-        "quantity": 2,
-        "description": "Запрос значений датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.524147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 D3 01 A0 CB 76",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          211,
-          416
-        ],
-        "description": "Ответ: T=21.1°C, H=41.6%"
-      },
-      "response_time_ms": 11.87
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.549147",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 46 00 02 15 E9",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40006,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.561147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 60 92",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 18.87
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.509147",
-      "direction": "TX",
-      "raw_hex": "10 04 75 38 00 02 65 57",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30008,
-        "quantity": 2,
-        "description": "Запрос значений датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.533147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F2 01 C7 55 F2",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          242,
-          455
-        ],
-        "description": "Ответ: T=24.2°C, H=45.5%"
-      },
-      "response_time_ms": 8.85
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.551147",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 48 00 02 DF AD",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40008,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.572147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 33 31",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 28.26
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.509147",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3A 00 02 C4 81",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30010,
-        "quantity": 2,
-        "description": "Запрос значений датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.517147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 FA 01 E2 BC 75",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          250,
-          482
-        ],
-        "description": "Ответ: T=25.0°C, H=48.2%"
-      },
-      "response_time_ms": 22.18
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.539147",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4A 00 02 3C 8C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40010,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.556147",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 D0 9E",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 21.37
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.510148",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3C 00 02 0D E6",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30012,
-        "quantity": 2,
-        "description": "Запрос значений датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.534148",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E4 01 C3 41 F8",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          228,
-          451
-        ],
-        "description": "Ответ: T=22.8°C, H=45.1%"
-      },
-      "response_time_ms": 19.61
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.548148",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4C 00 02 1E C3",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40012,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.553148",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 57 0E",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 14.21
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.510148",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3E 00 02 80 24",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30014,
-        "quantity": 2,
-        "description": "Запрос значений датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.515148",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F3 01 C5 E6 5B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          243,
-          453
-        ],
-        "description": "Ответ: T=24.3°C, H=45.3%"
-      },
-      "response_time_ms": 28.62
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.543148",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4E 00 02 39 03",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40014,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.565148",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 AB 4F",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 5.4
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.510148",
-      "direction": "TX",
-      "raw_hex": "10 04 75 40 00 02 F7 4C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30016,
-        "quantity": 2,
-        "description": "Запрос значений датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.528148",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F9 01 CE 32 AB",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          249,
-          462
-        ],
-        "description": "Ответ: T=24.9°C, H=46.2%"
-      },
-      "response_time_ms": 29.4
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.549148",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 50 00 02 76 EF",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40016,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.569148",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 9F FA",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 8.17
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.510148",
-      "direction": "TX",
-      "raw_hex": "10 04 75 42 00 02 29 D7",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30018,
-        "quantity": 2,
-        "description": "Запрос значений датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.526148",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F6 01 D8 20 BF",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          246,
-          472
-        ],
-        "description": "Ответ: T=24.6°C, H=47.2%"
-      },
-      "response_time_ms": 6.85
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.545148",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 52 00 02 B7 14",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40018,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:45.558148",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 59 87",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 8.95
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 30 00 02 73 73",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30000,
-        "quantity": 2,
-        "description": "Запрос значений датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.710426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 DB 01 E5 79 05",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          219,
-          485
-        ],
-        "description": "Ответ: T=21.9°C, H=48.5%"
-      },
-      "response_time_ms": 18.78
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.729426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 40 00 02 14 F6",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40000,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 1"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.738426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 FE CE",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 17.91
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 32 00 02 F0 33",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30002,
-        "quantity": 2,
-        "description": "Запрос значений датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.715426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 D4 01 91 4D 6B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          212,
-          401
-        ],
-        "description": "Ответ: T=21.2°C, H=40.1%"
-      },
-      "response_time_ms": 14.17
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.735426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 42 00 02 BA D4",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40002,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 2"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.745426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 64 34",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 14.53
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 34 00 02 2C 0D",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30004,
-        "quantity": 2,
-        "description": "Запрос значений датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.701426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E3 01 EF CD D9",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          227,
-          495
-        ],
-        "description": "Ответ: T=22.7°C, H=49.5%"
-      },
-      "response_time_ms": 6.87
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.730426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 44 00 02 87 E1",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40004,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 3"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.736426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 7E 40",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 17.75
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 36 00 02 D5 AB",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30006,
-        "quantity": 2,
-        "description": "Запрос значений датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.703426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 D6 01 9D C1 FB",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          214,
-          413
-        ],
-        "description": "Ответ: T=21.4°C, H=41.3%"
-      },
-      "response_time_ms": 28.38
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.717426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 46 00 02 04 DD",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40006,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 4"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.724426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 CA C1",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 25.25
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 38 00 02 88 A2",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30008,
-        "quantity": 2,
-        "description": "Запрос значений датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.702426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F0 01 CF 32 1B",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          240,
-          463
-        ],
-        "description": "Ответ: T=24.0°C, H=46.3%"
-      },
-      "response_time_ms": 27.42
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.728426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 48 00 02 82 DF",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40008,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 5"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.751426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 A1 C8",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 16.69
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3A 00 02 ED 9D",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30010,
-        "quantity": 2,
-        "description": "Запрос значений датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.701426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 F0 01 93 73 0F",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          240,
-          403
-        ],
-        "description": "Ответ: T=24.0°C, H=40.3%"
-      },
-      "response_time_ms": 15.94
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.716426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4A 00 02 A7 A5",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40010,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 6"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.729426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 EC 07",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 20.64
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3C 00 02 21 E5",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30012,
-        "quantity": 2,
-        "description": "Запрос значений датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.712426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 01 00 01 EC C5 C4",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          256,
-          492
-        ],
-        "description": "Ответ: T=25.6°C, H=49.2%"
-      },
-      "response_time_ms": 7.03
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.739426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4C 00 02 BD 8C",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40012,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 7"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.757426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 A5 13",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 23.17
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 3E 00 02 C8 B8",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30014,
-        "quantity": 2,
-        "description": "Запрос значений датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.713426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 E1 01 C6 C5 25",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          225,
-          454
-        ],
-        "description": "Ответ: T=22.5°C, H=45.4%"
-      },
-      "response_time_ms": 6.23
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.738426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 4E 00 02 37 C4",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40014,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 8"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.748426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 D2 37",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 21.76
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 40 00 02 74 67",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30016,
-        "quantity": 2,
-        "description": "Запрос значений датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.709426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 EC 01 E0 CD C2",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          236,
-          480
-        ],
-        "description": "Ответ: T=23.6°C, H=48.0%"
-      },
-      "response_time_ms": 25.0
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.731426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 50 00 02 E8 AD",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40016,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 9"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.737426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 22 EE",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 19.52
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.690426",
-      "direction": "TX",
-      "raw_hex": "10 04 75 42 00 02 99 76",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 30018,
-        "quantity": 2,
-        "description": "Запрос значений датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.710426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 FE 01 C8 EE 45",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          254,
-          456
-        ],
-        "description": "Ответ: T=25.4°C, H=45.6%"
-      },
-      "response_time_ms": 21.59
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.723426",
-      "direction": "TX",
-      "raw_hex": "10 04 9C 52 00 02 AD 24",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "start_addr": 40018,
-        "quantity": 2,
-        "description": "Запрос статусов датчика 10"
-      },
-      "response_time_ms": null
-    },
-    {
-      "timestamp": "2026-03-25T12:58:46.741426",
-      "direction": "RX",
-      "raw_hex": "10 04 04 00 00 00 00 7C 2A",
-      "parsed": {
-        "slave_id": 16,
-        "function": 4,
-        "byte_count": 4,
-        "values": [
-          0,
-          0
-        ],
-        "description": "Ответ: статусы OK"
-      },
-      "response_time_ms": 8.33
-    },
-    {
       "timestamp": "2026-03-25T12:58:48.500849",
       "direction": "TX",
       "raw_hex": "10 04 75 30 00 02 B5 F6",
@@ -14500,6 +11600,2906 @@
         "description": "Ответ: статусы OK"
       },
       "response_time_ms": 22.41
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 30 00 02 2E C2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30000,
+        "quantity": 2,
+        "description": "Запрос значений датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.119873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 DD 01 C8 4F F2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          221,
+          456
+        ],
+        "description": "Ответ: T=22.1°C, H=45.6%"
+      },
+      "response_time_ms": 9.53
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.144873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 40 00 02 F6 E8",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40000,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.155873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 A5 DD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 20.34
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 32 00 02 7C A7",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30002,
+        "quantity": 2,
+        "description": "Запрос значений датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.135873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 DD 01 D4 8F B5",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          221,
+          468
+        ],
+        "description": "Ответ: T=22.1°C, H=46.8%"
+      },
+      "response_time_ms": 10.63
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.145873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 42 00 02 C6 6B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40002,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.157873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 49 FB",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 5.35
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 34 00 02 65 7B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30004,
+        "quantity": 2,
+        "description": "Запрос значений датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.125873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 F0 01 CB FD D2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          240,
+          459
+        ],
+        "description": "Ответ: T=24.0°C, H=45.9%"
+      },
+      "response_time_ms": 20.19
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.138873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 44 00 02 DB 3A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40004,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.152873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 C4 C0",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 18.56
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 36 00 02 87 2F",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30006,
+        "quantity": 2,
+        "description": "Запрос значений датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.129873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 D7 01 F4 68 E6",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          215,
+          500
+        ],
+        "description": "Ответ: T=21.5°C, H=50.0%"
+      },
+      "response_time_ms": 12.35
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.143873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 46 00 02 68 5D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40006,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.158873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 2F ED",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 16.25
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 38 00 02 43 CC",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30008,
+        "quantity": 2,
+        "description": "Запрос значений датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.122873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 D4 01 BD 0D 98",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          212,
+          445
+        ],
+        "description": "Ответ: T=21.2°C, H=44.5%"
+      },
+      "response_time_ms": 5.36
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.142873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 48 00 02 97 D4",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40008,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.165873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 BC 23",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 23.77
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3A 00 02 7C E9",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30010,
+        "quantity": 2,
+        "description": "Запрос значений датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.129873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 EE 01 D0 EE 6F",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          238,
+          464
+        ],
+        "description": "Ответ: T=23.8°C, H=46.4%"
+      },
+      "response_time_ms": 18.96
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.156873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4A 00 02 BC CD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40010,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.181873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 8B 81",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 15.08
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3C 00 02 D5 E5",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30012,
+        "quantity": 2,
+        "description": "Запрос значений датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.137873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E7 01 A2 08 03",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          231,
+          418
+        ],
+        "description": "Ответ: T=23.1°C, H=41.8%"
+      },
+      "response_time_ms": 9.32
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.159873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4C 00 02 0F DD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40012,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.168873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 B5 BB",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 19.2
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3E 00 02 92 E1",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30014,
+        "quantity": 2,
+        "description": "Запрос значений датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.129873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 EC 01 B6 7D 23",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          236,
+          438
+        ],
+        "description": "Ответ: T=23.6°C, H=43.8%"
+      },
+      "response_time_ms": 5.17
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.151873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4E 00 02 E2 B2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40014,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.164873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 A2 59",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 29.04
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 40 00 02 2A E2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30016,
+        "quantity": 2,
+        "description": "Запрос значений датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.122873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 F2 01 E5 2B AB",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          242,
+          485
+        ],
+        "description": "Ответ: T=24.2°C, H=48.5%"
+      },
+      "response_time_ms": 7.59
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.136873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 50 00 02 44 2C",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40016,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.148873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 04 81",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 26.58
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.114873",
+      "direction": "TX",
+      "raw_hex": "10 04 75 42 00 02 3C 13",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30018,
+        "quantity": 2,
+        "description": "Запрос значений датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.123873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E3 01 F3 CB 41",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          227,
+          499
+        ],
+        "description": "Ответ: T=22.7°C, H=49.9%"
+      },
+      "response_time_ms": 19.82
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.142873",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 52 00 02 FE 21",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40018,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:09.147873",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 45 D8",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 17.18
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.142117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 30 00 02 4B 01",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30000,
+        "quantity": 2,
+        "description": "Запрос значений датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.160117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 DC 01 DF 42 BE",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          220,
+          479
+        ],
+        "description": "Ответ: T=22.0°C, H=47.9%"
+      },
+      "response_time_ms": 10.13
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.185117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 40 00 02 BD 3A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40000,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.203117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 E5 5D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 26.97
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.142117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 32 00 02 14 14",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30002,
+        "quantity": 2,
+        "description": "Запрос значений датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.153117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 D3 01 E8 C6 0E",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          211,
+          488
+        ],
+        "description": "Ответ: T=21.1°C, H=48.8%"
+      },
+      "response_time_ms": 6.79
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.176117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 42 00 02 45 EF",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40002,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.184117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 48 3B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 14.1
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.142117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 34 00 02 58 EC",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30004,
+        "quantity": 2,
+        "description": "Запрос значений датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.156117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 EA 01 A1 24 DD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          234,
+          417
+        ],
+        "description": "Ответ: T=23.4°C, H=41.7%"
+      },
+      "response_time_ms": 25.79
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.179117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 44 00 02 BE DE",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40004,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.195117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 CE 42",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 9.64
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.142117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 36 00 02 01 5A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30006,
+        "quantity": 2,
+        "description": "Запрос значений датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.154117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 F1 01 E6 4F 2D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          241,
+          486
+        ],
+        "description": "Ответ: T=24.1°C, H=48.6%"
+      },
+      "response_time_ms": 7.08
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.166117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 46 00 02 76 02",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40006,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.178117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 E9 39",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 17.24
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.142117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 38 00 02 DA 55",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30008,
+        "quantity": 2,
+        "description": "Запрос значений датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.163117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 F3 01 D5 A3 77",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          243,
+          469
+        ],
+        "description": "Ответ: T=24.3°C, H=46.9%"
+      },
+      "response_time_ms": 12.1
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.193117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 48 00 02 44 6C",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40008,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.210117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 5D 6A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 26.2
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.142117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3A 00 02 47 1F",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30010,
+        "quantity": 2,
+        "description": "Запрос значений датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.148117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E4 01 DB 11 8B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          228,
+          475
+        ],
+        "description": "Ответ: T=22.8°C, H=47.5%"
+      },
+      "response_time_ms": 8.51
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.174117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4A 00 02 2F BB",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40010,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.192117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 07 BF",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 22.72
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.142117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3C 00 02 01 9E",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30012,
+        "quantity": 2,
+        "description": "Запрос значений датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.163117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E6 01 E4 21 00",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          230,
+          484
+        ],
+        "description": "Ответ: T=23.0°C, H=48.4%"
+      },
+      "response_time_ms": 10.94
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.184117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4C 00 02 1B 34",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40012,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.208117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 74 5F",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 13.75
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.142117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3E 00 02 5F 9C",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30014,
+        "quantity": 2,
+        "description": "Запрос значений датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.165117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 DE 01 98 9C B4",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          222,
+          408
+        ],
+        "description": "Ответ: T=22.2°C, H=40.8%"
+      },
+      "response_time_ms": 14.59
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.192117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4E 00 02 5A 9B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40014,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.201117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 7F 2A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 16.0
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.143117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 40 00 02 67 B6",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30016,
+        "quantity": 2,
+        "description": "Запрос значений датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.156117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E6 01 CC 8B 4B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          230,
+          460
+        ],
+        "description": "Ответ: T=23.0°C, H=46.0%"
+      },
+      "response_time_ms": 25.5
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.186117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 50 00 02 99 45",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40016,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.197117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 8B 99",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 5.49
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.143117",
+      "direction": "TX",
+      "raw_hex": "10 04 75 42 00 02 62 82",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30018,
+        "quantity": 2,
+        "description": "Запрос значений датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.159117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 EA 01 C6 BA EF",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          234,
+          454
+        ],
+        "description": "Ответ: T=23.4°C, H=45.4%"
+      },
+      "response_time_ms": 12.37
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.184117",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 52 00 02 6B CB",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40018,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:10.209117",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 03 3D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 17.17
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.167090",
+      "direction": "TX",
+      "raw_hex": "10 04 75 30 00 02 45 FD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30000,
+        "quantity": 2,
+        "description": "Запрос значений датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.188090",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E8 01 BB 10 7A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          232,
+          443
+        ],
+        "description": "Ответ: T=23.2°C, H=44.3%"
+      },
+      "response_time_ms": 16.92
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.215090",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 40 00 02 B0 C4",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40000,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.222090",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 0D 02",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 10.95
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.167090",
+      "direction": "TX",
+      "raw_hex": "10 04 75 32 00 02 D5 92",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30002,
+        "quantity": 2,
+        "description": "Запрос значений датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.176090",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E8 01 BA 80 CA",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          232,
+          442
+        ],
+        "description": "Ответ: T=23.2°C, H=44.2%"
+      },
+      "response_time_ms": 24.31
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.204090",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 42 00 02 C7 BC",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40002,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.211090",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 19 7A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 12.89
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.167090",
+      "direction": "TX",
+      "raw_hex": "10 04 75 34 00 02 33 68",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30004,
+        "quantity": 2,
+        "description": "Запрос значений датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.177090",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 EE 01 96 D3 5D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          238,
+          406
+        ],
+        "description": "Ответ: T=23.8°C, H=40.6%"
+      },
+      "response_time_ms": 21.82
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.207090",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 44 00 02 FC 41",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40004,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.224090",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 01 23",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 28.4
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.167090",
+      "direction": "TX",
+      "raw_hex": "10 04 75 36 00 02 0B 31",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30006,
+        "quantity": 2,
+        "description": "Запрос значений датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.180090",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E0 01 D0 3C BA",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          224,
+          464
+        ],
+        "description": "Ответ: T=22.4°C, H=46.4%"
+      },
+      "response_time_ms": 12.32
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.205090",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 46 00 02 AA 88",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40006,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.226090",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 0A BC",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 27.77
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.168093",
+      "direction": "TX",
+      "raw_hex": "10 04 75 38 00 02 97 42",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30008,
+        "quantity": 2,
+        "description": "Запрос значений датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.184093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E5 01 C2 50 75",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          229,
+          450
+        ],
+        "description": "Ответ: T=22.9°C, H=45.0%"
+      },
+      "response_time_ms": 15.88
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.203093",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 48 00 02 E2 51",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40008,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.228093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 3D FD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 20.74
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.168093",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3A 00 02 52 2B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30010,
+        "quantity": 2,
+        "description": "Запрос значений датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.176093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 FC 01 AC B0 0E",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          252,
+          428
+        ],
+        "description": "Ответ: T=25.2°C, H=42.8%"
+      },
+      "response_time_ms": 11.29
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.206093",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4A 00 02 65 78",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40010,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.230093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 EE CA",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 20.54
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.168093",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3C 00 02 7E C5",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30012,
+        "quantity": 2,
+        "description": "Запрос значений датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.173093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 FB 01 AB 86 9D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          251,
+          427
+        ],
+        "description": "Ответ: T=25.1°C, H=42.7%"
+      },
+      "response_time_ms": 13.74
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.202093",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4C 00 02 62 18",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40012,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.221093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 AB 7A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 17.36
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.168093",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3E 00 02 92 68",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30014,
+        "quantity": 2,
+        "description": "Запрос значений датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.181093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 F2 01 E1 41 A2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          242,
+          481
+        ],
+        "description": "Ответ: T=24.2°C, H=48.1%"
+      },
+      "response_time_ms": 11.02
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.205093",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4E 00 02 37 5A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40014,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.225093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 A2 9A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 10.98
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.168093",
+      "direction": "TX",
+      "raw_hex": "10 04 75 40 00 02 56 25",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30016,
+        "quantity": 2,
+        "description": "Запрос значений датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.188093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 FF 01 D1 8A 06",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          255,
+          465
+        ],
+        "description": "Ответ: T=25.5°C, H=46.5%"
+      },
+      "response_time_ms": 5.1
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.217093",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 50 00 02 45 41",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40016,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.233093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 04 95",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 14.84
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.168093",
+      "direction": "TX",
+      "raw_hex": "10 04 75 42 00 02 70 4B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30018,
+        "quantity": 2,
+        "description": "Запрос значений датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.173093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 F2 01 BD 0D 04",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          242,
+          445
+        ],
+        "description": "Ответ: T=24.2°C, H=44.5%"
+      },
+      "response_time_ms": 11.59
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.185093",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 52 00 02 FB EE",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40018,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:11.204093",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 3A D0",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 19.99
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.212061",
+      "direction": "TX",
+      "raw_hex": "10 04 75 30 00 02 57 66",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30000,
+        "quantity": 2,
+        "description": "Запрос значений датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.222061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E7 01 B9 E8 4C",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          231,
+          441
+        ],
+        "description": "Ответ: T=23.1°C, H=44.1%"
+      },
+      "response_time_ms": 17.7
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.244061",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 40 00 02 0C 07",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40000,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.260061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 B4 AD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 22.33
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.212061",
+      "direction": "TX",
+      "raw_hex": "10 04 75 32 00 02 29 16",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30002,
+        "quantity": 2,
+        "description": "Запрос значений датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.226061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 DB 01 EF AB 11",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          219,
+          495
+        ],
+        "description": "Ответ: T=21.9°C, H=49.5%"
+      },
+      "response_time_ms": 7.59
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.241061",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 42 00 02 F4 28",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40002,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.249061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 64 14",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 18.88
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.212061",
+      "direction": "TX",
+      "raw_hex": "10 04 75 34 00 02 16 A9",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30004,
+        "quantity": 2,
+        "description": "Запрос значений датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.231061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E0 01 CA 0E F9",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          224,
+          458
+        ],
+        "description": "Ответ: T=22.4°C, H=45.8%"
+      },
+      "response_time_ms": 6.21
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.244061",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 44 00 02 22 BF",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40004,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.268061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 CD 5F",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 6.12
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.212061",
+      "direction": "TX",
+      "raw_hex": "10 04 75 36 00 02 82 A0",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30006,
+        "quantity": 2,
+        "description": "Запрос значений датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.229061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 D9 01 F1 16 A9",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          217,
+          497
+        ],
+        "description": "Ответ: T=21.7°C, H=49.7%"
+      },
+      "response_time_ms": 9.85
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.255061",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 46 00 02 E9 39",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40006,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.265061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 CC 45",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 11.86
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.212061",
+      "direction": "TX",
+      "raw_hex": "10 04 75 38 00 02 5C BE",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30008,
+        "quantity": 2,
+        "description": "Запрос значений датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.237061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 D7 01 A3 2C 1B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          215,
+          419
+        ],
+        "description": "Ответ: T=21.5°C, H=41.9%"
+      },
+      "response_time_ms": 24.35
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.267061",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 48 00 02 0B B5",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40008,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.288061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 38 F1",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 12.61
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.212061",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3A 00 02 FE 04",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30010,
+        "quantity": 2,
+        "description": "Запрос значений датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.224061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E4 01 D9 9D BD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          228,
+          473
+        ],
+        "description": "Ответ: T=22.8°C, H=47.3%"
+      },
+      "response_time_ms": 25.81
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.247061",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4A 00 02 B7 9A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40010,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.252061",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 68 01",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 12.95
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.213063",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3C 00 02 18 B1",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30012,
+        "quantity": 2,
+        "description": "Запрос значений датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.222063",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 F9 01 E8 8E E4",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          249,
+          488
+        ],
+        "description": "Ответ: T=24.9°C, H=48.8%"
+      },
+      "response_time_ms": 14.04
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.244063",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4C 00 02 64 78",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40012,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.258063",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 E1 97",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 13.06
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.213063",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3E 00 02 A7 0C",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30014,
+        "quantity": 2,
+        "description": "Запрос значений датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.230063",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 FA 01 B9 3C FA",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          250,
+          441
+        ],
+        "description": "Ответ: T=25.0°C, H=44.1%"
+      },
+      "response_time_ms": 29.43
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.240063",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4E 00 02 0F 0A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40014,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.257063",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 98 CD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 21.21
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.213063",
+      "direction": "TX",
+      "raw_hex": "10 04 75 40 00 02 BC F7",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30016,
+        "quantity": 2,
+        "description": "Запрос значений датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.233063",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 FE 01 BB 9A FC",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          254,
+          443
+        ],
+        "description": "Ответ: T=25.4°C, H=44.3%"
+      },
+      "response_time_ms": 7.34
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.243063",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 50 00 02 1F C1",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40016,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.266063",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 7C 47",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 24.97
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.213063",
+      "direction": "TX",
+      "raw_hex": "10 04 75 42 00 02 07 52",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30018,
+        "quantity": 2,
+        "description": "Запрос значений датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.236063",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E7 01 AD 14 FB",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          231,
+          429
+        ],
+        "description": "Ответ: T=23.1°C, H=42.9%"
+      },
+      "response_time_ms": 18.6
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.250063",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 52 00 02 91 FD",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40018,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:12.262063",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 9B 0B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 17.98
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.244030",
+      "direction": "TX",
+      "raw_hex": "10 04 75 30 00 02 B6 29",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30000,
+        "quantity": 2,
+        "description": "Запрос значений датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.257030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 DD 01 91 83 E5",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          221,
+          401
+        ],
+        "description": "Ответ: T=22.1°C, H=40.1%"
+      },
+      "response_time_ms": 20.14
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.280030",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 40 00 02 FC 75",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40000,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 1"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.294030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 16 70",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 20.02
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.244030",
+      "direction": "TX",
+      "raw_hex": "10 04 75 32 00 02 12 80",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30002,
+        "quantity": 2,
+        "description": "Запрос значений датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.251030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 D6 01 E1 CE 21",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          214,
+          481
+        ],
+        "description": "Ответ: T=21.4°C, H=48.1%"
+      },
+      "response_time_ms": 28.71
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.268030",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 42 00 02 F6 EA",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40002,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 2"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.291030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 C0 5D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 22.0
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.244030",
+      "direction": "TX",
+      "raw_hex": "10 04 75 34 00 02 EE CC",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30004,
+        "quantity": 2,
+        "description": "Запрос значений датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.258030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E3 01 F1 C2 E2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          227,
+          497
+        ],
+        "description": "Ответ: T=22.7°C, H=49.7%"
+      },
+      "response_time_ms": 17.77
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.287030",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 44 00 02 90 0E",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40004,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 3"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.294030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 AC A5",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 26.62
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.244030",
+      "direction": "TX",
+      "raw_hex": "10 04 75 36 00 02 09 34",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30006,
+        "quantity": 2,
+        "description": "Запрос значений датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.252030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 D3 01 C6 3C E4",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          211,
+          454
+        ],
+        "description": "Ответ: T=21.1°C, H=45.4%"
+      },
+      "response_time_ms": 11.76
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.267030",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 46 00 02 BE 8D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40006,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 4"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.291030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 AB C9",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 24.06
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.244030",
+      "direction": "TX",
+      "raw_hex": "10 04 75 38 00 02 69 EE",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30008,
+        "quantity": 2,
+        "description": "Запрос значений датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.262030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 F2 01 EE B8 B2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          242,
+          494
+        ],
+        "description": "Ответ: T=24.2°C, H=49.4%"
+      },
+      "response_time_ms": 19.04
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.277030",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 48 00 02 40 19",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40008,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 5"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.296030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 99 C2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 18.14
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.244030",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3A 00 02 B2 BF",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30010,
+        "quantity": 2,
+        "description": "Запрос значений датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.252030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E8 01 9C 6F 28",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          232,
+          412
+        ],
+        "description": "Ответ: T=23.2°C, H=41.2%"
+      },
+      "response_time_ms": 14.34
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.262030",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4A 00 02 74 DB",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40010,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 6"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.285030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 2B 87",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 17.47
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.244030",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3C 00 02 A6 7F",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30012,
+        "quantity": 2,
+        "description": "Запрос значений датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.266030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 EC 01 91 F2 6D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          236,
+          401
+        ],
+        "description": "Ответ: T=23.6°C, H=40.1%"
+      },
+      "response_time_ms": 27.51
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.296030",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4C 00 02 CA A7",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40012,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 7"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.320030",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 A1 AA",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 29.26
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.245032",
+      "direction": "TX",
+      "raw_hex": "10 04 75 3E 00 02 85 06",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30014,
+        "quantity": 2,
+        "description": "Запрос значений датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.260032",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 F1 01 E2 E9 07",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          241,
+          482
+        ],
+        "description": "Ответ: T=24.1°C, H=48.2%"
+      },
+      "response_time_ms": 6.26
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.290032",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 4E 00 02 70 46",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40014,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 8"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.299032",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 5F D0",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 18.62
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.245032",
+      "direction": "TX",
+      "raw_hex": "10 04 75 40 00 02 74 DE",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30016,
+        "quantity": 2,
+        "description": "Запрос значений датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.263032",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 ED 01 9C 1F B4",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          237,
+          412
+        ],
+        "description": "Ответ: T=23.7°C, H=41.2%"
+      },
+      "response_time_ms": 18.19
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.276032",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 50 00 02 CF 24",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40016,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 9"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.283032",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 A1 3A",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 24.71
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.245032",
+      "direction": "TX",
+      "raw_hex": "10 04 75 42 00 02 F5 63",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 30018,
+        "quantity": 2,
+        "description": "Запрос значений датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.250032",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 E9 01 A0 DE 0D",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          233,
+          416
+        ],
+        "description": "Ответ: T=23.3°C, H=41.6%"
+      },
+      "response_time_ms": 7.52
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.279032",
+      "direction": "TX",
+      "raw_hex": "10 04 9C 52 00 02 B2 D2",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "start_addr": 40018,
+        "quantity": 2,
+        "description": "Запрос статусов датчика 10"
+      },
+      "response_time_ms": null
+    },
+    {
+      "timestamp": "2026-03-25T12:59:13.292032",
+      "direction": "RX",
+      "raw_hex": "10 04 04 00 00 00 00 5E 8B",
+      "parsed": {
+        "slave_id": 16,
+        "function": 4,
+        "byte_count": 4,
+        "values": [
+          0,
+          0
+        ],
+        "description": "Ответ: статусы OK"
+      },
+      "response_time_ms": 26.68
     }
   ]
 }
