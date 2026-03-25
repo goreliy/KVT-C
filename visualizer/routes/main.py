@@ -32,8 +32,3 @@ def sensor_detail(sensor_id):
             sensor = s
             break
     return render_template('sensor.html', sensor=sensor, sensor_id=sensor_id)
-
-
-@main_bp.route('/events')
-def events_page():
-    return render_template('events.html')

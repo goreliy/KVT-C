@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Экспорт данных{% endblock %}
+
+{% block head %}
+<style>
+  .export-form { display: flex; flex-direction: column; gap: 16px; max-width: 600px; }
+  .sensor-checkboxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; max-height: 240px; overflow-y: auto; padding: 8px; background: var(--bg-input); border-radius: 6px; border: 1px solid var(--border-color); }
+  .sensor-checkboxes label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 4px; border-radius: 4px; }
+  .sensor-checkboxes label:hover { background: rgba(255,255,255,.05); }
+  .sensor-checkboxes input[type="checkbox"] { accent-color: var(--color-guarded); width: 16px; height: 16px; }
+  .date-row { display: flex; gap: 16px; align-items: end; }
+  .date-row .form-group { flex: 1; }
+  .format-row { display: flex; gap: 16px; }
+  .format-option { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--bg-input); border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .format-option:hover { border-color: var(--color-guarded); }
+  .format-option input[type="radio"] { accent-color: var(--color-guarded); width: 16px; height: 16px; }
+  .format-option.selected { border-color: var(--color-guarded); background: rgba(33,150,243,.1); }
+  .export-actions { display: flex; gap: 12px; align-items: center; }
+  .export-info { font-size: 13px; color: var(--text-secondary); }
+  .select-controls { display: flex; gap: 8px; margin-bottom: 8px; }
+  .select-controls button { font-size: 12px; padding: 2px 8px; background: transparent; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-secondary); cursor: pointer; }
+  .select-controls button:hover { color: var(--text-primary); border-color: var(--color-guarded); }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Экспорт данных</h1>
+{% include "journal/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Параметры экспорта</div>
+  <div class="export-form">
+
+    <div class="form-group">
+      <label>Датчики</label>
+      <div class="select-controls">
+        <button type="button" onclick="toggleAll(true)">Выбрать все</button>
+        <button type="button" onclick="toggleAll(false)">Снять все</button>
+      </div>
+      <div class="sensor-checkboxes" id="sensor-list">
+        <p class="text-muted">Загрузка...</p>
+      </div>
+    </div>
+
+    <div class="date-row">
+      <div class="form-group">
+        <label for="date-from">Дата начала</label>
+        <input type="date" id="date-from">
+      </div>
+      <div class="form-group">
+        <label for="date-to">Дата окончания</label>
+        <input type="date" id="date-to">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Формат</label>
+      <div class="format-row">
+        <label class="format-option selected" id="fmt-csv-label">
+          <input type="radio" name="format" value="csv" checked onchange="updateFormatSelection()"> CSV
+        </label>
+        <label class="format-option" id="fmt-json-label">
+          <input type="radio" name="format" value="json" onchange="updateFormatSelection()"> JSON
+        </label>
+      </div>
+    </div>
+
+    <div class="export-actions">
+      <button class="btn btn-primary" onclick="doExport()">Скачать</button>
+      <span class="export-info" id="export-info"></span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var allSensors = [];
+
+async function loadSensors() {
+  try {
+    allSensors = await apiFetch('/api/sensors');
+    var container = document.getElementById('sensor-list');
+    if (!allSensors.length) {
+      container.innerHTML = '<p class="text-muted">Нет настроенных датчиков</p>';
+      return;
+    }
+    container.innerHTML = allSensors.map(function(s) {
+      return '<label><input type="checkbox" value="' + s.id + '" checked> ' + s.name + ' (ID ' + s.id + ')</label>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('sensor-list').innerHTML = '<p class="text-muted">Ошибка загрузки датчиков</p>';
+  }
+}
+
+function toggleAll(state) {
+  var boxes = document.querySelectorAll('#sensor-list input[type="checkbox"]');
+  boxes.forEach(function(cb) { cb.checked = state; });
+}
+
+function updateFormatSelection() {
+  document.querySelectorAll('.format-option').forEach(function(el) {
+    el.classList.toggle('selected', el.querySelector('input').checked);
+  });
+}
+
+function getSelectedSensorIds() {
+  var boxes = document.querySelectorAll('#sensor-list input[type="checkbox"]:checked');
+  return Array.from(boxes).map(function(cb) { return cb.value; });
+}
+
+function doExport() {
+  var ids = getSelectedSensorIds();
+  if (!ids.length) {
+    showToast('Выберите хотя бы один датчик', 'error');
+    return;
+  }
+
+  var dateFrom = document.getElementById('date-from').value;
+  var dateTo = document.getElementById('date-to').value;
+  if (!dateFrom || !dateTo) {
+    showToast('Укажите период экспорта', 'error');
+    return;
+  }
+  if (dateFrom > dateTo) {
+    showToast('Дата начала не может быть позже даты окончания', 'error');
+    return;
+  }
+
+  var fmt = document.querySelector('input[name="format"]:checked').value;
+  var url = '/api/export/download?format=' + fmt
+    + '&sensor_ids=' + ids.join(',')
+    + '&from=' + dateFrom
+    + '&to=' + dateTo;
+
+  document.getElementById('export-info').textContent = 'Формирование файла...';
+
+  // Trigger download via hidden link
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = '';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  setTimeout(function() {
+    document.getElementById('export-info').textContent = 'Файл загружен';
+    setTimeout(function() { document.getElementById('export-info').textContent = ''; }, 3000);
+  }, 1000);
+}
+
+// Set default dates: last 7 days
+(function() {
+  var now = new Date();
+  var weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  document.getElementById('date-to').value = now.toISOString().slice(0, 10);
+  document.getElementById('date-from').value = weekAgo.toISOString().slice(0, 10);
+})();
+
+loadSensors();
+</script>
+{% endblock %}

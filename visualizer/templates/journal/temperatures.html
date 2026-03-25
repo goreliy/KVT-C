@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Журнал температур{% endblock %}
+
+{% block head %}
+<style>
+  .filter-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-bar select {
+    padding: 6px 10px; background: var(--bg-input); border: 1px solid var(--border-color);
+    border-radius: 6px; color: var(--text-primary); font-size: 13px;
+  }
+  .period-tabs { display: flex; gap: 4px; }
+  .period-tabs button {
+    padding: 6px 14px; background: var(--bg-input); border: 1px solid var(--border-color);
+    border-radius: 6px; color: var(--text-secondary); font-size: 13px; cursor: pointer;
+  }
+  .period-tabs button.active { background: var(--color-guarded); color: #fff; border-color: var(--color-guarded); }
+  .temp-val-high { color: var(--color-alarm); font-weight: 600; }
+  .temp-val-low { color: var(--color-guarded); font-weight: 600; }
+  .temp-val-avg { color: var(--text-primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Журнал температур</h1>
+{% include "journal/_nav.html" %}
+
+<div class="form-section">
+  <div class="filter-bar">
+    <select id="f-sensor" aria-label="Фильтр по датчику">
+      <option value="">Все датчики</option>
+    </select>
+    <div class="period-tabs">
+      <button class="active" data-period="hour" onclick="setPeriod(this)">По часам</button>
+      <button data-period="day" onclick="setPeriod(this)">По дням</button>
+      <button data-period="week" onclick="setPeriod(this)">По неделям</button>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="loadData()">Обновить</button>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="table-wrap">
+    <table id="temp-table">
+      <thead>
+        <tr>
+          <th>Период</th>
+          <th>Датчик</th>
+          <th>T мин, °C</th>
+          <th>T макс, °C</th>
+          <th>T сред, °C</th>
+          <th>Вл мин, %</th>
+          <th>Вл макс, %</th>
+          <th>Вл сред, %</th>
+          <th>Выборок</th>
+        </tr>
+      </thead>
+      <tbody id="temp-body">
+        <tr><td colspan="9" class="text-muted">Загрузка...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var currentPeriod = 'hour';
+
+function setPeriod(btn) {
+  document.querySelectorAll('.period-tabs button').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  currentPeriod = btn.dataset.period;
+  loadData();
+}
+
+async function loadSensorFilter() {
+  try {
+    var sensors = await apiFetch('/api/sensors');
+    var sel = document.getElementById('f-sensor');
+    sensors.forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s.id; opt.textContent = s.name;
+      sel.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+async function loadData() {
+  var sensorId = document.getElementById('f-sensor').value;
+  var url = '/api/journal/temperatures?period=' + currentPeriod;
+  if (sensorId) url += '&sensor_id=' + sensorId;
+
+  try {
+    var resp = await apiFetch(url);
+    var data = resp.data || [];
+    var tbody = document.getElementById('temp-body');
+
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Нет данных за выбранный период</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.map(function(d) {
+      return '<tr>' +
+        '<td>' + d.period + '</td>' +
+        '<td>' + d.sensor_name + '</td>' +
+        '<td class="temp-val-low">' + d.temp_min + '</td>' +
+        '<td class="temp-val-high">' + d.temp_max + '</td>' +
+        '<td class="temp-val-avg">' + d.temp_avg + '</td>' +
+        '<td class="temp-val-low">' + (d.hum_min != null ? d.hum_min : '—') + '</td>' +
+        '<td class="temp-val-high">' + (d.hum_max != null ? d.hum_max : '—') + '</td>' +
+        '<td class="temp-val-avg">' + (d.hum_avg != null ? d.hum_avg : '—') + '</td>' +
+        '<td>' + d.sample_count + '</td>' +
+        '</tr>';
+    }).join('');
+  } catch(e) {}
+}
+
+document.getElementById('f-sensor').addEventListener('change', loadData);
+loadSensorFilter();
+loadData();
+</script>
+{% endblock %}

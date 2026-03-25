@@ -10,9 +10,9 @@
       "priority": "medium",
       "value": -7.4,
       "message": "Датчик 9: Низкая температура -7.4°C",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "operator",
+      "acknowledged_at": "2026-03-25T13:03:49.743182"
     },
     {
       "id": 80,
@@ -22,9 +22,9 @@
       "priority": "high",
       "value": 35.2,
       "message": "АВАРИЯ Датчик 7: Критически высокая температура 35.2°C",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "operator",
+      "acknowledged_at": "2026-03-25T13:03:49.314194"
     },
     {
       "id": 79,
@@ -34,9 +34,9 @@
       "priority": "medium",
       "value": 35.6,
       "message": "Датчик 1: Высокая температура 35.6°C",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "operator",
+      "acknowledged_at": "2026-03-25T13:03:48.550924"
     },
     {
       "id": 78,
@@ -130,9 +130,9 @@
       "priority": "high",
       "value": 36.7,
       "message": "АВАРИЯ Датчик 9: Критически высокая температура 36.7°C",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "operator",
+      "acknowledged_at": "2026-03-25T13:03:50.824158"
     },
     {
       "id": 70,
@@ -406,9 +406,9 @@
       "priority": "medium",
       "value": -13.4,
       "message": "Датчик 6: Низкая температура -13.4°C",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "operator",
+      "acknowledged_at": "2026-03-25T13:06:55.435429"
     },
     {
       "id": 47,
