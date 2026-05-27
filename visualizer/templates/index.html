@@ -55,11 +55,11 @@
     <div class="sensor-card__name">{{ s.name }}</div>
     <div class="sensor-card__values">
       <div class="sensor-card__value">
-        {{ "%.1f"|format(s.temperature.value) }}°C
+        {{ ("%.1f"|format(s.temperature.value) ~ "°C") if s.temperature.value is not none else "—" }}
         <small>Температура</small>
       </div>
       <div class="sensor-card__value">
-        {{ "%.1f"|format(s.humidity.value) }}%
+        {{ ("%.1f"|format(s.humidity.value) ~ "%") if s.humidity.value is not none else "—" }}
         <small>Влажность</small>
       </div>
     </div>
@@ -152,11 +152,11 @@ setInterval(async () => {
           <div class="sensor-card__name">${s.name}</div>
           <div class="sensor-card__values">
             <div class="sensor-card__value">
-              ${s.temperature.value.toFixed(1)}°C
+              ${(s.temperature.value == null ? '—' : s.temperature.value.toFixed(1) + '°C')}
               <small>Температура</small>
             </div>
             <div class="sensor-card__value">
-              ${s.humidity.value.toFixed(1)}%
+              ${(s.humidity.value == null ? '—' : s.humidity.value.toFixed(1) + '%')}
               <small>Влажность</small>
             </div>
           </div>

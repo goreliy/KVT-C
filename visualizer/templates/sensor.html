@@ -57,11 +57,11 @@
   <div style="display:flex; gap:40px; align-items:center; flex-wrap:wrap;">
     <div>
       <div style="font-size:12px; color:var(--text-secondary);">Температура</div>
-      <div id="live-temp" style="font-size:36px; font-weight:700;">{{ "%.1f"|format(sensor.temperature.value) }}°C</div>
+      <div id="live-temp" style="font-size:36px; font-weight:700;">{{ ("%.1f"|format(sensor.temperature.value) ~ "°C") if sensor.temperature.value is not none else "—" }}</div>
     </div>
     <div>
       <div style="font-size:12px; color:var(--text-secondary);">Влажность</div>
-      <div id="live-hum" style="font-size:36px; font-weight:700;">{{ "%.1f"|format(sensor.humidity.value) }}%</div>
+      <div id="live-hum" style="font-size:36px; font-weight:700;">{{ ("%.1f"|format(sensor.humidity.value) ~ "%") if sensor.humidity.value is not none else "—" }}</div>
     </div>
     <div>
       <div style="font-size:12px; color:var(--text-secondary);">Статус</div>
@@ -552,8 +552,8 @@ async function updateLive() {
     const data = await apiFetch('/api/current');
     const s = (data.sensors || []).find(s => s.id === SENSOR_ID);
     if (s) {
-      document.getElementById('live-temp').textContent = s.temperature.value.toFixed(1) + '°C';
-      document.getElementById('live-hum').textContent = s.humidity.value.toFixed(1) + '%';
+      document.getElementById('live-temp').textContent = (s.temperature.value == null ? '—' : s.temperature.value.toFixed(1) + '°C');
+      document.getElementById('live-hum').textContent = (s.humidity.value == null ? '—' : s.humidity.value.toFixed(1) + '%');
     }
   } catch(e) {}
 }

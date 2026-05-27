@@ -435,8 +435,8 @@ async function updateLiveData() {
     (data.sensors || []).forEach(s => {
       const tempEl = document.querySelector(`[data-temp="${s.id}"]`);
       const humEl = document.querySelector(`[data-hum="${s.id}"]`);
-      if (tempEl) tempEl.textContent = s.temperature.value.toFixed(1) + '°C';
-      if (humEl) humEl.textContent = s.humidity.value.toFixed(1) + '%';
+      if (tempEl) tempEl.textContent = (s.temperature.value == null ? '—' : s.temperature.value.toFixed(1) + '°C');
+      if (humEl) humEl.textContent = (s.humidity.value == null ? '—' : s.humidity.value.toFixed(1) + '%');
       // Update marker border color based on status
       const marker = document.querySelector(`.fp-marker[data-sensor-id="${s.id}"]`);
       if (marker) {

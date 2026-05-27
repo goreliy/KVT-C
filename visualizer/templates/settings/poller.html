@@ -32,11 +32,43 @@
 </div>
 
 <div class="form-section">
+  <div class="form-section__title">Управление Poller</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:28px;">
+        <input type="checkbox" id="p-auto-start" {{ 'checked' if poller.auto_start else '' }}>
+        Автостарт Poller при запуске сервиса
+      </label>
+    </div>
+    <div class="form-group">
+      <label>Статус Poller</label>
+      <div id="poller-status" style="margin-top:10px;">—</div>
+    </div>
+  </div>
+  <div class="form-row">
+    <button class="btn" onclick="startPoller()">Запустить Poller</button>
+    <button class="btn" onclick="stopPoller()">Остановить Poller</button>
+    <button class="btn" onclick="reloadPoller()">Перезагрузить датчики</button>
+    <button class="btn" onclick="refreshPollerAll()">Обновить статус и лог</button>
+  </div>
+  <div class="form-row">
+    <div class="form-group" style="width:100%;">
+      <label>Последние записи Modbus лога</label>
+      <pre id="poller-log" style="max-height:260px;overflow:auto;background:var(--bg-input);padding:12px;border:1px solid var(--border-color);border-radius:8px;">—</pre>
+    </div>
+  </div>
+</div>
+
+<div class="form-section">
   <div class="form-section__title">Параметры COM-порта</div>
   <div class="form-row">
     <div class="form-group">
       <label>COM-порт</label>
       <input type="text" id="p-com" value="{{ poller.com_port }}">
+    </div>
+    <div class="form-group">
+      <label>Адрес Modbus устройства (Slave ID)</label>
+      <input type="number" id="p-device-slave" value="{{ poller.device_slave_id or 16 }}" min="1" max="247">
     </div>
     <div class="form-group">
       <label>Скорость (бод)</label>
@@ -70,6 +102,14 @@
         <option value="2" {{ 'selected' if poller.stopbits == 2 }}>2</option>
       </select>
     </div>
+  </div>
+  <div class="form-row">
+    <input id="scan-start" type="number" min="1" max="247" value="1" style="width:100px;">
+    <input id="scan-end" type="number" min="1" max="247" value="32" style="width:100px;">
+    <input id="scan-timeout" type="number" min="50" max="10000" value="500" style="width:120px;">
+    <button class="btn" onclick="scanModbusDevices()">Поиск Modbus устройств на COM</button>
+    <button class="btn" onclick="openPollerServicePage()">Открыть страницу Poller</button>
+    <div id="scan-result" style="margin-top:10px;">—</div>
   </div>
 </div>
 
@@ -112,9 +152,11 @@
 <script>
 async function savePoller() {
   const data = {
+    auto_start: document.getElementById('p-auto-start').checked,
     use_mock_server: document.getElementById('p-use-mock').checked,
     mock_server_url: document.getElementById('p-mock-url').value.trim(),
     com_port: document.getElementById('p-com').value,
+    device_slave_id: parseInt(document.getElementById('p-device-slave').value),
     baudrate: parseInt(document.getElementById('p-baud').value),
     bytesize: parseInt(document.getElementById('p-bytesize').value),
     parity: document.getElementById('p-parity').value,
@@ -159,5 +201,93 @@ function openMockServerPage() {
 }
 
 refreshMockStatus();
+
+async function refreshPollerStatus() {
+  try {
+    const data = await apiFetch('/api/poller/status');
+    const err = data.last_error ? `, ошибка: ${data.last_error}` : '';
+    document.getElementById('poller-status').textContent =
+      `${data.state}, опросов: ${data.total_polls || 0}, успешных: ${data.successful_polls || 0}, неуспешных: ${data.failed_polls || 0}${err}`;
+  } catch (e) {
+    document.getElementById('poller-status').textContent = 'poller недоступен';
+  }
+}
+
+async function refreshPollerLog() {
+  try {
+    const data = await apiFetch('/api/poller/log?limit=20');
+    const entries = data.entries || [];
+    if (!entries.length) {
+      document.getElementById('poller-log').textContent = 'Лог пуст';
+      return;
+    }
+    const lines = entries.map(e => {
+      const ts = e.timestamp || '';
+      const dir = e.direction || '';
+      const desc = (e.parsed && e.parsed.description) ? e.parsed.description : '';
+      const rt = e.response_time_ms != null ? `, ${e.response_time_ms} ms` : '';
+      return `[${ts}] ${dir}: ${desc}${rt}`;
+    });
+    document.getElementById('poller-log').textContent = lines.join('\n');
+  } catch (e) {
+    document.getElementById('poller-log').textContent = `Ошибка чтения лога: ${e.message}`;
+  }
+}
+
+async function refreshPollerAll() {
+  await refreshPollerStatus();
+  await refreshPollerLog();
+}
+
+async function scanModbusDevices() {
+  const resultEl = document.getElementById('scan-result');
+  resultEl.textContent = 'Сканирование...';
+  try {
+    const start = parseInt(document.getElementById('scan-start').value || '1');
+    const end = parseInt(document.getElementById('scan-end').value || '32');
+    const timeout = parseInt(document.getElementById('scan-timeout').value || '500');
+    const data = await apiFetch(`/api/poller/scan?start_id=${start}&end_id=${end}&timeout_ms=${timeout}`);
+    const found = data.found || [];
+    if (!found.length) {
+      resultEl.textContent = 'Устройства не найдены';
+      return;
+    }
+    resultEl.textContent = `Найдено: ${found.map(x => x.slave_id).join(', ')}`;
+  } catch (e) {
+    resultEl.textContent = `Ошибка поиска: ${e.message}`;
+  }
+}
+
+async function openPollerServicePage() {
+  try {
+    const net = await apiFetch('/api/network/config');
+    const host = (net.poller_host === '0.0.0.0' || !net.poller_host) ? window.location.hostname : net.poller_host;
+    const port = net.poller_port || 5001;
+    window.open(`http://${host}:${port}/`, '_blank');
+  } catch (e) {
+    window.open(`http://${window.location.hostname}:5001/`, '_blank');
+  }
+}
+
+async function startPoller() {
+  await apiFetch('/api/poller/start', { method: 'POST' });
+  showToast('Poller запущен');
+  await refreshPollerAll();
+}
+
+async function stopPoller() {
+  await apiFetch('/api/poller/stop', { method: 'POST' });
+  showToast('Poller остановлен');
+  await refreshPollerAll();
+}
+
+async function reloadPoller() {
+  await apiFetch('/api/poller/reload', { method: 'POST' });
+  showToast('Конфигурация датчиков обновлена');
+  await refreshPollerAll();
+}
+
+refreshPollerAll();
+setInterval(refreshPollerAll, 5000);
 </script>
 {% endblock %}

@@ -1,9 +1,11 @@
 {
+  "auto_start": true,
   "use_mock_server": false,
   "mock_server_url": "http://127.0.0.1:8000",
   "mock_server_host": "127.0.0.1",
   "mock_server_port": 8000,
-  "com_port": "/dev/ttyUSB0",
+  "com_port": "COM8",
+  "device_slave_id": 16,
   "baudrate": 9600,
   "bytesize": 8,
   "parity": "N",

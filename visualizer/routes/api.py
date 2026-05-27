@@ -21,6 +21,8 @@ api_bp = Blueprint('api', __name__)
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _MOCK_SERVER_PROCESS = None
+_LOCAL_HTTP = requests.Session()
+_LOCAL_HTTP.trust_env = False
 
 
 def _mock_server_url() -> str:
@@ -30,7 +32,7 @@ def _mock_server_url() -> str:
 
 def _is_mock_reachable(base_url: str) -> bool:
     try:
-        resp = requests.get(f"{base_url}/api/status", timeout=1.5)
+        resp = _LOCAL_HTTP.get(f"{base_url}/api/status", timeout=1.5)
         return resp.ok
     except requests.RequestException:
         return False
@@ -44,6 +46,40 @@ def _mock_status_payload():
         'reachable': _is_mock_reachable(base_url),
         'process_running': process_running
     }
+
+
+def _poller_base_url() -> str:
+    cfg = load_system_config().get('network', {})
+    host = str(cfg.get('poller_host', '127.0.0.1'))
+    if host in ('0.0.0.0', '::'):
+        host = '127.0.0.1'
+    port = int(cfg.get('poller_port', 5001))
+    return f"http://{host}:{port}"
+
+
+def _poller_call(method: str, path: str, payload=None):
+    try:
+        url = f"{_poller_base_url()}{path}"
+        timeout = 25 if '/api/poller/scan' in path else 3
+        if method == 'GET':
+            response = _LOCAL_HTTP.get(url, timeout=timeout)
+        else:
+            response = _LOCAL_HTTP.post(url, json=payload, timeout=timeout)
+        content_type = response.headers.get('Content-Type', '')
+        if 'application/json' in content_type.lower():
+            try:
+                data = response.json()
+            except ValueError:
+                data = {'error': f'Poller вернул некорректный JSON (HTTP {response.status_code})'}
+                return data, 502
+            return data, response.status_code
+        text = (response.text or '').strip()
+        snippet = text[:300] if text else '<empty>'
+        return {'error': f'Poller вернул не-JSON ответ (HTTP {response.status_code}): {snippet}'}, 502
+    except requests.RequestException as ex:
+        return {'error': f'Poller недоступен: {ex}'}, 502
+    except Exception as ex:
+        return {'error': f'Ошибка проксирования Poller: {ex}'}, 500
 
 
 def _load_archive():
@@ -149,6 +185,64 @@ def api_save_poller_config():
     return jsonify(data)
 
 
+@api_bp.route('/poller/status')
+def api_poller_status():
+    data, code = _poller_call('GET', '/api/poller/status')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/current')
+def api_poller_current():
+    data, code = _poller_call('GET', '/api/poller/current')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/log')
+def api_poller_log():
+    limit = request.args.get('limit', 100, type=int)
+    data, code = _poller_call('GET', f'/api/poller/log?limit={limit}')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/ports')
+def api_poller_ports():
+    data, code = _poller_call('GET', '/api/poller/ports')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/scan')
+def api_poller_scan():
+    start_id = request.args.get('start_id', 1, type=int)
+    end_id = request.args.get('end_id', 32, type=int)
+    timeout_ms = request.args.get('timeout_ms', 500, type=int)
+    data, code = _poller_call('GET', f'/api/poller/scan?start_id={start_id}&end_id={end_id}&timeout_ms={timeout_ms}')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/health')
+def api_poller_health():
+    data, code = _poller_call('GET', '/api/poller/health')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/start', methods=['POST'])
+def api_poller_start():
+    data, code = _poller_call('POST', '/api/poller/start')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/stop', methods=['POST'])
+def api_poller_stop():
+    data, code = _poller_call('POST', '/api/poller/stop')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/reload', methods=['POST'])
+def api_poller_reload():
+    data, code = _poller_call('POST', '/api/poller/reload')
+    return jsonify(data), code
+
+
 @api_bp.route('/mockserver/status')
 def api_mockserver_status():
     return jsonify(_mock_status_payload())
@@ -160,7 +254,7 @@ def api_mockserver_start():
     base_url = _mock_server_url()
     if _is_mock_reachable(base_url):
         try:
-            requests.post(f"{base_url}/api/start_all", timeout=2)
+            _LOCAL_HTTP.post(f"{base_url}/api/start_all", timeout=2)
         except requests.RequestException:
             pass
         return jsonify({'status': 'ok', **_mock_status_payload()})
@@ -183,7 +277,7 @@ def api_mockserver_start():
 
     if _is_mock_reachable(base_url):
         try:
-            requests.post(f"{base_url}/api/start_all", timeout=2)
+            _LOCAL_HTTP.post(f"{base_url}/api/start_all", timeout=2)
         except requests.RequestException:
             pass
         return jsonify({'status': 'ok', **_mock_status_payload()})
@@ -195,7 +289,7 @@ def api_mockserver_stop():
     global _MOCK_SERVER_PROCESS
     base_url = _mock_server_url()
     try:
-        requests.post(f"{base_url}/api/stop_all", timeout=2)
+        _LOCAL_HTTP.post(f"{base_url}/api/stop_all", timeout=2)
     except requests.RequestException:
         pass
 
