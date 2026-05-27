@@ -7,6 +7,31 @@
 {% include "settings/_nav.html" %}
 
 <div class="form-section">
+  <div class="form-section__title">Тестовый Mock Server</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:28px;">
+        <input type="checkbox" id="p-use-mock" {{ 'checked' if poller.use_mock_server else '' }}>
+        Использовать Mock Server для тестов
+      </label>
+    </div>
+    <div class="form-group">
+      <label>URL Mock Server</label>
+      <input type="text" id="p-mock-url" value="{{ poller.mock_server_url or 'http://127.0.0.1:8000' }}">
+    </div>
+    <div class="form-group">
+      <label>Статус</label>
+      <div id="mock-status" style="margin-top:10px;">—</div>
+    </div>
+  </div>
+  <div class="form-row">
+    <button class="btn" onclick="startMockServer()">Запустить Mock Server</button>
+    <button class="btn" onclick="stopMockServer()">Остановить Mock Server</button>
+    <button class="btn" onclick="openMockServerPage()">Открыть страницу Mock Server</button>
+  </div>
+</div>
+
+<div class="form-section">
   <div class="form-section__title">Параметры COM-порта</div>
   <div class="form-row">
     <div class="form-group">
@@ -87,6 +112,8 @@
 <script>
 async function savePoller() {
   const data = {
+    use_mock_server: document.getElementById('p-use-mock').checked,
+    mock_server_url: document.getElementById('p-mock-url').value.trim(),
     com_port: document.getElementById('p-com').value,
     baudrate: parseInt(document.getElementById('p-baud').value),
     bytesize: parseInt(document.getElementById('p-bytesize').value),
@@ -102,5 +129,35 @@ async function savePoller() {
   await apiFetch('/api/poller/config', { method: 'POST', body: JSON.stringify(data) });
   showToast('Настройки Modbus сохранены');
 }
+
+async function refreshMockStatus() {
+  try {
+    const data = await apiFetch('/api/mockserver/status');
+    const status = data.reachable ? 'доступен' : 'недоступен';
+    const proc = data.process_running ? 'процесс запущен' : 'процесс не запущен';
+    document.getElementById('mock-status').textContent = `${status}, ${proc}`;
+  } catch (e) {
+    document.getElementById('mock-status').textContent = 'ошибка получения статуса';
+  }
+}
+
+async function startMockServer() {
+  await apiFetch('/api/mockserver/start', { method: 'POST' });
+  showToast('Mock Server запущен');
+  await refreshMockStatus();
+}
+
+async function stopMockServer() {
+  await apiFetch('/api/mockserver/stop', { method: 'POST' });
+  showToast('Mock Server остановлен');
+  await refreshMockStatus();
+}
+
+function openMockServerPage() {
+  const url = document.getElementById('p-mock-url').value.trim() || 'http://127.0.0.1:8000';
+  window.open(url, '_blank');
+}
+
+refreshMockStatus();
 </script>
 {% endblock %}

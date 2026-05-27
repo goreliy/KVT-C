@@ -1,8 +1,12 @@
 """REST API для фронтенда."""
 import json
 import os
+import sys
+import time
+import subprocess
 from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request
+import requests
 from shared.config_manager import (
     load_system_config, save_system_config,
     load_poller_config, save_poller_config,
@@ -15,6 +19,31 @@ from shared.config_manager import (
 api_bp = Blueprint('api', __name__)
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_MOCK_SERVER_PROCESS = None
+
+
+def _mock_server_url() -> str:
+    poller_cfg = load_poller_config()
+    return str(poller_cfg.get('mock_server_url', 'http://127.0.0.1:8000')).rstrip('/')
+
+
+def _is_mock_reachable(base_url: str) -> bool:
+    try:
+        resp = requests.get(f"{base_url}/api/status", timeout=1.5)
+        return resp.ok
+    except requests.RequestException:
+        return False
+
+
+def _mock_status_payload():
+    base_url = _mock_server_url()
+    process_running = _MOCK_SERVER_PROCESS is not None and _MOCK_SERVER_PROCESS.poll() is None
+    return {
+        'url': base_url,
+        'reachable': _is_mock_reachable(base_url),
+        'process_running': process_running
+    }
 
 
 def _load_archive():
@@ -118,6 +147,66 @@ def api_save_poller_config():
         return jsonify({'error': 'Нет данных'}), 400
     save_poller_config(data)
     return jsonify(data)
+
+
+@api_bp.route('/mockserver/status')
+def api_mockserver_status():
+    return jsonify(_mock_status_payload())
+
+
+@api_bp.route('/mockserver/start', methods=['POST'])
+def api_mockserver_start():
+    global _MOCK_SERVER_PROCESS
+    base_url = _mock_server_url()
+    if _is_mock_reachable(base_url):
+        try:
+            requests.post(f"{base_url}/api/start_all", timeout=2)
+        except requests.RequestException:
+            pass
+        return jsonify({'status': 'ok', **_mock_status_payload()})
+
+    if _MOCK_SERVER_PROCESS is None or _MOCK_SERVER_PROCESS.poll() is not None:
+        script_path = os.path.join(ROOT_DIR, 'MocTestServer', 'server', 'run.py')
+        poller_cfg = load_poller_config()
+        host = str(poller_cfg.get('mock_server_host', '127.0.0.1'))
+        port = int(poller_cfg.get('mock_server_port', 8000))
+        _MOCK_SERVER_PROCESS = subprocess.Popen(
+            [sys.executable, script_path, '--host', host, '--port', str(port)],
+            cwd=ROOT_DIR,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        for _ in range(15):
+            if _is_mock_reachable(base_url):
+                break
+            time.sleep(0.2)
+
+    if _is_mock_reachable(base_url):
+        try:
+            requests.post(f"{base_url}/api/start_all", timeout=2)
+        except requests.RequestException:
+            pass
+        return jsonify({'status': 'ok', **_mock_status_payload()})
+    return jsonify({'error': 'Не удалось запустить Mock Server'}), 500
+
+
+@api_bp.route('/mockserver/stop', methods=['POST'])
+def api_mockserver_stop():
+    global _MOCK_SERVER_PROCESS
+    base_url = _mock_server_url()
+    try:
+        requests.post(f"{base_url}/api/stop_all", timeout=2)
+    except requests.RequestException:
+        pass
+
+    if _MOCK_SERVER_PROCESS is not None and _MOCK_SERVER_PROCESS.poll() is None:
+        _MOCK_SERVER_PROCESS.terminate()
+        try:
+            _MOCK_SERVER_PROCESS.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            _MOCK_SERVER_PROCESS.kill()
+        _MOCK_SERVER_PROCESS = None
+    return jsonify({'status': 'ok', **_mock_status_payload()})
 
 
 # --- Network config ---
