@@ -1,8 +1,8 @@
 {
-  "config_version": "1.0.12",
+  "config_version": "1.0.10",
   "config_schema_version": "1.0",
   "created_at": "2026-03-11T00:00:00",
-  "updated_at": "2026-05-27T15:11:13.848890",
+  "updated_at": "2026-05-27T15:11:08.424747",
   "update_history": [
     {
       "version": "1.0.0",
@@ -58,16 +58,6 @@
       "version": "1.0.10",
       "timestamp": "2026-05-27T15:11:08.424747",
       "changes": "Удалён датчик \"выаа\""
-    },
-    {
-      "version": "1.0.11",
-      "timestamp": "2026-05-27T15:11:10.904855",
-      "changes": "Удалён датчик \"ХРАН. № 10\""
-    },
-    {
-      "version": "1.0.12",
-      "timestamp": "2026-05-27T15:11:13.848890",
-      "changes": "Удалён датчик \"ХРАН. № 9\""
     }
   ],
   "system": {
@@ -289,6 +279,62 @@
       "modbus_slave_id": 16,
       "modbus_addr_temp": 15,
       "modbus_addr_hum": 16,
+      "temp_limits": {
+        "min": -40.0,
+        "max": 85.0,
+        "warning_delta": 3.0,
+        "alarm_delta": 5.0
+      },
+      "hum_limits": {
+        "min": 0.0,
+        "max": 100.0,
+        "warning_delta": 5.0,
+        "alarm_delta": 10.0
+      },
+      "guarded": true,
+      "notifications": {
+        "email_on_warning": true,
+        "email_on_alarm": true,
+        "telegram_on_alarm": true
+      },
+      "created_at": "2026-03-11T00:00:00"
+    },
+    {
+      "id": 9,
+      "enabled": true,
+      "name": "ХРАН. № 9",
+      "description": "Хранилище 9",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 17,
+      "modbus_addr_hum": 18,
+      "temp_limits": {
+        "min": -40.0,
+        "max": 85.0,
+        "warning_delta": 3.0,
+        "alarm_delta": 5.0
+      },
+      "hum_limits": {
+        "min": 0.0,
+        "max": 100.0,
+        "warning_delta": 5.0,
+        "alarm_delta": 10.0
+      },
+      "guarded": true,
+      "notifications": {
+        "email_on_warning": true,
+        "email_on_alarm": true,
+        "telegram_on_alarm": true
+      },
+      "created_at": "2026-03-11T00:00:00"
+    },
+    {
+      "id": 10,
+      "enabled": true,
+      "name": "ХРАН. № 10",
+      "description": "Хранилище 10",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 19,
+      "modbus_addr_hum": 20,
       "temp_limits": {
         "min": -40.0,
         "max": 85.0,

@@ -1,0 +1,5 @@
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5001/ (Press CTRL+C to quit)
+127.0.0.1 - - [28/May/2026 13:15:38] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 13:15:38] "GET /api/poller/log?limit=3 HTTP/1.1" 200 -

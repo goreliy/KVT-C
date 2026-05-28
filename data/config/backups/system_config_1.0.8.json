@@ -1,8 +1,8 @@
 {
-  "config_version": "1.0.12",
+  "config_version": "1.0.8",
   "config_schema_version": "1.0",
   "created_at": "2026-03-11T00:00:00",
-  "updated_at": "2026-05-27T15:11:13.848890",
+  "updated_at": "2026-05-27T15:10:33.805240",
   "update_history": [
     {
       "version": "1.0.0",
@@ -48,26 +48,6 @@
       "version": "1.0.8",
       "timestamp": "2026-05-27T15:10:33.805240",
       "changes": "Обновлён датчик \"ХРАН. № 3\""
-    },
-    {
-      "version": "1.0.9",
-      "timestamp": "2026-05-27T15:11:05.913380",
-      "changes": "Удалён датчик \"ываываыва\""
-    },
-    {
-      "version": "1.0.10",
-      "timestamp": "2026-05-27T15:11:08.424747",
-      "changes": "Удалён датчик \"выаа\""
-    },
-    {
-      "version": "1.0.11",
-      "timestamp": "2026-05-27T15:11:10.904855",
-      "changes": "Удалён датчик \"ХРАН. № 10\""
-    },
-    {
-      "version": "1.0.12",
-      "timestamp": "2026-05-27T15:11:13.848890",
-      "changes": "Удалён датчик \"ХРАН. № 9\""
     }
   ],
   "system": {
@@ -308,6 +288,118 @@
         "telegram_on_alarm": true
       },
       "created_at": "2026-03-11T00:00:00"
+    },
+    {
+      "id": 9,
+      "enabled": true,
+      "name": "ХРАН. № 9",
+      "description": "Хранилище 9",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 17,
+      "modbus_addr_hum": 18,
+      "temp_limits": {
+        "min": -40.0,
+        "max": 85.0,
+        "warning_delta": 3.0,
+        "alarm_delta": 5.0
+      },
+      "hum_limits": {
+        "min": 0.0,
+        "max": 100.0,
+        "warning_delta": 5.0,
+        "alarm_delta": 10.0
+      },
+      "guarded": true,
+      "notifications": {
+        "email_on_warning": true,
+        "email_on_alarm": true,
+        "telegram_on_alarm": true
+      },
+      "created_at": "2026-03-11T00:00:00"
+    },
+    {
+      "id": 10,
+      "enabled": true,
+      "name": "ХРАН. № 10",
+      "description": "Хранилище 10",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 19,
+      "modbus_addr_hum": 20,
+      "temp_limits": {
+        "min": -40.0,
+        "max": 85.0,
+        "warning_delta": 3.0,
+        "alarm_delta": 5.0
+      },
+      "hum_limits": {
+        "min": 0.0,
+        "max": 100.0,
+        "warning_delta": 5.0,
+        "alarm_delta": 10.0
+      },
+      "guarded": true,
+      "notifications": {
+        "email_on_warning": true,
+        "email_on_alarm": true,
+        "telegram_on_alarm": true
+      },
+      "created_at": "2026-03-11T00:00:00"
+    },
+    {
+      "name": "выаа",
+      "description": "ываыв",
+      "modbus_slave_id": 10,
+      "modbus_addr_temp": 21,
+      "modbus_addr_hum": 22,
+      "temp_limits": {
+        "min": -40,
+        "max": 85,
+        "warning_delta": 3,
+        "alarm_delta": 5
+      },
+      "hum_limits": {
+        "min": 0,
+        "max": 100,
+        "warning_delta": 5,
+        "alarm_delta": 10
+      },
+      "guarded": true,
+      "enabled": true,
+      "id": 11,
+      "created_at": "2026-03-11T12:44:07.979097",
+      "notifications": {
+        "email_on_warning": true,
+        "email_on_alarm": true,
+        "telegram_on_alarm": true
+      }
+    },
+    {
+      "name": "ываываыва",
+      "description": "ывава",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 23,
+      "modbus_addr_hum": 24,
+      "temp_limits": {
+        "min": -40,
+        "max": 85,
+        "warning_delta": 3,
+        "alarm_delta": 5
+      },
+      "hum_limits": {
+        "min": 0,
+        "max": 100,
+        "warning_delta": 5,
+        "alarm_delta": 10
+      },
+      "guarded": true,
+      "enabled": true,
+      "id": 12,
+      "created_at": "2026-03-17T17:28:23.389141",
+      "notifications": {
+        "email_on_warning": true,
+        "email_on_alarm": true,
+        "telegram_on_alarm": true
+      }
     }
   ],
   "next_sensor_id": 13
