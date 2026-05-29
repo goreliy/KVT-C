@@ -1,10 +1,19 @@
-flask==2.0.3
 pymodbus==2.5.3
 pyserial==3.5
 sqlalchemy==1.4.46
 apscheduler==3.9.1
 requests==2.28.1
 jsonschema==4.17.3
-Werkzeug==2.0.3
-Jinja2==3.0.3
-MarkupSafe==2.1.1
+
+# Python 3.14+ no longer has ast.Str; old Werkzeug 2.0.x crashes while Flask
+# builds routes. Keep the legacy stack for old Python, use current Flask stack
+# for new Python.
+flask==2.0.3; python_version < "3.14"
+Werkzeug==2.0.3; python_version < "3.14"
+Jinja2==3.0.3; python_version < "3.14"
+MarkupSafe==2.1.1; python_version < "3.14"
+
+flask>=3.1,<4; python_version >= "3.14"
+Werkzeug>=3.1,<4; python_version >= "3.14"
+Jinja2>=3.1,<4; python_version >= "3.14"
+MarkupSafe>=2.1,<4; python_version >= "3.14"

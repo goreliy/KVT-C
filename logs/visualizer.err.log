@@ -992,3 +992,788 @@
 192.168.66.97 - - [28/May/2026 14:05:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
 192.168.66.97 - - [28/May/2026 14:05:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
  * Detected change in 'D:\\123321\\КВТ версия С\\KVT-C\\poller\\app.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\pip\\__pip-runner__.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\pip\\_vendor\\pyproject_hooks\\_in_process\\_in_process.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'D:\\Python\\Python310\\Lib\\runpy.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\serial\\serialwin32.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\serial\\serialutil.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\_pytest\\python.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\_pytest\\pathlib.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\importlib\\__init__.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\_pytest\\assertion\\rewrite.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\_pytest\\main.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\pluggy\\_hooks.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\pluggy\\_manager.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\_pytest\\logging.py', reloading
+ * Detected change in 'D:\\Python\\Python310\\Lib\\site-packages\\_pytest\\terminal.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Detected change in 'C:\\Users\\gorelyi\\Desktop\\УО-4С тест\\Python_empl\\src\\uo4c\\cli\\demo.py', reloading
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 119-278-973
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5000/ (Press CTRL+C to quit)
+127.0.0.1 - - [28/May/2026 17:22:38] "GET /settings/ HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:38] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:22:39] "GET /floorplan HTTP/1.1" 308 -
+127.0.0.1 - - [28/May/2026 17:22:39] "GET /floorplan/ HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:40] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:22:40] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:40] "GET /static/floorplans/d40f167a_01bec5.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:40] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:40] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:22:40] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:40] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:40] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:41] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:41] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:41] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:41] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:41] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:43] "GET /events HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:43] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:22:43] "GET /api/journal/events?limit=50 HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:43] "GET /api/sensors HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:48] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:54] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:54] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:54] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:54] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:54] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:54] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:54] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:54] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:54] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:57] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:22:58] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:00] "GET /sensor/3 HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:00] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:23:00] "GET /api/events?sensor_id=3&limit=30 HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:00] "GET /api/archive/sensor/3?period=24h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:02] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:03] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:04] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:04] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:04] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:04] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:04] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:04] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:04] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:04] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:06] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:07] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:23:08] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:08] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:08] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:08] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:08] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:08] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:08] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:08] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:13] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:13] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:13] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:13] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:13] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:13] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:13] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:13] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:13] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:17] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:18] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:18] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:18] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:18] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:18] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:18] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:18] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:18] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:22] "GET /sensor/3 HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:22] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:23:22] "GET /api/events?sensor_id=3&limit=30 HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:22] "GET /api/archive/sensor/3?period=24h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:26] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:28] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:29] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:29] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:23:29] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:29] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:29] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:29] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:29] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:29] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:30] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:30] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:30] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:30] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [28/May/2026 17:23:30] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:31] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:31] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:31] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:31] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:31] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:31] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:31] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:35] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:35] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:36] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:36] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:36] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:36] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:36] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:36] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:36] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:40] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:40] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:41] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:41] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:41] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:41] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:41] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:41] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:41] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:45] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:45] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:46] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:46] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:46] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:46] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:46] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:46] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:46] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:50] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:51] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:51] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:51] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:51] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:51] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:51] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:51] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:51] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:55] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:56] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:56] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:56] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:56] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:56] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:56] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:56] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:23:56] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:00] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:01] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:01] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:01] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:01] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:01] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:01] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:01] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:01] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:05] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:06] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:06] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:06] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:06] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:06] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:06] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:06] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:06] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:10] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:10] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:11] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:11] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:11] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:11] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:11] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:11] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:11] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:15] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:16] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:16] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:16] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:16] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:16] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:16] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:16] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:16] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:20] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:21] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:21] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:21] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:21] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:21] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:21] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:21] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:21] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:25] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:25] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:26] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:26] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:26] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:26] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:26] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:26] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:26] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:30] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:31] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:31] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:31] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:31] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:31] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:31] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:31] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:31] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:35] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:36] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:36] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:36] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:36] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:36] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:36] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:36] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:36] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:40] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:41] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:41] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:41] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:41] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:41] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:41] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:41] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:41] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:45] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:46] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:46] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:46] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:46] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:46] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:46] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:46] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:46] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:50] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:51] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:51] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:51] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:51] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:51] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:51] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:51] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:51] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:55] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:56] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:56] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:56] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:56] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:56] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:56] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:56] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:24:56] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:00] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:00] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:01] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:01] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:01] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:01] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:01] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:01] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:01] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:05] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:06] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:06] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:06] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:06] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:06] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:06] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:06] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:06] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:10] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:11] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:11] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:11] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:11] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:11] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:11] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:11] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:11] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:15] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:16] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:16] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:16] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:16] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:16] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:16] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:16] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:16] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:21] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:21] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:21] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:21] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:21] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:21] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:21] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:21] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:21] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:26] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:26] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:26] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:26] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:26] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:26] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:26] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:26] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:26] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:31] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:31] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:31] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:31] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:31] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:31] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:31] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:31] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:31] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:36] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:36] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:36] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:36] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:36] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:36] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:36] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:36] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:36] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:41] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:41] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:41] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:41] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:41] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:41] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:41] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:41] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:41] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:46] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:46] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:46] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:46] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:46] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:46] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:46] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:46] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:46] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:51] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:51] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:51] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:51] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:51] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:51] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:51] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:51] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:51] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:56] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:56] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:56] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:56] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:56] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:56] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:56] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:56] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:25:56] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:01] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:01] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:01] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:01] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:01] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:01] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:01] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:01] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:01] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:06] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:06] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:06] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:06] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:06] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:06] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:06] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:06] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:06] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:11] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:11] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:11] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:11] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:11] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:11] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:11] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:11] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:11] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:16] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:16] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:16] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:16] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:16] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:16] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:16] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:16] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:16] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:26:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:27:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:27:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:27:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:27:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:27:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:27:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:27:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:27:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:27:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:28:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:28:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:28:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:28:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:28:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:28:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:28:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:28:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:28:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:29:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:29:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:29:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:29:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:29:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:29:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:29:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:29:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:29:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:30:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:30:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:30:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:30:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:30:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:30:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:30:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:30:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:30:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:31:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:31:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:31:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:31:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:31:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:31:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:31:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:31:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:31:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:32:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:32:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:32:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:32:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:32:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:32:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:32:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:32:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:32:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:33:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:33:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:33:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:33:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:33:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:33:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:33:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:33:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:33:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:34:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:34:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:34:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:34:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:34:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:34:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:34:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:34:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:34:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:35:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:35:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:35:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:35:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:35:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:35:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:35:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:35:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:35:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:36:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:36:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:36:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:36:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:36:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:36:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:36:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:36:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:36:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:37:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:37:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:37:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:37:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:37:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:37:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:37:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:37:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:37:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:38:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:38:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:38:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:38:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:38:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:38:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:38:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:38:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:38:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:39:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:39:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:39:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:39:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:39:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:39:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:39:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:39:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:39:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:40:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:40:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:40:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:40:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:40:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:40:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:40:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:40:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:40:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:41:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:41:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:41:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:41:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:41:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:41:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:41:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:41:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:41:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:42:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:42:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:42:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:42:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:42:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:42:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:42:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:42:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:42:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:43:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:43:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:43:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:43:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:43:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:43:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:43:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:43:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:43:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:44:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:44:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:44:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:44:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:44:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:44:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:44:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:44:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:44:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:45:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:45:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:45:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:45:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:45:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:45:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:45:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:45:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:45:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:46:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:46:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:46:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:46:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:46:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:46:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:46:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:46:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:46:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:47:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:47:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:47:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:47:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:47:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:47:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:47:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:47:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:47:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/current HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/1?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/2?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/3?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/4?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/5?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
+127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -

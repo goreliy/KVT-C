@@ -1,4 +1,15 @@
-flask>=2.0.0
 pymodbus>=2.5.0
 apscheduler>=3.9.0
 watchdog>=2.1.0
+
+# Python 3.14+ is incompatible with old Werkzeug 2.0.x because ast.Str was
+# removed. Use the current Flask stack on new Python.
+flask>=2.0,<4; python_version < "3.14"
+Werkzeug>=2.0,<3; python_version < "3.14"
+Jinja2>=3.0,<4; python_version < "3.14"
+MarkupSafe>=2.1,<4; python_version < "3.14"
+
+flask>=3.1,<4; python_version >= "3.14"
+Werkzeug>=3.1,<4; python_version >= "3.14"
+Jinja2>=3.1,<4; python_version >= "3.14"
+MarkupSafe>=2.1,<4; python_version >= "3.14"
