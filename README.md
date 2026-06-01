@@ -45,6 +45,11 @@ pip install -r requirements.txt
 - Poller API/UI: `http://127.0.0.1:5001/`
 - Poller status API: `http://127.0.0.1:5001/api/poller/status`
 
+## Визуализация актуальности
+- На каждой плашке датчика на главном экране отображается строка `Последние данные: ...`.
+- Время берется из `sensor.temperature.timestamp` (fallback: общий `current.timestamp`).
+- Метка нужна для быстрого контроля свежести данных по каждому датчику.
+
 ## Poller: Modbus transport
 Поддерживаются два режима:
 - `serial` — через COM-порт (RTU)

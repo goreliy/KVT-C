@@ -66,6 +66,11 @@
     <div class="sensor-card__meta">
       Modbus: slave={{ s.modbus_slave_id }}, addr={{ s.modbus_addr_temp }}/{{ s.modbus_addr_hum }}
     </div>
+    <div class="sensor-card__freshness">
+      Последние данные: {{ ((s.temperature.timestamp or data.timestamp or '—').replace('T', ' ')[:19]) if (s.temperature.timestamp or data.timestamp) else '—' }}
+      <br>
+      Получено данных сегодня: <span id="today-count-{{ s.id }}">—</span>
+    </div>
     <div class="sensor-card__mini-chart">
       <canvas id="mini-{{ s.id }}"></canvas>
     </div>
@@ -77,6 +82,14 @@
 {% block scripts %}
 <script>
 const miniCharts = {};
+const todayCounts = {};
+
+function fmtSensorTs(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return String(ts).replace('T', ' ').slice(0, 19);
+  return d.toLocaleString('ru-RU');
+}
 
 function statusBase(status) {
   return status.includes('_') ? status.split('_')[0] : status;
@@ -124,10 +137,32 @@ async function loadMiniCharts() {
   }
 }
 
+function todayIsoRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+  return { from: start.toISOString(), to: end.toISOString() };
+}
+
+async function loadTodayCounts(sensors) {
+  const { from, to } = todayIsoRange();
+  for (const s of sensors) {
+    try {
+      const resp = await fetch(`/api/archive/sensor/${s.id}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+      if (!resp.ok) continue;
+      const result = await resp.json();
+      todayCounts[s.id] = Array.isArray(result.data) ? result.data.length : (result.data_count || 0);
+      const el = document.getElementById(`today-count-${s.id}`);
+      if (el) el.textContent = String(todayCounts[s.id]);
+    } catch (e) {}
+  }
+}
+
 // Init
 const initialSensors = {{ data.sensors | tojson }};
 initMiniCharts(initialSensors);
 loadMiniCharts();
+loadTodayCounts(initialSensors);
 
 // Auto-refresh current values
 setInterval(async () => {
@@ -163,6 +198,11 @@ setInterval(async () => {
           <div class="sensor-card__meta">
             Modbus: slave=${s.modbus_slave_id}, addr=${s.modbus_addr_temp}/${s.modbus_addr_hum}
           </div>
+          <div class="sensor-card__freshness">
+            Последние данные: ${fmtSensorTs((s.temperature && s.temperature.timestamp) || data.timestamp)}
+            <br>
+            Получено данных сегодня: <span id="today-count-${s.id}">${todayCounts[s.id] ?? '—'}</span>
+          </div>
           <div class="sensor-card__mini-chart">
             <canvas id="mini-${s.id}"></canvas>
           </div>
@@ -178,6 +218,7 @@ setInterval(async () => {
     // Re-init mini charts after DOM rebuild
     initMiniCharts(data.sensors);
     loadMiniCharts();
+    loadTodayCounts(data.sensors);
   } catch(e) {}
 }, 5000);
 </script>

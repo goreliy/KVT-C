@@ -1592,3 +1592,49 @@ Traceback (most recent call last):
     raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
 json.decoder.JSONDecodeError: Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)
  * Running on http://127.0.0.1:5001/ (Press CTRL+C to quit)
+127.0.0.1 - - [01/Jun/2026 14:30:00] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:00] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:05] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:05] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:10] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:10] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:15] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:15] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:20] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:20] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:25] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:25] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:30] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:30] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:35] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:35] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:40] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:40] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:45] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:45] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:50] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:50] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:55] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:30:55] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:31:00] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:31:00] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:31:05] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 14:31:05] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+Exception in thread Thread-1 (_run):
+Traceback (most recent call last):
+  File "D:\Python\Python310\lib\threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "D:\Python\Python310\lib\threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 392, in _run
+    self._log_rx(None, {"slave_id": self._config.get("device_slave_id", 0), "function": 3, "description": self._last_error})
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 189, in _log_rx
+    self._log({"timestamp": datetime.now().isoformat(), "direction": "RX", "raw_hex": raw_hex, "parsed": parsed, "response_time_ms": response_time_ms})
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 202, in _log
+    self._write_log_file()
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 210, in _write_log_file
+    self._write_json_atomic(
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 227, in _write_json_atomic
+    os.replace(tmp, path)
+PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\123321\\КВТ версия С\\KVT-C\\data\\modbus_log.json.tmp' -> 'D:\\123321\\КВТ версия С\\KVT-C\\data\\modbus_log.json'
+ * Running on http://127.0.0.1:5001/ (Press CTRL+C to quit)

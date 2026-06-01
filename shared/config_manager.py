@@ -1,6 +1,6 @@
-"""
-Менеджер конфигурации системы КВТ.
-Чтение, запись, валидация и версионирование system_config.json.
+﻿"""
+РњРµРЅРµРґР¶РµСЂ РєРѕРЅС„РёРіСѓСЂР°С†РёРё СЃРёСЃС‚РµРјС‹ РљР’Рў.
+Р§С‚РµРЅРёРµ, Р·Р°РїРёСЃСЊ, РІР°Р»РёРґР°С†РёСЏ Рё РІРµСЂСЃРёРѕРЅРёСЂРѕРІР°РЅРёРµ system_config.json.
 """
 import json
 import os
@@ -25,13 +25,13 @@ def _ensure_dirs():
 
 
 def load_json(path):
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, 'r', encoding='utf-8-sig') as f:
         return json.load(f)
 
 
 def save_json(path, data):
     _ensure_dirs()
-    with open(path, 'w', encoding='utf-8') as f:
+    with open(path, 'w', encoding='utf-8-sig') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
@@ -102,7 +102,7 @@ def save_layout_config(config):
 def _default_theme_config():
     return {
         "theme": "dark",
-        "app_title": "КВТ Мониторинг",
+        "app_title": "РљР’Рў РњРѕРЅРёС‚РѕСЂРёРЅРі",
         "colors": {
             "dark": {
                 "bg_dark": "#1a1a2e",
@@ -190,19 +190,19 @@ def get_sensor_by_id(sensor_id, config=None):
 
 
 def validate_sensor(sensor, existing_sensors=None, exclude_id=None):
-    """Валидация данных датчика. Возвращает список ошибок."""
+    """Р’Р°Р»РёРґР°С†РёСЏ РґР°РЅРЅС‹С… РґР°С‚С‡РёРєР°. Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РѕС€РёР±РѕРє."""
     errors = []
     if not sensor.get('name', '').strip():
-        errors.append('Имя датчика обязательно')
+        errors.append('РРјСЏ РґР°С‚С‡РёРєР° РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ')
     slave_id = sensor.get('modbus_slave_id')
     if slave_id is None or not (1 <= slave_id <= 247):
-        errors.append('Modbus Slave ID должен быть от 1 до 247')
+        errors.append('Modbus Slave ID РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РѕС‚ 1 РґРѕ 247')
     addr_t = sensor.get('modbus_addr_temp')
     addr_h = sensor.get('modbus_addr_hum')
     if addr_t is None or addr_h is None:
-        errors.append('Адреса Modbus обязательны')
+        errors.append('РђРґСЂРµСЃР° Modbus РѕР±СЏР·Р°С‚РµР»СЊРЅС‹')
     elif addr_h != addr_t + 1:
-        errors.append('Адрес влажности должен быть = адрес температуры + 1')
+        errors.append('РђРґСЂРµСЃ РІР»Р°Р¶РЅРѕСЃС‚Рё РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ = Р°РґСЂРµСЃ С‚РµРјРїРµСЂР°С‚СѓСЂС‹ + 1')
 
     # Check uniqueness
     if existing_sensors:
@@ -210,14 +210,14 @@ def validate_sensor(sensor, existing_sensors=None, exclude_id=None):
             if exclude_id and es['id'] == exclude_id:
                 continue
             if es.get('modbus_addr_temp') == addr_t:
-                errors.append(f'Адрес Modbus {addr_t} уже используется датчиком "{es["name"]}"')
+                errors.append(f'РђРґСЂРµСЃ Modbus {addr_t} СѓР¶Рµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР°С‚С‡РёРєРѕРј "{es["name"]}"')
 
     # Limits validation
     for key in ('temp_limits', 'hum_limits'):
         lim = sensor.get(key, {})
         if lim.get('min') is not None and lim.get('max') is not None:
             if lim['min'] >= lim['max']:
-                errors.append(f'{key}: min должен быть меньше max')
+                errors.append(f'{key}: min РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РјРµРЅСЊС€Рµ max')
 
     return errors
 
@@ -239,7 +239,7 @@ def add_sensor(sensor_data, config=None):
 
     config['sensors'].append(sensor_data)
     config['next_sensor_id'] = sensor_data['id'] + 1
-    save_system_config(config, f'Добавлен датчик "{sensor_data["name"]}"')
+    save_system_config(config, f'Р”РѕР±Р°РІР»РµРЅ РґР°С‚С‡РёРє "{sensor_data["name"]}"')
     return sensor_data, []
 
 
@@ -254,9 +254,9 @@ def update_sensor(sensor_id, updates, config=None):
             if errors:
                 return None, errors
             config['sensors'][i] = merged
-            save_system_config(config, f'Обновлён датчик "{merged["name"]}"')
+            save_system_config(config, f'РћР±РЅРѕРІР»С‘РЅ РґР°С‚С‡РёРє "{merged["name"]}"')
             return merged, []
-    return None, ['Датчик не найден']
+    return None, ['Р”Р°С‚С‡РёРє РЅРµ РЅР°Р№РґРµРЅ']
 
 
 def delete_sensor(sensor_id, config=None):
@@ -265,6 +265,6 @@ def delete_sensor(sensor_id, config=None):
     for i, s in enumerate(config['sensors']):
         if s['id'] == sensor_id:
             removed = config['sensors'].pop(i)
-            save_system_config(config, f'Удалён датчик "{removed["name"]}"')
+            save_system_config(config, f'РЈРґР°Р»С‘РЅ РґР°С‚С‡РёРє "{removed["name"]}"')
             return removed, []
-    return None, ['Датчик не найден']
+    return None, ['Р”Р°С‚С‡РёРє РЅРµ РЅР°Р№РґРµРЅ']

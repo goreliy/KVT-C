@@ -217,10 +217,8 @@ class ModbusClient:
                     response_time_ms=elapsed,
                 )
 
-            registers = []
             payload = rx_frame[3:-2]
-            for index in range(0, len(payload), 2):
-                registers.append((payload[index] << 8) | payload[index + 1])
+            registers = [int.from_bytes(payload[index:index + 2], "big") for index in range(0, len(payload), 2)]
             return ModbusExchange(
                 registers=registers,
                 tx_frame=tx_frame,

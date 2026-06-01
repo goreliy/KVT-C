@@ -90,15 +90,14 @@ def start_service(name: str) -> None:
     if pid and not _pid_alive(pid):
         _remove_pid(cfg["pid_file"])
 
-    stdout = open(cfg["stdout"], "a", encoding="utf-8")
-    stderr = open(cfg["stderr"], "a", encoding="utf-8")
     cmd = [sys.executable, "-m", cfg["module"], "--host", cfg["host"], "--port", str(cfg["port"])]
 
     creationflags = 0
     if _is_windows():
         creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
 
-    proc = subprocess.Popen(cmd, cwd=str(ROOT), stdout=stdout, stderr=stderr, creationflags=creationflags)
+    with open(cfg["stdout"], "a", encoding="utf-8") as stdout, open(cfg["stderr"], "a", encoding="utf-8") as stderr:
+        proc = subprocess.Popen(cmd, cwd=str(ROOT), stdout=stdout, stderr=stderr, creationflags=creationflags)
     _write_pid(cfg["pid_file"], proc.pid)
     print(f"{name}: started (pid={proc.pid}, port={cfg['port']})")
 
