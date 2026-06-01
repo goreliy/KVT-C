@@ -1571,3 +1571,24 @@
 127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/poller/status HTTP/1.1" 200 -
 127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/poller/config HTTP/1.1" 200 -
 127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+Traceback (most recent call last):
+  File "D:\Python\Python310\lib\runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "D:\Python\Python310\lib\runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "D:\123321\КВТ версия С\KVT-C\poller\app.py", line 17, in <module>
+    SERVICE = PollerService()
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 26, in __init__
+    self._config = normalized_poller_config()
+  File "D:\123321\КВТ версия С\KVT-C\poller\config.py", line 31, in normalized_poller_config
+    cfg = load_poller_config()
+  File "D:\123321\КВТ версия С\KVT-C\shared\config_manager.py", line 71, in load_poller_config
+    return load_json(POLLER_CONFIG_PATH)
+  File "D:\123321\КВТ версия С\KVT-C\shared\config_manager.py", line 29, in load_json
+    return json.load(f)
+  File "D:\Python\Python310\lib\json\__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "D:\Python\Python310\lib\json\__init__.py", line 335, in loads
+    raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
+json.decoder.JSONDecodeError: Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)
+ * Running on http://127.0.0.1:5001/ (Press CTRL+C to quit)

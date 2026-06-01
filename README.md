@@ -1,308 +1,81 @@
-# КВТ — Комплект контроля температуры и влажности
+﻿# KVT-C
 
-<p align="center">
-  <img src="docs/images/logo.png" alt="КВТ Logo" width="200">
-</p>
+Система мониторинга температуры/влажности с веб-интерфейсом и отдельным Modbus poller.
 
-<p align="center">
-  <a href="#возможности">Возможности</a> •
-  <a href="#архитектура">Архитектура</a> •
-  <a href="#установка">Установка</a> •
-  <a href="#использование">Использование</a> •
-  <a href="#api">API</a> •
-  <a href="#конфигурация">Конфигурация</a>
-</p>
+## Что есть в проекте
+- `visualizer` (Flask, порт `5000`) — веб UI, настройки, API.
+- `poller` (Flask, порт `5001`) — опрос Modbus, лог обменов, текущее состояние.
+- `MocTestServer` — тестовый сервер/генератор данных (опционально).
+- `data/config/*.json` — рабочие конфиги системы.
 
----
-Изменён пользователь делающий коммиты
+## Единая точка запуска
+Запуск/остановка/статус из одного места:
 
-## Описание
-
-**КВТ** — система мониторинга температурно-влажностных режимов на базе датчиков [С2000-ВТ (Болид)](https://bolid.ru/production/s2000-vt.html). Предназначена для автоматического измерения, хранения и визуализации данных о температуре и влажности.
-
-### Ключевые особенности
-
-- 🌡️ Поддержка **произвольного количества** датчиков С2000-ВТ
-- 📊 Веб-интерфейс с интерактивными графиками и мнемосхемой
-- 💾 Гибкое архивирование (SQLite / PostgreSQL / JSON)
-- 🔔 Уведомления по Email и Telegram
-- 🐳 Docker-контейнеризация
-- 🔧 Работа на ARM v7 (контроллеры) и x86_64 (ПК/серверы)
-
----
-
-## Возможности
-
-### Мониторинг
-- Опрос датчиков по Modbus RTU
-- Отображение текущих значений температуры и влажности
-- Цветовая индикация статусов (норма / предупреждение / тревога)
-- Журнал событий с квитированием
-
-### Архивирование
-- Автоматическое сохранение измерений
-- Компрессия данных (схлопывание одинаковых значений)
-- Политики хранения с автоматической ротацией
-- Контроль свободного места на диске
-
-### Визуализация
-- Мнемосхема с перетаскиваемыми плашками датчиков
-- Графики за час / день / неделю / месяц / год
-- Загрузка фоновой подложки
-- Экспорт данных в CSV/JSON
-
-### Уведомления
-- Email при превышении/принижении границ
-- Telegram-бот для оповещений
-- Периодические сводки с графиками
-
----
-.
-## Архитектура
-
-Система состоит из трёх независимых подсистем:
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Modbus Poller  │────▶│ Archive Manager │────▶│ Web Visualizer  │
-│    (порт 5001)  │     │   (порт 5002)   │     │   (порт 5000)   │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-        │                       │                       │
-        ▼                       ▼                       ▼
-  current.json            archive.db              Web UI
-  modbus_log.json         archive.json
+```bash
+python run_kvt.py start
+python run_kvt.py status
+python run_kvt.py stop
 ```
 
-| Подсистема | Назначение |
-|------------|------------|
-| **Modbus Poller** | Опрос датчиков по RS-485, запись в `current.json` |
-| **Archive Manager** | Архивирование данных, компрессия, ротация |
-| **Web Visualizer** | Веб-интерфейс, настройки, уведомления |
+Дополнительно:
 
----
+```bash
+python run_kvt.py restart
+python run_kvt.py start --service poller
+python run_kvt.py stop --service visualizer
+```
+
+Логи:
+- `logs/poller.out.log`, `logs/poller.err.log`
+- `logs/visualizer.out.log`, `logs/visualizer.err.log`
+
+PID-файлы:
+- `.run/poller.pid`
+- `.run/visualizer.pid`
 
 ## Установка
-
-### Требования
-
-- Python 3.8+
-- RS-485 адаптер (USB или встроенный)
-- Датчики С2000-ВТ
-
-### Быстрый старт
-
 ```bash
-# Клонирование репозитория
-git clone https://github.com/your-org/kvt.git
-cd kvt
-
-# Создание виртуального окружения
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# или
-venv\Scripts\activate     # Windows
-
-# Установка зависимостей
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
-
-# Запуск всех подсистем
-python -m poller.app --port 5001 &
-python -m archiver.app --port 5002 &
-python -m visualizer.app --port 5000
 ```
 
-### Docker
+## Адреса сервисов
+- Visualizer UI: `http://127.0.0.1:5000/`
+- Poller API/UI: `http://127.0.0.1:5001/`
+- Poller status API: `http://127.0.0.1:5001/api/poller/status`
 
-```bash
-# Сборка и запуск
-docker-compose up -d
+## Poller: Modbus transport
+Поддерживаются два режима:
+- `serial` — через COM-порт (RTU)
+- `udp` — нативный RTU-over-UDP (RTU кадр + CRC через UDP сокет)
 
-# Просмотр логов
-docker-compose logs -f
-```
-
----
-
-## Использование
-
-### Веб-интерфейс
-
-После запуска откройте в браузере: **http://localhost:5000**
-
-| Страница | URL | Описание |
-|----------|-----|----------|
-| Главная | `/` | Мнемосхема с датчиками |
-| Датчик | `/sensor/{id}` | Детальный просмотр и графики |
-| Настройки | `/settings` | Конфигурация системы |
-| События | `/events` | Журнал тревог |
-
-### Добавление датчиков
-
-1. Перейдите в **Настройки → Датчики**
-2. Нажмите **"Добавить датчик"**
-3. Укажите:
-   - Название
-   - Modbus Slave ID
-   - Адреса регистров (чётный — температура, нечётный — влажность)
-   - Границы допустимых значений
-
----
-
-## API
-
-### Modbus Poller (порт 5001)
-
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/poller/status` | Статус опросчика |
-| GET | `/api/poller/current` | Текущие значения |
-| GET | `/api/poller/log` | Лог обмена Modbus |
-| GET | `/api/poller/ports` | Доступные COM-порты |
-| POST | `/api/poller/start` | Запустить опрос |
-| POST | `/api/poller/stop` | Остановить опрос |
-
-### Archive Manager (порт 5002)
-
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/archive/status` | Статус архива |
-| GET | `/api/archive/query` | Запрос данных |
-| GET | `/api/archive/events` | Журнал событий |
-| POST | `/api/archive/events/{id}/ack` | Квитировать |
-| GET | `/api/archive/export` | Экспорт CSV/JSON |
-
-### Web Visualizer (порт 5000)
-
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| GET | `/api/sensors` | Список датчиков |
-| POST | `/api/sensors` | Добавить датчик |
-| PUT | `/api/sensors/{id}` | Обновить датчик |
-| DELETE | `/api/sensors/{id}` | Удалить датчик |
-| GET | `/api/config` | Конфигурация |
-| GET | `/api/config/history` | История изменений |
-| GET | `/api/theme` | Настройки оформления |
-| POST | `/api/theme` | Сохранить оформление |
-
----
-
-## Конфигурация
-
-### Структура файлов конфигурации
-
-```
-data/config/
-├── system_config.json      # Датчики и общие настройки
-├── poller_config.json      # Параметры Modbus
-├── archive_config.json     # Настройки архивирования
-├── layout.json             # Расположение плашек
-├── theme_config.json       # Оформление (темы, цвета, название)
-├── notifications.json      # Email/Telegram
-└── backups/                # Резервные копии
-```
-
-### Пример system_config.json
+Ключи в `data/config/poller_config.json`:
 
 ```json
 {
-  "config_version": "1.0.0",
-  "system": {
-    "name": "КВТ-10",
-    "location": "Склад №1"
-  },
-  "sensors": [
-    {
-      "id": 1,
-      "name": "ХРАН. № 1",
-      "modbus_slave_id": 16,
-      "modbus_addr_temp": 1,
-      "modbus_addr_hum": 2,
-      "temp_limits": {"min": -40, "max": 85},
-      "hum_limits": {"min": 0, "max": 100}
-    }
-  ]
+  "transport": "serial",
+  "com_port": "COM8",
+  "baudrate": 9600,
+  "bytesize": 8,
+  "parity": "N",
+  "stopbits": 1,
+  "udp_host": "127.0.0.1",
+  "udp_port": 502,
+  "timeout_ms": 500
 }
 ```
 
-### Адресация Modbus
+Переключение режима также доступно в UI:
+`Settings -> Poller`.
 
-| Тип регистра | Базовый адрес | Описание |
-|--------------|---------------|----------|
-| Значения | 30000 + N | Температура (чёт), влажность (нечёт) |
-| Статусы | 40000 + N | Статус канала |
+## Быстрый smoke-test
+1. `python run_kvt.py start`
+2. Открыть `http://127.0.0.1:5000/`
+3. Проверить `http://127.0.0.1:5001/api/poller/status`
+4. `python run_kvt.py stop`
 
----
-
-## Структура проекта
-
-```
-kvt/
-├── poller/                 # Подсистема опроса Modbus
-│   ├── app.py
-│   ├── modbus_client.py
-│   └── poller_service.py
-│
-├── archiver/               # Подсистема архивирования
-│   ├── app.py
-│   ├── archive_service.py
-│   └── storage/
-│
-├── visualizer/             # Веб-интерфейс
-│   ├── app.py
-│   ├── routes/
-│   ├── static/
-│   └── templates/
-│
-├── shared/                 # Общие модули
-├── data/                   # Данные и конфигурация
-├── tests/                  # Тесты
-│
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-└── README.md
-```
-
----
-
-## Требования к оборудованию
-
-### Минимальные
-
-- CPU: ARM v7 / x86_64, 2 ядра
-- RAM: 512 MB
-- Диск: 1 GB
-
-### Рекомендуемые
-
-- CPU: ARM v7 4 ядра / x86_64
-- RAM: 1 GB
-- Диск: 10+ GB (для архива на год)
-
----
-
-## Лицензия
-
-MIT License — см. файл [LICENSE](LICENSE)
-
----
-
-## Поддержка
-
-- 📖 [Документация](docs/)
-- 🐛 [Сообщить об ошибке](https://github.com/your-org/kvt/issues)
-- 💬 [Обсуждения](https://github.com/your-org/kvt/discussions)
-
----
-
-## Ссылки
-
-- [Датчик С2000-ВТ (Болид)](https://bolid.ru/production/s2000-vt.html)
-- [pymodbus](https://pymodbus.readthedocs.io/)
-- [Flask](https://flask.palletsprojects.com/)
-
----
-
-<p align="center">
-  <sub>Разработано с ❤️ для автоматизации мониторинга</sub>
-</p>
+## Замечания по проекту (актуальные)
+- В репозитории нет подсистемы `archiver` (старые упоминания удалены из документации).
+- Docker/compose артефактов в текущем дереве нет.
+- Основной поддерживаемый сценарий запуска: `run_kvt.py`.

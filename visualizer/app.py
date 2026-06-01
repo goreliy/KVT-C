@@ -2,10 +2,14 @@
 Flask-приложение Web Visualizer (Подсистема 3).
 Порт: 5000
 """
+import argparse
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from shared.python_compat import patch_legacy_werkzeug_ast
+patch_legacy_werkzeug_ast()
 
 from flask import Flask
 from shared.config_manager import load_theme_config
@@ -46,5 +50,11 @@ def create_app():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='KVT Web Visualizer')
+    parser.add_argument('--host', default='0.0.0.0')
+    parser.add_argument('--port', type=int, default=5000)
+    parser.add_argument('--debug', action='store_true')
+    args = parser.parse_args()
+
     app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host=args.host, port=args.port, debug=args.debug)

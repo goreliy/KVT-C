@@ -1,9 +1,8 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}Настройки Modbus{% endblock %}
 
 {% block content %}
 <h1 class="page-title">Настройки Modbus опросчика</h1>
-
 {% include "settings/_nav.html" %}
 
 <div class="form-section">
@@ -60,9 +59,16 @@
 </div>
 
 <div class="form-section">
-  <div class="form-section__title">Параметры COM-порта</div>
+  <div class="form-section__title">Параметры подключения Modbus</div>
   <div class="form-row">
     <div class="form-group">
+      <label>Транспорт</label>
+      <select id="p-transport">
+        <option value="serial" {{ 'selected' if (poller.transport or 'serial') == 'serial' }}>COM</option>
+        <option value="udp" {{ 'selected' if (poller.transport or 'serial') == 'udp' }}>UDP</option>
+      </select>
+    </div>
+    <div class="form-group serial-only">
       <label>COM-порт</label>
       <input type="text" id="p-com" value="{{ poller.com_port }}">
     </div>
@@ -70,7 +76,7 @@
       <label>Адрес Modbus устройства (Slave ID)</label>
       <input type="number" id="p-device-slave" value="{{ poller.device_slave_id or 16 }}" min="1" max="247">
     </div>
-    <div class="form-group">
+    <div class="form-group serial-only">
       <label>Скорость (бод)</label>
       <select id="p-baud">
         {% for b in [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200] %}
@@ -79,7 +85,17 @@
       </select>
     </div>
   </div>
-  <div class="form-row">
+  <div class="form-row udp-only">
+    <div class="form-group">
+      <label>UDP IP</label>
+      <input type="text" id="p-udp-host" value="{{ poller.udp_host or '127.0.0.1' }}">
+    </div>
+    <div class="form-group">
+      <label>UDP порт</label>
+      <input type="number" id="p-udp-port" value="{{ poller.udp_port or 502 }}" min="1" max="65535">
+    </div>
+  </div>
+  <div class="form-row serial-only">
     <div class="form-group">
       <label>Биты данных</label>
       <select id="p-bytesize">
@@ -107,7 +123,7 @@
     <input id="scan-start" type="number" min="1" max="247" value="1" style="width:100px;">
     <input id="scan-end" type="number" min="1" max="247" value="32" style="width:100px;">
     <input id="scan-timeout" type="number" min="50" max="10000" value="500" style="width:120px;">
-    <button class="btn" onclick="scanModbusDevices()">Поиск Modbus устройств на COM</button>
+    <button class="btn" onclick="scanModbusDevices()">Поиск Modbus устройств</button>
     <button class="btn" onclick="openPollerServicePage()">Открыть страницу Poller</button>
     <div id="scan-result" style="margin-top:10px;">—</div>
   </div>
@@ -150,8 +166,15 @@
 
 {% block scripts %}
 <script>
+function refreshTransportFields() {
+  const transport = document.getElementById('p-transport').value;
+  document.querySelectorAll('.serial-only').forEach(el => { el.style.display = transport === 'serial' ? '' : 'none'; });
+  document.querySelectorAll('.udp-only').forEach(el => { el.style.display = transport === 'udp' ? '' : 'none'; });
+}
+
 async function savePoller() {
   const data = {
+    transport: document.getElementById('p-transport').value,
     auto_start: document.getElementById('p-auto-start').checked,
     use_mock_server: document.getElementById('p-use-mock').checked,
     mock_server_url: document.getElementById('p-mock-url').value.trim(),
@@ -161,6 +184,8 @@ async function savePoller() {
     bytesize: parseInt(document.getElementById('p-bytesize').value),
     parity: document.getElementById('p-parity').value,
     stopbits: parseInt(document.getElementById('p-stopbits').value),
+    udp_host: document.getElementById('p-udp-host').value.trim(),
+    udp_port: parseInt(document.getElementById('p-udp-port').value || '0'),
     poll_period_ms: parseInt(document.getElementById('p-period').value),
     timeout_ms: parseInt(document.getElementById('p-timeout').value),
     retry_count: parseInt(document.getElementById('p-retry').value),
@@ -168,11 +193,17 @@ async function savePoller() {
     status_register_base: parseInt(document.getElementById('p-stat-base').value),
     log_max_entries: parseInt(document.getElementById('p-log-max').value)
   };
+
+  if (data.transport === 'udp') {
+    if (!data.udp_host) throw new Error('UDP IP обязателен');
+    if (!(data.udp_port >= 1 && data.udp_port <= 65535)) throw new Error('UDP порт должен быть 1..65535');
+  }
+
   await apiFetch('/api/poller/config', { method: 'POST', body: JSON.stringify(data) });
   showToast('Настройки Modbus сохранены');
 }
 
-async function refreshMockStatus() {
+async function refreshMockStatus() { /* unchanged */
   try {
     const data = await apiFetch('/api/mockserver/status');
     const status = data.reachable ? 'доступен' : 'недоступен';
@@ -183,63 +214,31 @@ async function refreshMockStatus() {
   }
 }
 
-async function startMockServer() {
-  await apiFetch('/api/mockserver/start', { method: 'POST' });
-  showToast('Mock Server запущен');
-  await refreshMockStatus();
-}
-
-async function stopMockServer() {
-  await apiFetch('/api/mockserver/stop', { method: 'POST' });
-  showToast('Mock Server остановлен');
-  await refreshMockStatus();
-}
-
-function openMockServerPage() {
-  const url = document.getElementById('p-mock-url').value.trim() || 'http://127.0.0.1:8000';
-  window.open(url, '_blank');
-}
-
+async function startMockServer(){ await apiFetch('/api/mockserver/start',{method:'POST'}); showToast('Mock Server запущен'); await refreshMockStatus(); }
+async function stopMockServer(){ await apiFetch('/api/mockserver/stop',{method:'POST'}); showToast('Mock Server остановлен'); await refreshMockStatus(); }
+function openMockServerPage(){ const url=document.getElementById('p-mock-url').value.trim()||'http://127.0.0.1:8000'; window.open(url,'_blank'); }
 refreshMockStatus();
 
-async function refreshPollerStatus() {
+async function refreshPollerStatus(){
   try {
     const data = await apiFetch('/api/poller/status');
     const err = data.last_error ? `, ошибка: ${data.last_error}` : '';
-    document.getElementById('poller-status').textContent =
-      `${data.state}, опросов: ${data.total_polls || 0}, успешных: ${data.successful_polls || 0}, неуспешных: ${data.failed_polls || 0}${err}`;
-  } catch (e) {
-    document.getElementById('poller-status').textContent = 'poller недоступен';
-  }
+    document.getElementById('poller-status').textContent = `${data.state}, опросов: ${data.total_polls || 0}, успешных: ${data.successful_polls || 0}, неуспешных: ${data.failed_polls || 0}${err}`;
+  } catch (e) { document.getElementById('poller-status').textContent = 'poller недоступен'; }
 }
 
-async function refreshPollerLog() {
+async function refreshPollerLog(){
   try {
     const data = await apiFetch('/api/poller/log?limit=20');
     const entries = data.entries || [];
-    if (!entries.length) {
-      document.getElementById('poller-log').textContent = 'Лог пуст';
-      return;
-    }
-    const lines = entries.map(e => {
-      const ts = e.timestamp || '';
-      const dir = e.direction || '';
-      const desc = (e.parsed && e.parsed.description) ? e.parsed.description : '';
-      const rt = e.response_time_ms != null ? `, ${e.response_time_ms} ms` : '';
-      return `[${ts}] ${dir}: ${desc}${rt}`;
-    });
-    document.getElementById('poller-log').textContent = lines.join('\n');
-  } catch (e) {
-    document.getElementById('poller-log').textContent = `Ошибка чтения лога: ${e.message}`;
-  }
+    if (!entries.length) { document.getElementById('poller-log').textContent = 'Лог пуст'; return; }
+    document.getElementById('poller-log').textContent = entries.map(e => `[${e.timestamp || ''}] ${e.direction || ''}: ${(e.parsed && e.parsed.description) ? e.parsed.description : ''}${e.response_time_ms != null ? `, ${e.response_time_ms} ms` : ''}`).join('\n');
+  } catch (e) { document.getElementById('poller-log').textContent = `Ошибка чтения лога: ${e.message}`; }
 }
 
-async function refreshPollerAll() {
-  await refreshPollerStatus();
-  await refreshPollerLog();
-}
+async function refreshPollerAll(){ await refreshPollerStatus(); await refreshPollerLog(); }
 
-async function scanModbusDevices() {
+async function scanModbusDevices(){
   const resultEl = document.getElementById('scan-result');
   resultEl.textContent = 'Сканирование...';
   try {
@@ -248,45 +247,25 @@ async function scanModbusDevices() {
     const timeout = parseInt(document.getElementById('scan-timeout').value || '500');
     const data = await apiFetch(`/api/poller/scan?start_id=${start}&end_id=${end}&timeout_ms=${timeout}`);
     const found = data.found || [];
-    if (!found.length) {
-      resultEl.textContent = 'Устройства не найдены';
-      return;
-    }
-    resultEl.textContent = `Найдено: ${found.map(x => x.slave_id).join(', ')}`;
-  } catch (e) {
-    resultEl.textContent = `Ошибка поиска: ${e.message}`;
-  }
+    resultEl.textContent = found.length ? `Найдено: ${found.map(x => x.slave_id).join(', ')}` : 'Устройства не найдены';
+  } catch (e) { resultEl.textContent = `Ошибка поиска: ${e.message}`; }
 }
 
-async function openPollerServicePage() {
+async function openPollerServicePage(){
   try {
     const net = await apiFetch('/api/network/config');
     const host = (net.poller_host === '0.0.0.0' || !net.poller_host) ? window.location.hostname : net.poller_host;
     const port = net.poller_port || 5001;
     window.open(`http://${host}:${port}/`, '_blank');
-  } catch (e) {
-    window.open(`http://${window.location.hostname}:5001/`, '_blank');
-  }
+  } catch (e) { window.open(`http://${window.location.hostname}:5001/`, '_blank'); }
 }
 
-async function startPoller() {
-  await apiFetch('/api/poller/start', { method: 'POST' });
-  showToast('Poller запущен');
-  await refreshPollerAll();
-}
+async function startPoller(){ await apiFetch('/api/poller/start',{method:'POST'}); showToast('Poller запущен'); await refreshPollerAll(); }
+async function stopPoller(){ await apiFetch('/api/poller/stop',{method:'POST'}); showToast('Poller остановлен'); await refreshPollerAll(); }
+async function reloadPoller(){ await apiFetch('/api/poller/reload',{method:'POST'}); showToast('Конфигурация датчиков обновлена'); await refreshPollerAll(); }
 
-async function stopPoller() {
-  await apiFetch('/api/poller/stop', { method: 'POST' });
-  showToast('Poller остановлен');
-  await refreshPollerAll();
-}
-
-async function reloadPoller() {
-  await apiFetch('/api/poller/reload', { method: 'POST' });
-  showToast('Конфигурация датчиков обновлена');
-  await refreshPollerAll();
-}
-
+refreshTransportFields();
+document.getElementById('p-transport').addEventListener('change', refreshTransportFields);
 refreshPollerAll();
 setInterval(refreshPollerAll, 5000);
 </script>

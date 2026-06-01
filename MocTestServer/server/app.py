@@ -4,6 +4,13 @@
 
 import json
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from shared.python_compat import patch_legacy_werkzeug_ast
+patch_legacy_werkzeug_ast()
+
 from flask import Flask, render_template, jsonify, request
 
 from .mock_modbus.api import modbus_api, init_server as init_modbus, get_server as get_modbus

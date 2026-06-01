@@ -1,4 +1,5 @@
-import time
+﻿import time
+import socket
 from dataclasses import dataclass
 from typing import List
 
@@ -57,9 +58,20 @@ class ModbusClient:
     def __init__(self, config):
         self.config = config
         self.client = None
+        self.transport = str(self.config.get("transport", "serial")).lower()
 
     def connect(self) -> bool:
         self.close()
+        self.transport = str(self.config.get("transport", "serial")).lower()
+        if self.transport == "udp":
+            try:
+                self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.client.settimeout(float(self.config["timeout_ms"]) / 1000.0)
+                return True
+            except OSError:
+                self.client = None
+                return False
+
         try:
             self.client = serial.Serial(
                 port=self.config["com_port"],
@@ -114,39 +126,65 @@ class ModbusClient:
         tx_frame = request + bytes([crc & 0xFF, (crc >> 8) & 0xFF])
 
         try:
-            self.client.reset_input_buffer()
+            if self.transport == "serial":
+                self.client.reset_input_buffer()
         except Exception:
             pass
 
         started = time.perf_counter()
         try:
-            self.client.write(tx_frame)
-            self.client.flush()
-            header = self.client.read(3)
-            if len(header) < 3:
+            if self.transport == "udp":
+                host = str(self.config.get("udp_host", "127.0.0.1")).strip()
+                port = int(self.config.get("udp_port", 502))
+                self.client.sendto(tx_frame, (host, port))
+                rx_frame, _ = self.client.recvfrom(2048)
                 elapsed = round((time.perf_counter() - started) * 1000, 2)
-                raise ModbusError(
-                    f"No response: slave={slave_id}, function={function}, addr={start_addr}, count={count}",
-                    tx_frame=tx_frame,
-                    rx_frame=header,
-                    response_time_ms=elapsed,
-                )
+            else:
+                self.client.write(tx_frame)
+                self.client.flush()
+                header = self.client.read(3)
+                if len(header) < 3:
+                    elapsed = round((time.perf_counter() - started) * 1000, 2)
+                    raise ModbusError(
+                        f"No response: slave={slave_id}, function={function}, addr={start_addr}, count={count}",
+                        tx_frame=tx_frame,
+                        rx_frame=header,
+                        response_time_ms=elapsed,
+                    )
 
-            if header[1] & 0x80:
-                tail = self.client.read(2)
+                if header[1] & 0x80:
+                    tail = self.client.read(2)
+                    rx_frame = header + tail
+                    elapsed = round((time.perf_counter() - started) * 1000, 2)
+                    raise ModbusError(
+                        f"Modbus exception: slave={slave_id}, function={function}, code={header[2]}",
+                        tx_frame=tx_frame,
+                        rx_frame=rx_frame,
+                        response_time_ms=elapsed,
+                    )
+
+                byte_count = header[2]
+                tail = self.client.read(byte_count + 2)
                 rx_frame = header + tail
                 elapsed = round((time.perf_counter() - started) * 1000, 2)
+
+            if len(rx_frame) < 5:
                 raise ModbusError(
-                    f"Modbus exception: slave={slave_id}, function={function}, code={header[2]}",
+                    f"Incomplete response: got={len(rx_frame)}, expected>=5",
                     tx_frame=tx_frame,
                     rx_frame=rx_frame,
                     response_time_ms=elapsed,
                 )
 
-            byte_count = header[2]
-            tail = self.client.read(byte_count + 2)
-            rx_frame = header + tail
-            elapsed = round((time.perf_counter() - started) * 1000, 2)
+            if rx_frame[1] & 0x80:
+                raise ModbusError(
+                    f"Modbus exception: slave={slave_id}, function={function}, code={rx_frame[2]}",
+                    tx_frame=tx_frame,
+                    rx_frame=rx_frame,
+                    response_time_ms=elapsed,
+                )
+
+            byte_count = rx_frame[2]
             expected_len = 3 + byte_count + 2
             if len(rx_frame) != expected_len:
                 raise ModbusError(
@@ -189,6 +227,6 @@ class ModbusClient:
                 rx_frame=rx_frame,
                 response_time_ms=elapsed,
             )
-        except serial.SerialException as exc:
+        except (serial.SerialException, socket.timeout, OSError) as exc:
             elapsed = round((time.perf_counter() - started) * 1000, 2)
             raise ModbusError(str(exc), tx_frame=tx_frame, response_time_ms=elapsed) from exc

@@ -5,35 +5,35 @@
       "name": "первый",
       "description": "",
       "parent_id": null,
-      "background": "/static/floorplans/d40f167a_01bec5.jpg",
+      "background": "/static/floorplans/d40f167a_b3c6ed.png",
       "bg_type": "image",
       "canvas_width": 1200,
       "canvas_height": 800,
       "sensors": [
         {
           "sensor_id": 4,
-          "x": 28.46,
-          "y": 12.27
+          "x": 6.82812,
+          "y": 57.7136
         },
         {
           "sensor_id": 3,
-          "x": 47.7225,
-          "y": 23.3286
+          "x": 5.40751,
+          "y": 49.5876
         },
         {
           "sensor_id": 5,
-          "x": 68.69,
-          "y": 17.93
+          "x": 84.9139,
+          "y": 36.0355
         },
         {
           "sensor_id": 7,
-          "x": 22.9575,
-          "y": 21.58
+          "x": 6.82847,
+          "y": 40.7647
         },
         {
           "sensor_id": 8,
-          "x": 55.22,
-          "y": 9.23
+          "x": 91.5578,
+          "y": 28.8943
         },
         {
           "sensor_id": 9,
@@ -47,8 +47,8 @@
         },
         {
           "sensor_id": 1,
-          "x": 9.58,
-          "y": 13.05
+          "x": 9.86463,
+          "y": 67.3665
         }
       ]
     },

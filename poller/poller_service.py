@@ -70,7 +70,10 @@ class PollerService:
         return {
             "state": self._state,
             "running": self._running,
+            "transport": self._config.get("transport", "serial"),
             "com_port": self._config.get("com_port"),
+            "udp_host": self._config.get("udp_host"),
+            "udp_port": self._config.get("udp_port"),
             "device_slave_id": self._config.get("device_slave_id"),
             "last_error": self._last_error,
             "last_poll_at": self._last_poll_at,
@@ -121,7 +124,10 @@ class PollerService:
         found = []
 
         if not scan_client.connect():
-            message = f"Cannot open port {self._config['com_port']}"
+            if str(self._config.get("transport", "serial")).lower() == "udp":
+                message = f"Cannot reach UDP endpoint {self._config.get('udp_host')}:{self._config.get('udp_port')}"
+            else:
+                message = f"Cannot open port {self._config['com_port']}"
             self._log_rx(None, {"slave_id": 0, "function": 3, "description": f"Scan: {message}"})
             return {"status": "error", "error": message, "found": []}
 
@@ -154,7 +160,10 @@ class PollerService:
 
         return {
             "status": "ok",
+            "transport": self._config.get("transport", "serial"),
             "com_port": self._config["com_port"],
+            "udp_host": self._config.get("udp_host"),
+            "udp_port": self._config.get("udp_port"),
             "timeout_ms": timeout_ms,
             "probe_address": status_base,
             "range": {"start": start_id, "end": end_id},
@@ -376,7 +385,10 @@ class PollerService:
 
             if not self._modbus.connect():
                 self._state = "error"
-                self._last_error = f"Cannot open port {self._config['com_port']}"
+                if str(self._config.get("transport", "serial")).lower() == "udp":
+                    self._last_error = f"Cannot reach UDP endpoint {self._config.get('udp_host')}:{self._config.get('udp_port')}"
+                else:
+                    self._last_error = f"Cannot open port {self._config['com_port']}"
                 self._log_rx(None, {"slave_id": self._config.get("device_slave_id", 0), "function": 3, "description": self._last_error})
                 time.sleep(reconnect_pause)
                 continue
@@ -416,8 +428,11 @@ class PollerService:
 
                 payload = {
                     "timestamp": now_iso,
+                    "transport": self._config.get("transport", "serial"),
                     "poll_period_ms": int(self._config["poll_period_ms"]),
                     "com_port": self._config["com_port"],
+                    "udp_host": self._config.get("udp_host"),
+                    "udp_port": self._config.get("udp_port"),
                     "baudrate": int(self._config["baudrate"]),
                     "sensors": out_sensors,
                     "stats": {**self._stats, "last_error": self._last_error},

@@ -4,10 +4,12 @@ import json
 import os
 import sys
 
-from flask import Flask, jsonify, render_template_string, request
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from shared.python_compat import patch_legacy_werkzeug_ast
+patch_legacy_werkzeug_ast()
+
+from flask import Flask, jsonify, render_template_string, request
 from shared.config_manager import load_poller_config
 from .poller_service import PollerService
 

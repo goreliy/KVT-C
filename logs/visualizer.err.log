@@ -1777,3 +1777,5 @@
 127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/6?period=6h HTTP/1.1" 200 -
 127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/7?period=6h HTTP/1.1" 200 -
 127.0.0.1 - - [28/May/2026 17:48:24] "GET /api/archive/sensor/8?period=6h HTTP/1.1" 200 -
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+ * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)

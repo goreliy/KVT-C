@@ -1,4 +1,4 @@
-"""REST API для фронтенда."""
+﻿"""REST API РґР»СЏ С„СЂРѕРЅС‚РµРЅРґР°."""
 import json
 import os
 import sys
@@ -70,16 +70,16 @@ def _poller_call(method: str, path: str, payload=None):
             try:
                 data = response.json()
             except ValueError:
-                data = {'error': f'Poller вернул некорректный JSON (HTTP {response.status_code})'}
+                data = {'error': f'Poller РІРµСЂРЅСѓР» РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ JSON (HTTP {response.status_code})'}
                 return data, 502
             return data, response.status_code
         text = (response.text or '').strip()
         snippet = text[:300] if text else '<empty>'
-        return {'error': f'Poller вернул не-JSON ответ (HTTP {response.status_code}): {snippet}'}, 502
+        return {'error': f'Poller РІРµСЂРЅСѓР» РЅРµ-JSON РѕС‚РІРµС‚ (HTTP {response.status_code}): {snippet}'}, 502
     except requests.RequestException as ex:
-        return {'error': f'Poller недоступен: {ex}'}, 502
+        return {'error': f'Poller РЅРµРґРѕСЃС‚СѓРїРµРЅ: {ex}'}, 502
     except Exception as ex:
-        return {'error': f'Ошибка проксирования Poller: {ex}'}, 500
+        return {'error': f'РћС€РёР±РєР° РїСЂРѕРєСЃРёСЂРѕРІР°РЅРёСЏ Poller: {ex}'}, 500
 
 
 def _load_archive():
@@ -107,7 +107,7 @@ def api_current():
         with open(path, 'r', encoding='utf-8') as f:
             return jsonify(json.load(f))
     except (FileNotFoundError, json.JSONDecodeError):
-        return jsonify({'error': 'Нет данных'}), 404
+        return jsonify({'error': 'РќРµС‚ РґР°РЅРЅС‹С…'}), 404
 
 
 @api_bp.route('/config')
@@ -119,8 +119,8 @@ def api_config():
 def api_save_config():
     data = request.get_json()
     if not data:
-        return jsonify({'error': 'Нет данных'}), 400
-    config = save_system_config(data, data.get('_change_description', 'Обновление через API'))
+        return jsonify({'error': 'РќРµС‚ РґР°РЅРЅС‹С…'}), 400
+    config = save_system_config(data, data.get('_change_description', 'РћР±РЅРѕРІР»РµРЅРёРµ С‡РµСЂРµР· API'))
     return jsonify(config)
 
 
@@ -136,14 +136,14 @@ def api_sensor(sensor_id):
     s = get_sensor_by_id(sensor_id)
     if s:
         return jsonify(s)
-    return jsonify({'error': 'Датчик не найден'}), 404
+    return jsonify({'error': 'Р”Р°С‚С‡РёРє РЅРµ РЅР°Р№РґРµРЅ'}), 404
 
 
 @api_bp.route('/sensors', methods=['POST'])
 def api_add_sensor():
     data = request.get_json()
     if not data:
-        return jsonify({'error': 'Нет данных'}), 400
+        return jsonify({'error': 'РќРµС‚ РґР°РЅРЅС‹С…'}), 400
     sensor, errors = add_sensor(data)
     if errors:
         return jsonify({'errors': errors}), 400
@@ -154,7 +154,7 @@ def api_add_sensor():
 def api_update_sensor(sensor_id):
     data = request.get_json()
     if not data:
-        return jsonify({'error': 'Нет данных'}), 400
+        return jsonify({'error': 'РќРµС‚ РґР°РЅРЅС‹С…'}), 400
     sensor, errors = update_sensor(sensor_id, data)
     if errors:
         return jsonify({'errors': errors}), 400
@@ -180,7 +180,23 @@ def api_poller_config():
 def api_save_poller_config():
     data = request.get_json()
     if not data:
-        return jsonify({'error': 'Нет данных'}), 400
+        return jsonify({'error': 'РќРµС‚ РґР°РЅРЅС‹С…'}), 400
+    transport = str(data.get('transport', 'serial')).lower()
+    if transport not in ('serial', 'udp'):
+        return jsonify({'error': 'transport должен быть serial или udp'}), 400
+    data['transport'] = transport
+    if transport == 'udp':
+        udp_host = str(data.get('udp_host', '')).strip()
+        if not udp_host:
+            return jsonify({'error': 'udp_host обязателен для UDP'}), 400
+        try:
+            udp_port = int(data.get('udp_port'))
+        except (TypeError, ValueError):
+            return jsonify({'error': 'udp_port должен быть числом'}), 400
+        if not (1 <= udp_port <= 65535):
+            return jsonify({'error': 'udp_port должен быть в диапазоне 1..65535'}), 400
+        data['udp_host'] = udp_host
+        data['udp_port'] = udp_port
     save_poller_config(data)
     return jsonify(data)
 
@@ -281,7 +297,7 @@ def api_mockserver_start():
         except requests.RequestException:
             pass
         return jsonify({'status': 'ok', **_mock_status_payload()})
-    return jsonify({'error': 'Не удалось запустить Mock Server'}), 500
+    return jsonify({'error': 'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ Mock Server'}), 500
 
 
 @api_bp.route('/mockserver/stop', methods=['POST'])
@@ -315,10 +331,10 @@ def api_network_config():
 def api_save_network_config():
     data = request.get_json()
     if not data:
-        return jsonify({'error': 'Нет данных'}), 400
+        return jsonify({'error': 'РќРµС‚ РґР°РЅРЅС‹С…'}), 400
     config = load_system_config()
     config['network'] = data
-    save_system_config(config, 'Обновлены сетевые настройки')
+    save_system_config(config, 'РћР±РЅРѕРІР»РµРЅС‹ СЃРµС‚РµРІС‹Рµ РЅР°СЃС‚СЂРѕР№РєРё')
     return jsonify(data)
 
 
@@ -327,7 +343,7 @@ def api_save_network_config():
 @api_bp.route('/archive/sensor/<int:sensor_id>')
 def api_archive_sensor(sensor_id):
     """
-    Архивные данные датчика.
+    РђСЂС…РёРІРЅС‹Рµ РґР°РЅРЅС‹Рµ РґР°С‚С‡РёРєР°.
     Query params:
       period: 1h, 6h, 24h, 7d, 30d (default: 24h)
       from: ISO datetime
@@ -337,7 +353,7 @@ def api_archive_sensor(sensor_id):
     sensor_key = str(sensor_id)
     sensor_data = archive.get('sensors', {}).get(sensor_key)
     if not sensor_data:
-        return jsonify({'error': 'Нет архивных данных для датчика'}), 404
+        return jsonify({'error': 'РќРµС‚ Р°СЂС…РёРІРЅС‹С… РґР°РЅРЅС‹С… РґР»СЏ РґР°С‚С‡РёРєР°'}), 404
 
     # Parse period or from/to
     period = request.args.get('period', '24h')
@@ -351,7 +367,7 @@ def api_archive_sensor(sensor_id):
             dt_from = datetime.fromisoformat(from_str)
             dt_to = datetime.fromisoformat(to_str)
         except ValueError:
-            return jsonify({'error': 'Неверный формат даты'}), 400
+            return jsonify({'error': 'РќРµРІРµСЂРЅС‹Р№ С„РѕСЂРјР°С‚ РґР°С‚С‹'}), 400
     else:
         period_map = {
             '1h': timedelta(hours=1),
@@ -388,7 +404,7 @@ def api_archive_sensor(sensor_id):
 
     return jsonify({
         'sensor_id': sensor_id,
-        'sensor_name': sensor_data.get('name', f'Датчик {sensor_id}'),
+        'sensor_name': sensor_data.get('name', f'Р”Р°С‚С‡РёРє {sensor_id}'),
         'period': period,
         'from': dt_from.isoformat(),
         'to': dt_to.isoformat(),
@@ -401,11 +417,11 @@ def api_archive_sensor(sensor_id):
 @api_bp.route('/events')
 def api_events():
     """
-    Журнал событий.
+    Р–СѓСЂРЅР°Р» СЃРѕР±С‹С‚РёР№.
     Query params:
-      sensor_id: фильтр по датчику
-      type: фильтр по типу (alarm, warning)
-      limit: количество записей (default: 50)
+      sensor_id: С„РёР»СЊС‚СЂ РїРѕ РґР°С‚С‡РёРєСѓ
+      type: С„РёР»СЊС‚СЂ РїРѕ С‚РёРїСѓ (alarm, warning)
+      limit: РєРѕР»РёС‡РµСЃС‚РІРѕ Р·Р°РїРёСЃРµР№ (default: 50)
     """
     events_data = _load_events()
     events = events_data.get('events', [])
@@ -427,7 +443,7 @@ def api_events():
 
 @api_bp.route('/archive/summary')
 def api_archive_summary():
-    """Сводка по всем датчикам за период (для главной)."""
+    """РЎРІРѕРґРєР° РїРѕ РІСЃРµРј РґР°С‚С‡РёРєР°Рј Р·Р° РїРµСЂРёРѕРґ (РґР»СЏ РіР»Р°РІРЅРѕР№)."""
     archive = _load_archive()
     period = request.args.get('period', '24h')
     now = datetime.now()
@@ -484,15 +500,16 @@ def api_theme():
 def api_save_theme():
     data = request.get_json()
     if not data:
-        return jsonify({'error': 'Нет данных'}), 400
+        return jsonify({'error': 'РќРµС‚ РґР°РЅРЅС‹С…'}), 400
     # Validate theme name
     if data.get('theme') not in ('dark', 'light'):
-        return jsonify({'error': 'Тема должна быть "dark" или "light"'}), 400
+        return jsonify({'error': 'РўРµРјР° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ "dark" РёР»Рё "light"'}), 400
     # Validate app_title
     title = data.get('app_title', '').strip()
     if not title:
-        return jsonify({'error': 'Название приложения не может быть пустым'}), 400
+        return jsonify({'error': 'РќР°Р·РІР°РЅРёРµ РїСЂРёР»РѕР¶РµРЅРёСЏ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РїСѓСЃС‚С‹Рј'}), 400
     if len(title) > 50:
-        return jsonify({'error': 'Название приложения не более 50 символов'}), 400
+        return jsonify({'error': 'РќР°Р·РІР°РЅРёРµ РїСЂРёР»РѕР¶РµРЅРёСЏ РЅРµ Р±РѕР»РµРµ 50 СЃРёРјРІРѕР»РѕРІ'}), 400
     config = save_theme_config(data)
     return jsonify(config)
+

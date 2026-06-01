@@ -4,6 +4,7 @@ from shared.config_manager import load_poller_config, save_poller_config
 
 
 DEFAULT_POLLER_CONFIG: Dict[str, Any] = {
+    "transport": "serial",
     "use_mock_server": False,
     "mock_server_url": "http://127.0.0.1:8000",
     "mock_server_host": "127.0.0.1",
@@ -14,6 +15,8 @@ DEFAULT_POLLER_CONFIG: Dict[str, Any] = {
     "bytesize": 8,
     "parity": "N",
     "stopbits": 1,
+    "udp_host": "127.0.0.1",
+    "udp_port": 502,
     "timeout_ms": 500,
     "poll_period_ms": 1000,
     "retry_count": 3,
