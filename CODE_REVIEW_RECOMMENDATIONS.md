@@ -2,25 +2,6 @@
 
 Дата ревью: 2026-06-03
 
-## Статус изменений после ревью
-
-Обновлено 2026-06-03:
-
-- Исправлена mojibake-кодировка в `Общее ТЗ на систему КВТ С.md`: документ снова отображается в GitHub нормальной кириллицей.
-- Исправлены русские строки в `visualizer/routes/api.py`: сообщения API для Poller/UDP снова читаемые.
-- Исправлены русские строки и комментарии в `shared/config_manager.py`.
-- После исправления выполнена проверка: поиск Unicode replacement character по текстовым файлам ничего не нашел, повторный скан на обратимо чинимый mojibake не выявил новых кандидатов.
-- `python -m py_compile visualizer\routes\api.py shared\config_manager.py` проходит.
-- Внедрен общий `atomic_save_json()` и tolerant `load_runtime_json()` в `shared/config_manager.py`; config JSON, `current.json`, `modbus_log.json`, journal/events write path и visualizer runtime reads переведены на общий безопасный слой.
-- `PollerService.apply_config()` больше не закрывает Modbus-клиент прямо во время активного запроса: конфиг сохраняется и применяется между циклами с переподключением.
-- `scan_devices()` больше не подменяет общий `_modbus`; scan запрещен во время активного polling и использует отдельный клиент в остановленном режиме.
-- Запись `modbus_log.json` throttled/debounced и принудительно сбрасывается в конце poll cycle; в status/current добавлена `last_cycle_duration_ms`.
-- Flask secret вынесен из hardcoded строки: используется `KVT_SECRET_KEY` или локальный generated secret в `data/config/flask_secret.key`.
-- MockServer больше не запускается с `DEVNULL`: stdout/stderr пишутся в `logs/mockserver.out.log` и `logs/mockserver.err.log`, status API показывает return code и хвост stderr.
-- Poller config validation вынесена в `poller/config.py` и используется Visualizer API и Poller API.
-- Добавлен `.gitignore` для `__pycache__`, `*.pyc`, `.run/`, `logs/`, временных файлов и `data/config/flask_secret.key`.
-- Проверка после прохода: `python -m py_compile shared\config_manager.py poller\config.py poller\poller_service.py poller\app.py visualizer\app.py visualizer\routes\api.py visualizer\routes\journal.py` проходит.
-
 ## Краткое состояние проекта
 
 Проект уже имеет рабочую структуру: `visualizer` отвечает за Flask UI/API, `poller` вынесен в отдельный сервис опроса, `shared/config_manager.py` хранит общий слой конфигураций, `MocTestServer` используется как стенд, а `run_kvt.py` остается правильной единой точкой запуска. Это хорошая база для Windows-эксплуатации: запуск, PID-файлы и логи собраны в одном месте, а транспортная логика не размазана по UI.
@@ -33,15 +14,10 @@
 
 | Приоритет | Область | Проблема | Риск | Рекомендация | Проверка |
 |---|---|---|---|---|---|
-| P0 | `PollerService` | Было: `_modbus`, `_config`, очереди логов и статусы читались/менялись из thread/API/scan/apply_config без единой модели владения. Статус: частично исправлено 2026-06-03. | Главная гонка закрытия клиента во время `apply_config` снижена; scan больше не подменяет общий client. Полная command-queue модель еще не внедрена. | Оставить текущую безопасную паузу как минимум; следующим шагом можно заменить на полноценную очередь команд poller-thread. | `py_compile` проходит; runtime-проверка: config apply во время polling должен попасть в pending reconnect, scan во время polling должен вернуть 400/error без подмены `_modbus`. |
-| P0 | JSON/data | Было: `shared/config_manager.save_json` писал напрямую, `poller` писал атомарно только часть файлов, часть runtime reads падала на битом JSON. Статус: частично исправлено 2026-06-03. | Риск частичного JSON для переведенных путей снижен; mock generators еще требуют отдельного прохода. | `atomic_save_json()` и `load_runtime_json()` внедрены для config, poller current/log, journal/events и visualizer reads. Оставшийся mock write path перевести тем же helper-ом. | `py_compile` проходит; runtime-проверка: повредить `current.json`/`events.json` и убедиться, что API возвращает штатный fallback. |
-| P0 | Безопасность | Было: `visualizer/app.py` содержал hardcoded `app.secret_key = 'kvt-secret-key-change-in-production'`. Статус: исправлено 2026-06-03. | Предсказуемый secret убран из кода; локальный secret становится runtime-файлом. | Использовать `KVT_SECRET_KEY` для управляемого деплоя или generated `data/config/flask_secret.key` для локального запуска. | `visualizer/app.py` компилируется; при первом запуске создается локальный secret, hardcoded production-secret отсутствует. |
-| P1 | MockServer diagnostics | Было: `visualizer/routes/api.py` запускал MockServer через `Popen(... stdout=DEVNULL, stderr=DEVNULL)`. Статус: исправлено 2026-06-03. | Причина failed start больше не теряется. | stdout/stderr пишутся в `logs/mockserver.out.log` и `logs/mockserver.err.log`; `/api/mockserver/status` показывает return code и хвост stderr. | Ошибка импорта, занятый порт или несовместимость зависимостей должна быть видна в логах и API status. |
-| P1 | Кодировки | Было: в части Python-файлов и в общем ТЗ русские строки отображались как mojibake. Статус: исправлено 2026-06-03 для `Общее ТЗ на систему КВТ С.md`, `visualizer/routes/api.py`, `shared/config_manager.py`. | Ошибки, комментарии и подписи становились нечитаемыми; сопровождение и диагностика были хуже. | Держать все текстовые файлы в UTF-8; при будущих правках проверять GitHub preview и не сохранять русские документы в неправильной кодировке. | Поиск Unicode replacement character и повторный mojibake-scan после исправления не выявили новых проблем; `py_compile` для исправленных Python-файлов проходит. |
+| P0 | `PollerService` | `_modbus`, `_config`, очереди логов и статусы читаются/меняются из thread/API/scan/apply_config без единой модели владения. | При `apply_config` или `scan_devices` во время цикла опроса можно закрыть клиент во время запроса, потерять лог, получить неконсистентный `current.json` или ложный `state=error`. | Сделать один poller-thread владельцем Modbus-клиента; команды config/reload/scan передавать через очередь или выполнять под явной паузой poll loop. Не подменять общий `self._modbus` внутри `scan_devices`. | Во время активного polling многократно вызвать config apply и scan; не должно быть traceback, битого JSON и смешанных TX/RX записей. |
+| P0 | JSON/data | `shared/config_manager.save_json` пишет напрямую, `poller` пишет атомарно только часть файлов, mock generators тоже пишут напрямую. | При падении процесса или параллельном чтении можно получить частичный JSON; похожие BOM/JSONDecodeError уже видны в runtime-логах. | Ввести общий helper `atomic_save_json()` и использовать его для config/runtime/mock JSON. Для config сохранять backup до замены, для runtime - безопасную замену через temp file и `os.replace`. | Искусственно прерванная запись не портит основной файл; чтение возвращает старую валидную версию или понятную ошибку. |
 | P1 | UDP transport | В коде есть serial и UDP, но диагностика UDP пока недостаточно точная: `connect()` только создает socket, а endpoint фактически проверяется на первом обмене. | UI может писать "Cannot reach UDP endpoint" до реальной проверки или не различать timeout, CRC, exception response и transport error. | Для сети считать целевым только RTU-over-UDP: сохранять RTU frame + CRC, улучшить классификацию ошибок и статусы по UDP-обмену. Modbus TCP не использовать как сетевой путь. | UDP-обмен показывает transport, endpoint, tx/rx hex, response_time_ms и отдельный error_type. |
-| P1 | Конфиги API | Было: `/api/poller/config` принимал большие куски JSON без строгой схемы. Статус: частично исправлено 2026-06-03 для poller config. | Риск неверных poller-полей снижен; system/network/sensor configs еще требуют отдельной схемы. | `validated_poller_config_patch()` проверяет известные поля, типы и диапазоны; используется Visualizer API и Poller API. | Невалидный `poll_period_ms`, `udp_port`, `timeout_ms` возвращает 400 и не меняет файл. |
-| P1 | Runtime logs | Было: `modbus_log.json` переписывался на каждую TX/RX/exchange запись. Статус: частично исправлено 2026-06-03. | Нагрузка на диск снижена за счет debounce и flush в конце poll cycle. | Сохранить throttling; следующим шагом можно убрать pretty JSON для operational logs или перейти на bounded line log. | `last_cycle_duration_ms` появился в status/current; runtime-проверка должна подтвердить, что файл не пишется десятки раз за цикл. |
-| P2 | Репозиторий/runtime | Было: в дереве лежат `.pyc`, runtime `logs`, `data/*.json`, `data/config/backups`; `.gitignore` отсутствовал. Статус: частично исправлено 2026-06-03. | Новые runtime-секреты, pid, логи и cache больше не должны попадать в GitHub; уже существующие рабочие данные не удалялись. | Добавлен `.gitignore` для `.run/`, `logs/`, `__pycache__/`, `*.pyc`, temp-файлов и `data/config/flask_secret.key`. Отдельно решить судьбу sample/runtime JSON. | После штатного запуска новые логи, pid, pycache и Flask secret должны игнорироваться. |
+| P1 | Конфиги API | `/api/config`, `/api/network/config`, `/api/poller/config` принимают большие куски JSON без строгой схемы. | Можно сохранить неверные типы, диапазоны, лишние поля или конфликтующие настройки, после чего сервис сломается при reload/start. | API должен принимать patch известных полей, приводить типы, проверять диапазоны и сохранять только валидный config. | Невалидный `poll_period_ms`, `udp_port`, `timeout_ms`, sensor limits возвращают 400 и не меняют файл. |
 
 ## Узкие места и деградации под нагрузкой
 
@@ -151,10 +127,40 @@ GET http://127.0.0.1:5001/api/poller/scan?start_id=1&end_id=32&timeout_ms=500
 5. Ввести validation layer для poller/system/network/sensor configs.
 6. Исправить Flask secret.
 7. Добавить логи MockServer вместо `DEVNULL`, PID/status и вывод причины failed start.
-8. Нормализовать кодировки Python-файлов и убрать mojibake. Статус: выполнено для найденных проблемных файлов 2026-06-03; оставить как контрольное правило для будущих правок.
+8. Нормализовать кодировки Python-файлов и убрать mojibake.
 9. Уточнить стенд: сетевой transport только UDP RTU frame; TCP-эмуляцию не использовать как проверку целевого режима.
 10. После стабилизации решить вопрос с runtime-файлами в дереве: `.pyc`, logs, `data/*.json`, backups.
 
 ## Итог
 
 Проект рабочий и уже имеет правильные опорные части: единый launcher, разделение visualizer/poller и RTU frame path. Главное направление улучшений: надежность JSON, потокобезопасный poller, корректный UDP transport, понятная диагностика и снижение деградации при росте числа датчиков. Пункты про обязательное добавление pytest и изменение `0.0.0.0` убраны из ревью; Modbus TCP не рассматривается как целевой сетевой путь.
+
+## Комментарии: уже сделано
+
+Обновлено 2026-06-03:
+
+Закрытые пункты ревью:
+
+- `P0 | Безопасность`: hardcoded Flask secret убран из `visualizer/app.py`.
+- `P1 | MockServer diagnostics`: запуск MockServer больше не теряет stdout/stderr.
+- `P1 | Кодировки`: найденный mojibake исправлен, добавлены правила UTF-8.
+- `P1 | Runtime logs`: `modbus_log.json` переведен на throttled compact atomic-запись.
+- `P2 | Репозиторий/runtime`: добавлен и расширен `.gitignore` для runtime/cache/secret артефактов.
+
+- Исправлена mojibake-кодировка в `Общее ТЗ на систему КВТ С.md`: документ снова отображается в GitHub нормальной кириллицей.
+- Исправлены русские строки в `visualizer/routes/api.py`: сообщения API для Poller/UDP снова читаемые.
+- Исправлены русские строки и комментарии в `shared/config_manager.py`.
+- После исправления выполнена проверка: поиск Unicode replacement character по текстовым файлам ничего не нашел, повторный скан на обратимо чинимый mojibake не выявил новых кандидатов.
+- `python -m py_compile visualizer\routes\api.py shared\config_manager.py` проходит.
+- Внедрен общий `atomic_save_json()` и tolerant `load_runtime_json()` в `shared/config_manager.py`; config JSON, `current.json`, `modbus_log.json`, journal/events write path и visualizer runtime reads переведены на общий безопасный слой.
+- `PollerService.apply_config()` больше не закрывает Modbus-клиент прямо во время активного запроса: конфиг сохраняется и применяется между циклами с переподключением.
+- `scan_devices()` больше не подменяет общий `_modbus`; scan запрещен во время активного polling и использует отдельный клиент в остановленном режиме.
+- Запись `modbus_log.json` throttled/debounced и принудительно сбрасывается в конце poll cycle; в status/current добавлена `last_cycle_duration_ms`.
+- Flask secret вынесен из hardcoded строки: используется `KVT_SECRET_KEY` или локальный generated secret в `data/config/flask_secret.key`.
+- MockServer больше не запускается с `DEVNULL`: stdout/stderr пишутся в `logs/mockserver.out.log` и `logs/mockserver.err.log`, status API показывает return code и хвост stderr.
+- Poller config validation вынесена в `poller/config.py` и используется Visualizer API и Poller API.
+- Добавлен `.gitignore` для `__pycache__`, `*.pyc`, `.run/`, `logs/`, временных файлов и `data/config/flask_secret.key`.
+- Проверка после прохода: `python -m py_compile shared\config_manager.py poller\config.py poller\poller_service.py poller\app.py visualizer\app.py visualizer\routes\api.py visualizer\routes\journal.py` проходит.
+- Закреплены правила кодировки: добавлены `.editorconfig` и `.gitattributes` для UTF-8 текстовых файлов.
+- `modbus_log.json` теперь пишется компактным JSON (`indent=None`) через общий atomic writer, что уменьшает размер файла и нагрузку записи.
+- `.gitignore` расширен для runtime JSON (`data/current.json`, `data/modbus_log.json`, `data/events.json`, `data/archive.json`) и `data/config/backups/`; текущие рабочие данные не удалялись.

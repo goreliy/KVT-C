@@ -45,7 +45,7 @@ def atomic_save_json(path, data, encoding='utf-8', indent=2):
     basename = os.path.basename(path)
     tmp = os.path.join(directory, f'.{basename}.{os.getpid()}.{threading.get_ident()}.tmp')
     with open(tmp, 'w', encoding=encoding) as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(data, f, ensure_ascii=False, indent=indent, separators=(',', ':') if indent is None else None)
         f.flush()
         try:
             os.fsync(f.fileno())

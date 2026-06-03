@@ -5,5 +5,10 @@ __pycache__/
 logs/
 
 data/config/flask_secret.key
+data/config/backups/
+data/current.json
+data/modbus_log.json
+data/events.json
+data/archive.json
 data/*.tmp
 *.tmp

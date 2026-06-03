@@ -2024,3 +2024,10 @@ OSError: [Errno 22] Invalid argument: 'D:\\123321\\КВТ версия С\\KVT-C\\data\\mo
 127.0.0.1 - - [03/Jun/2026 12:31:11] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
 127.0.0.1 - - [03/Jun/2026 12:31:16] "GET /api/poller/status HTTP/1.1" 200 -
 127.0.0.1 - - [03/Jun/2026 12:31:16] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+ * Running on http://127.0.0.1:5001/ (Press CTRL+C to quit)
+127.0.0.1 - - [03/Jun/2026 12:32:06] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:32:06] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:32:11] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:32:11] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:32:37] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:32:37] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -

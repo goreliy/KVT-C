@@ -247,6 +247,7 @@ class PollerService:
                 "rx_queue": list(self._rx_queue),
                 "exchange_queue": list(self._exchange_queue),
             },
+            indent=None,
         )
 
     def _read_registers_logged(
