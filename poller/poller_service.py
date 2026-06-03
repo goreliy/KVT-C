@@ -31,7 +31,7 @@ class PollerService:
         self._running = False
         self._thread = None
         self._lock = threading.RLock()
-        self._stats = {"total_polls": 0, "successful_polls": 0, "failed_polls": 0}
+        self._stats = {"total_polls": 0, "successful_polls": 0, "failed_polls": 0, "skipped_status_reads": 0}
         self._log_entries: List[Dict[str, Any]] = []
         self._tx_queue = deque(maxlen=5000)
         self._rx_queue = deque(maxlen=5000)
@@ -226,6 +226,26 @@ class PollerService:
             self._log_dirty = True
             self._flush_log_file()
 
+    def _log_status_skipped_after_values_failure(self, context: Dict[str, Any], slave_id: int, start_addr: int, count: int, error: ModbusError):
+        timestamp = datetime.now().isoformat()
+        self._stats["skipped_status_reads"] = self._stats.get("skipped_status_reads", 0) + 1
+        self._log_exchange({
+            "timestamp": timestamp,
+            "status": "skipped",
+            "source": {**context, "register_group": "status"},
+            "slave_id": slave_id,
+            "function": 3,
+            "start_addr": start_addr,
+            "quantity": count,
+            "request": "Read statuses skipped after values failure",
+            "tx_hex": None,
+            "rx_hex": None,
+            "response_time_ms": None,
+            "reason": "values read failed",
+            "error_type": type(error).__name__,
+            "result": f"Status read skipped after values failure: {error}",
+        })
+
     def _flush_log_file(self, force: bool = False):
         now = time.monotonic()
         if not self._log_dirty:
@@ -338,7 +358,7 @@ class PollerService:
             return "warning_high_hum"
         return "guarded" if sensor.get("guarded", True) else "normal"
 
-    def _poll_sensor(self, sensor: Dict[str, Any], now_iso: str):
+    def _poll_sensor(self, sensor: Dict[str, Any], now_iso: str, attempt: int = 0):
         configured_slave = int(self._config.get("device_slave_id", 0) or 0)
         slave_id = configured_slave if configured_slave > 0 else int(sensor["modbus_slave_id"])
         addr_t = int(sensor["modbus_addr_temp"])
@@ -355,16 +375,22 @@ class PollerService:
             "sensor_name": sensor_name,
             "temp_addr": addr_t,
             "hum_addr": addr_h,
+            "attempt": attempt,
         }
 
-        values = self._read_registers_logged(
-            slave_id=slave_id,
-            start_addr=value_start,
-            count=2,
-            tx_description=f"Read values for sensor {sensor['id']}",
-            rx_description=lambda regs: f"T={_fixed_q8_8(regs[0]):.4f} C, H={_fixed_q8_8(regs[1]):.4f}%",
-            context={**context, "register_group": "values"},
-        )
+        try:
+            values = self._read_registers_logged(
+                slave_id=slave_id,
+                start_addr=value_start,
+                count=2,
+                tx_description=f"Read values for sensor {sensor['id']}",
+                rx_description=lambda regs: f"T={_fixed_q8_8(regs[0]):.4f} C, H={_fixed_q8_8(regs[1]):.4f}%",
+                context={**context, "register_group": "values"},
+            )
+        except ModbusError as error:
+            self._log_status_skipped_after_values_failure(context, slave_id, status_start, 2, error)
+            raise
+
         statuses = self._read_registers_logged(
             slave_id=slave_id,
             start_addr=status_start,
@@ -445,16 +471,19 @@ class PollerService:
 
                 for sensor in self._enabled_sensors():
                     success = False
+                    last_sensor_error = None
                     for attempt in range(int(self._config.get("retry_count", 3)) + 1):
                         try:
-                            out_sensors.append(self._poll_sensor(sensor, now_iso))
+                            out_sensors.append(self._poll_sensor(sensor, now_iso, attempt=attempt))
                             success = True
                             break
                         except ModbusError as error:
+                            last_sensor_error = error
                             self._last_error = str(error)
                             if attempt < int(self._config.get("retry_count", 3)):
                                 time.sleep(0.05)
                         except Exception as error:
+                            last_sensor_error = error
                             self._last_error = str(error)
                             self._log_rx(None, {"slave_id": self._config.get("device_slave_id", 0), "function": 3, "description": f"Poll error: {error}"})
                             if attempt < int(self._config.get("retry_count", 3)):
@@ -462,6 +491,8 @@ class PollerService:
 
                     if not success:
                         cycle_failed = True
+                        if last_sensor_error is not None:
+                            self._last_error = str(last_sensor_error)
                         out_sensors.append(self._offline_sensor(sensor, now_iso))
 
                 payload = {
