@@ -1638,3 +1638,375 @@ Traceback (most recent call last):
     os.replace(tmp, path)
 PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\123321\\КВТ версия С\\KVT-C\\data\\modbus_log.json.tmp' -> 'D:\\123321\\КВТ версия С\\KVT-C\\data\\modbus_log.json'
  * Running on http://127.0.0.1:5001/ (Press CTRL+C to quit)
+ * Running on http://127.0.0.1:5001/ (Press CTRL+C to quit)
+127.0.0.1 - - [01/Jun/2026 16:52:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:31] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [01/Jun/2026 16:52:35] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:35] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:35] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:37] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:37] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:37] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:40] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:40] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:40] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:43] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:43] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:43] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:47] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:47] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:47] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:50] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:50] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:50] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:53] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:53] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:53] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:56] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:56] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:56] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:59] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:59] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:52:59] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:02] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:02] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:02] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:04] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:04] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:04] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:07] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:07] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:07] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:10] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:10] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:10] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:13] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:13] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:13] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:16] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:16] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:16] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:19] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:19] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:19] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:23] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:23] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:23] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:26] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:26] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:26] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:29] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:29] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:29] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:32] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:32] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:32] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:35] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:35] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:35] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:38] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:38] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:38] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:41] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:41] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:41] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:44] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:44] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:44] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:47] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:47] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:47] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:50] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:50] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:50] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:53] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:53] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:53] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:56] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:56] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:56] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:59] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:59] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:53:59] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:02] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:02] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:02] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:05] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:05] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:05] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:08] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:08] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:08] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:11] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:11] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:11] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:14] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:14] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:14] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:17] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:17] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:17] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:54:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:55:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:55:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:55:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:56:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:56:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:56:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:57:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:57:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:57:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:58:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:58:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:58:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:59:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:59:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 16:59:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:00:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:00:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:00:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:01:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:01:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:01:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:02:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:02:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:02:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:03:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:03:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:03:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:04:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:04:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:04:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:05:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:05:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:05:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:06:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:06:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:06:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:07:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:07:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:07:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:08:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:08:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:08:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:09:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:09:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:09:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:10:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:10:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:10:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:11:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:11:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:11:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:12:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:12:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:12:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:13:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:13:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:13:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:14:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:14:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:14:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:15:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:15:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:15:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:16:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:16:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:16:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:17:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:17:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:17:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:18:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:18:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:18:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:19:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:19:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:19:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:20:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:20:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:20:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:21:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:21:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:21:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:22:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:22:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:22:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:23:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:23:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:23:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:24:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:24:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:24:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:25:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:25:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:25:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:26:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:26:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:26:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:27:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:27:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:27:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:28:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:28:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:28:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:29:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:29:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:29:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:30:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:30:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:30:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:31:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:31:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:31:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:32:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:32:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:32:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:33:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:33:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:33:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:34:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:34:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:34:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:35:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:35:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:35:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:36:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:36:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:36:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:37:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:37:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:37:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:38:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:38:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:38:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:39:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:39:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:39:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:40:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:40:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:40:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:41:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:41:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:41:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:42:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:42:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:42:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:43:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:43:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:43:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:44:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:44:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:44:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:45:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:45:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:45:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:46:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:46:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:46:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:47:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:47:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:47:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:48:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:48:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:48:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:49:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:49:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:49:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:50:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:50:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:50:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:51:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:51:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:51:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:52:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:52:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:52:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:53:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:53:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:53:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+Exception in thread Thread-1 (_run):
+Traceback (most recent call last):
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 412, in _run
+    out_sensors.append(self._poll_sensor(sensor, now_iso))
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 334, in _poll_sensor
+    values = self._read_registers_logged(
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 268, in _read_registers_logged
+    self._log_rx(
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 189, in _log_rx
+    self._log({"timestamp": datetime.now().isoformat(), "direction": "RX", "raw_hex": raw_hex, "parsed": parsed, "response_time_ms": response_time_ms})
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 202, in _log
+    self._write_log_file()
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 210, in _write_log_file
+    self._write_json_atomic(
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 227, in _write_json_atomic
+    os.replace(tmp, path)
+PermissionError: [WinError 32] Процесс не может получить доступ к файлу, так как этот файл занят другим процессом: 'D:\\123321\\КВТ версия С\\KVT-C\\data\\modbus_log.json.tmp' -> 'D:\\123321\\КВТ версия С\\KVT-C\\data\\modbus_log.json'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Python\Python310\lib\threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "D:\Python\Python310\lib\threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 421, in _run
+    self._log_rx(None, {"slave_id": self._config.get("device_slave_id", 0), "function": 3, "description": f"Poll error: {error}"})
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 189, in _log_rx
+    self._log({"timestamp": datetime.now().isoformat(), "direction": "RX", "raw_hex": raw_hex, "parsed": parsed, "response_time_ms": response_time_ms})
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 202, in _log
+    self._write_log_file()
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 210, in _write_log_file
+    self._write_json_atomic(
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 225, in _write_json_atomic
+    with open(tmp, "w", encoding="utf-8") as handle:
+OSError: [Errno 22] Invalid argument: 'D:\\123321\\КВТ версия С\\KVT-C\\data\\modbus_log.json.tmp'
+127.0.0.1 - - [01/Jun/2026 17:54:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:54:52] "GET /api/poller/config HTTP/1.1" 200 -
+127.0.0.1 - - [01/Jun/2026 17:54:52] "GET /api/poller/log?limit=80 HTTP/1.1" 200 -
+ * Running on http://127.0.0.1:5001/ (Press CTRL+C to quit)
+127.0.0.1 - - [03/Jun/2026 12:06:40] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:06:40] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:06:45] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:06:45] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:06:50] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:06:50] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:06:55] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:06:55] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:07:00] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:07:00] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:07:05] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:07:05] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:07:10] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:07:10] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:07:18] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:07:18] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:13:56] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:13:57] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:02] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:02] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:07] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:07] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:12] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:12] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:17] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:17] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:22] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:22] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:27] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:27] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:32] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:32] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:37] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:37] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:42] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:42] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:47] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:47] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:52] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:52] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:57] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:14:57] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:15:26] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:15:26] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
