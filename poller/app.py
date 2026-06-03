@@ -11,6 +11,7 @@ patch_legacy_werkzeug_ast()
 
 from flask import Flask, jsonify, render_template_string, request
 from shared.config_manager import load_poller_config
+from .config import validated_poller_config_patch
 from .poller_service import PollerService
 
 app = Flask(__name__)
@@ -317,7 +318,10 @@ def api_config():
 @app.route("/api/poller/config", methods=["POST"])
 def api_config_save():
     data = request.get_json(silent=True) or {}
-    SERVICE.apply_config(data)
+    config, errors = validated_poller_config_patch(data, load_poller_config())
+    if errors:
+        return jsonify({"errors": errors}), 400
+    SERVICE.apply_config(config)
     return jsonify({"status": "ok", "config": load_poller_config()})
 
 

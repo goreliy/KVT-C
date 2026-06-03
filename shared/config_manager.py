@@ -5,6 +5,7 @@
 import json
 import os
 import shutil
+import threading
 from datetime import datetime
 from copy import deepcopy
 
@@ -29,10 +30,32 @@ def load_json(path):
         return json.load(f)
 
 
-def save_json(path, data):
+def load_runtime_json(path, default=None):
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {} if default is None else deepcopy(default)
+
+
+def atomic_save_json(path, data, encoding='utf-8', indent=2):
     _ensure_dirs()
-    with open(path, 'w', encoding='utf-8-sig') as f:
+    directory = os.path.dirname(path)
+    os.makedirs(directory, exist_ok=True)
+    basename = os.path.basename(path)
+    tmp = os.path.join(directory, f'.{basename}.{os.getpid()}.{threading.get_ident()}.tmp')
+    with open(tmp, 'w', encoding=encoding) as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+        f.flush()
+        try:
+            os.fsync(f.fileno())
+        except OSError:
+            pass
+    os.replace(tmp, path)
+
+
+def save_json(path, data):
+    atomic_save_json(path, data, encoding='utf-8-sig', indent=2)
 
 
 def load_system_config():

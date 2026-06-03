@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+
+.run/
+logs/
+
+data/config/flask_secret.key
+data/*.tmp
+*.tmp

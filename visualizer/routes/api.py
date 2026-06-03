@@ -1,5 +1,4 @@
 ﻿"""REST API для фронтенда."""
-import json
 import os
 import sys
 import time
@@ -7,11 +6,13 @@ import subprocess
 from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request
 import requests
+from poller.config import validated_poller_config_patch
 from shared.config_manager import (
     load_system_config, save_system_config,
     load_poller_config, save_poller_config,
     load_notifications_config, save_notifications_config,
     load_theme_config, save_theme_config,
+    load_runtime_json,
     get_sensors, get_sensor_by_id, add_sensor, update_sensor, delete_sensor,
     validate_sensor
 )
@@ -20,6 +21,9 @@ api_bp = Blueprint('api', __name__)
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+LOG_DIR = os.path.join(ROOT_DIR, 'logs')
+MOCKSERVER_OUT_LOG = os.path.join(LOG_DIR, 'mockserver.out.log')
+MOCKSERVER_ERR_LOG = os.path.join(LOG_DIR, 'mockserver.err.log')
 _MOCK_SERVER_PROCESS = None
 _LOCAL_HTTP = requests.Session()
 _LOCAL_HTTP.trust_env = False
@@ -41,11 +45,27 @@ def _is_mock_reachable(base_url: str) -> bool:
 def _mock_status_payload():
     base_url = _mock_server_url()
     process_running = _MOCK_SERVER_PROCESS is not None and _MOCK_SERVER_PROCESS.poll() is None
+    returncode = _MOCK_SERVER_PROCESS.poll() if _MOCK_SERVER_PROCESS is not None else None
     return {
         'url': base_url,
         'reachable': _is_mock_reachable(base_url),
-        'process_running': process_running
+        'process_running': process_running,
+        'returncode': returncode,
+        'stderr_tail': _tail_file(MOCKSERVER_ERR_LOG),
+        'stdout_log': MOCKSERVER_OUT_LOG,
+        'stderr_log': MOCKSERVER_ERR_LOG,
     }
+
+
+def _tail_file(path: str, max_chars: int = 2000) -> str:
+    try:
+        with open(path, 'r', encoding='utf-8', errors='replace') as handle:
+            handle.seek(0, os.SEEK_END)
+            size = handle.tell()
+            handle.seek(max(0, size - max_chars))
+            return handle.read().strip()
+    except FileNotFoundError:
+        return ''
 
 
 def _poller_base_url() -> str:
@@ -84,30 +104,21 @@ def _poller_call(method: str, path: str, payload=None):
 
 def _load_archive():
     path = os.path.join(DATA_DIR, 'archive.json')
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {'sensors': {}}
+    return load_runtime_json(path, default={'sensors': {}})
 
 
 def _load_events():
     path = os.path.join(DATA_DIR, 'events.json')
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {'events': []}
+    return load_runtime_json(path, default={'events': []})
 
 
 @api_bp.route('/current')
 def api_current():
     path = os.path.join(DATA_DIR, 'current.json')
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return jsonify(json.load(f))
-    except (FileNotFoundError, json.JSONDecodeError):
+    current = load_runtime_json(path, default={})
+    if not current:
         return jsonify({'error': 'Нет данных'}), 404
+    return jsonify(current)
 
 
 @api_bp.route('/config')
@@ -181,24 +192,11 @@ def api_save_poller_config():
     data = request.get_json()
     if not data:
         return jsonify({'error': 'Нет данных'}), 400
-    transport = str(data.get('transport', 'serial')).lower()
-    if transport not in ('serial', 'udp'):
-        return jsonify({'error': 'transport должен быть serial или udp'}), 400
-    data['transport'] = transport
-    if transport == 'udp':
-        udp_host = str(data.get('udp_host', '')).strip()
-        if not udp_host:
-            return jsonify({'error': 'udp_host обязателен для UDP'}), 400
-        try:
-            udp_port = int(data.get('udp_port'))
-        except (TypeError, ValueError):
-            return jsonify({'error': 'udp_port должен быть числом'}), 400
-        if not (1 <= udp_port <= 65535):
-            return jsonify({'error': 'udp_port должен быть в диапазоне 1..65535'}), 400
-        data['udp_host'] = udp_host
-        data['udp_port'] = udp_port
-    save_poller_config(data)
-    return jsonify(data)
+    config, errors = validated_poller_config_patch(data, load_poller_config())
+    if errors:
+        return jsonify({'errors': errors}), 400
+    save_poller_config(config)
+    return jsonify(config)
 
 
 @api_bp.route('/poller/status')
@@ -280,12 +278,14 @@ def api_mockserver_start():
         poller_cfg = load_poller_config()
         host = str(poller_cfg.get('mock_server_host', '127.0.0.1'))
         port = int(poller_cfg.get('mock_server_port', 8000))
-        _MOCK_SERVER_PROCESS = subprocess.Popen(
-            [sys.executable, script_path, '--host', host, '--port', str(port)],
-            cwd=ROOT_DIR,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
+        os.makedirs(LOG_DIR, exist_ok=True)
+        with open(MOCKSERVER_OUT_LOG, 'a', encoding='utf-8') as stdout, open(MOCKSERVER_ERR_LOG, 'a', encoding='utf-8') as stderr:
+            _MOCK_SERVER_PROCESS = subprocess.Popen(
+                [sys.executable, script_path, '--host', host, '--port', str(port)],
+                cwd=ROOT_DIR,
+                stdout=stdout,
+                stderr=stderr
+            )
         for _ in range(15):
             if _is_mock_reachable(base_url):
                 break

@@ -1,9 +1,8 @@
 """Журналы: события, температуры, превышения."""
-import json
 import os
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, jsonify, request
-from shared.config_manager import get_sensors, get_sensor_by_id
+from shared.config_manager import atomic_save_json, get_sensors, get_sensor_by_id, load_runtime_json
 
 journal_bp = Blueprint('journal', __name__)
 
@@ -12,17 +11,12 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.
 
 def _load_json(filename):
     path = os.path.join(DATA_DIR, filename)
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
+    return load_runtime_json(path, default={})
 
 
 def _save_json(filename, data):
     path = os.path.join(DATA_DIR, filename)
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    atomic_save_json(path, data)
 
 
 def _parse_period(period_str):

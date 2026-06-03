@@ -84,3 +84,8 @@ pip install -r requirements.txt
 - В репозитории нет подсистемы `archiver` (старые упоминания удалены из документации).
 - Docker/compose артефактов в текущем дереве нет.
 - Основной поддерживаемый сценарий запуска: `run_kvt.py`.
+
+## Журнал документации
+- 2026-06-03: исправлена кодировка русских строк в `Общее ТЗ на систему КВТ С.md`, `visualizer/routes/api.py` и `shared/config_manager.py`; общий ТЗ снова корректно отображается в GitHub.
+- 2026-06-03: файл ревью `CODE_REVIEW_RECOMMENDATIONS.md` обновлен: пункт про кодировки отмечен как выполненный, а оставшиеся рекомендации сохранены как открытые.
+- 2026-06-03: выполнен первый проход по `CODE_REVIEW_RECOMMENDATIONS.md`: добавлены atomic JSON helpers, tolerant runtime JSON reads, отложенное применение poller config, запрет scan во время polling, throttling записи `modbus_log.json`, generated Flask secret, MockServer stdout/stderr logs, валидация poller config и `.gitignore` для runtime/cache/secret артефактов.

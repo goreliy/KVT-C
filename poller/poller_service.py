@@ -1,4 +1,3 @@
-import json
 import os
 import threading
 import time
@@ -8,7 +7,7 @@ from typing import Any, Callable, Dict, List
 
 from serial.tools import list_ports
 
-from shared.config_manager import load_system_config, save_poller_config
+from shared.config_manager import atomic_save_json, load_runtime_json, load_system_config, save_poller_config
 from .config import data_dir, normalized_poller_config
 from .modbus_client import ModbusClient, ModbusError
 
@@ -31,12 +30,16 @@ class PollerService:
         self._last_exchange_at = None
         self._running = False
         self._thread = None
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._stats = {"total_polls": 0, "successful_polls": 0, "failed_polls": 0}
         self._log_entries: List[Dict[str, Any]] = []
         self._tx_queue = deque(maxlen=5000)
         self._rx_queue = deque(maxlen=5000)
         self._exchange_queue = deque(maxlen=5000)
+        self._last_cycle_duration_ms = 0
+        self._last_log_write_at = 0.0
+        self._log_dirty = False
+        self._pending_config = None
         self._modbus = ModbusClient(self._config)
 
     def start(self):
@@ -52,91 +55,106 @@ class PollerService:
         with self._lock:
             self._running = False
             self._state = "stopped"
-        self._modbus.close()
+            self._modbus.close()
 
     def reload_sensors(self):
         return {"status": "ok", "sensors": len(self._enabled_sensors())}
 
     def apply_config(self, config: Dict[str, Any]):
         with self._lock:
-            self._config = {**self._config, **config}
-            save_poller_config(self._config)
+            merged = {**self._config, **config}
+            save_poller_config(merged)
+            if self._running:
+                self._pending_config = merged
+                self._last_error = "Config saved; pending reconnect between poll cycles"
+                return
+            self._config = merged
             self._modbus.close()
             self._modbus = ModbusClient(self._config)
-            self._state = "running" if self._running else "stopped"
+            self._state = "stopped"
 
     def status(self) -> Dict[str, Any]:
-        response_times = [x["response_time_ms"] for x in self._log_entries if x.get("response_time_ms") is not None]
-        return {
-            "state": self._state,
-            "running": self._running,
-            "transport": self._config.get("transport", "serial"),
-            "com_port": self._config.get("com_port"),
-            "udp_host": self._config.get("udp_host"),
-            "udp_port": self._config.get("udp_port"),
-            "device_slave_id": self._config.get("device_slave_id"),
-            "last_error": self._last_error,
-            "last_poll_at": self._last_poll_at,
-            "last_success_at": self._last_success_at,
-            "last_exchange_at": self._last_exchange_at,
-            "current_sensor_count": len(self._enabled_sensors()),
-            "log_entries": len(self._log_entries),
-            "tx_entries": len(self._tx_queue),
-            "rx_entries": len(self._rx_queue),
-            "exchange_entries": len(self._exchange_queue),
-            "avg_response_time_ms": round(sum(response_times) / len(response_times), 2) if response_times else 0,
-            **self._stats,
-        }
+        with self._lock:
+            response_times = [x["response_time_ms"] for x in self._log_entries if x.get("response_time_ms") is not None]
+            return {
+                "state": self._state,
+                "running": self._running,
+                "transport": self._config.get("transport", "serial"),
+                "com_port": self._config.get("com_port"),
+                "udp_host": self._config.get("udp_host"),
+                "udp_port": self._config.get("udp_port"),
+                "device_slave_id": self._config.get("device_slave_id"),
+                "last_error": self._last_error,
+                "last_poll_at": self._last_poll_at,
+                "last_success_at": self._last_success_at,
+                "last_exchange_at": self._last_exchange_at,
+                "current_sensor_count": len(self._enabled_sensors()),
+                "log_entries": len(self._log_entries),
+                "tx_entries": len(self._tx_queue),
+                "rx_entries": len(self._rx_queue),
+                "exchange_entries": len(self._exchange_queue),
+                "avg_response_time_ms": round(sum(response_times) / len(response_times), 2) if response_times else 0,
+                "last_cycle_duration_ms": self._last_cycle_duration_ms,
+                **self._stats,
+            }
 
     def health(self) -> Dict[str, Any]:
-        return {"state": self._state, **self._stats, "last_error": self._last_error}
+        with self._lock:
+            return {"state": self._state, **self._stats, "last_error": self._last_error}
 
     def current_payload(self) -> Dict[str, Any]:
         path = os.path.join(data_dir(), "current.json")
-        if not os.path.exists(path):
-            return {}
-        with open(path, "r", encoding="utf-8") as handle:
-            return json.load(handle)
+        return load_runtime_json(path, default={})
 
     def log_payload(self, limit: int = 100) -> Dict[str, Any]:
         limit = max(1, int(limit))
-        return {
-            "max_entries": int(self._config["log_max_entries"]),
-            "entries": self._log_entries[-limit:],
-            "tx_queue": list(self._tx_queue)[-limit:],
-            "rx_queue": list(self._rx_queue)[-limit:],
-            "exchange_queue": list(self._exchange_queue)[-limit:],
-        }
+        with self._lock:
+            return {
+                "max_entries": int(self._config["log_max_entries"]),
+                "entries": self._log_entries[-limit:],
+                "tx_queue": list(self._tx_queue)[-limit:],
+                "rx_queue": list(self._rx_queue)[-limit:],
+                "exchange_queue": list(self._exchange_queue)[-limit:],
+            }
 
     @staticmethod
     def available_ports() -> List[Dict[str, Any]]:
         return [{"device": port.device, "description": port.description} for port in list_ports.comports()]
 
     def scan_devices(self, start_id: int = 1, end_id: int = 32, timeout_ms: int = 500) -> Dict[str, Any]:
+        with self._lock:
+            if self._running:
+                return {
+                    "status": "error",
+                    "error": "Scan is disabled while polling is running. Stop poller before scan.",
+                    "found": [],
+                }
+            config = dict(self._config)
+
         start_id = max(1, int(start_id))
         end_id = min(247, int(end_id))
         if end_id < start_id:
             start_id, end_id = end_id, start_id
 
         timeout_ms = max(50, min(10000, int(timeout_ms)))
-        status_base = int(self._config["status_register_base"])
-        scan_client = ModbusClient({**self._config, "timeout_ms": timeout_ms})
+        status_base = int(config["status_register_base"])
+        scan_client = ModbusClient({**config, "timeout_ms": timeout_ms})
         found = []
 
         if not scan_client.connect():
-            if str(self._config.get("transport", "serial")).lower() == "udp":
-                message = f"Cannot reach UDP endpoint {self._config.get('udp_host')}:{self._config.get('udp_port')}"
+            if str(config.get("transport", "serial")).lower() == "udp":
+                message = f"Cannot reach UDP endpoint {config.get('udp_host')}:{config.get('udp_port')}"
             else:
-                message = f"Cannot open port {self._config['com_port']}"
+                message = f"Cannot open port {config['com_port']}"
             self._log_rx(None, {"slave_id": 0, "function": 3, "description": f"Scan: {message}"})
+            self._flush_log_file(force=True)
             return {"status": "error", "error": message, "found": []}
 
-        original_client = self._modbus
-        self._modbus = scan_client
         try:
             for slave_id in range(start_id, end_id + 1):
                 try:
                     registers = self._read_registers_logged(
+                        client=scan_client,
                         slave_id=slave_id,
                         start_addr=status_base,
                         count=1,
@@ -156,14 +174,13 @@ class PollerService:
                     continue
         finally:
             scan_client.close()
-            self._modbus = original_client
 
         return {
             "status": "ok",
-            "transport": self._config.get("transport", "serial"),
-            "com_port": self._config["com_port"],
-            "udp_host": self._config.get("udp_host"),
-            "udp_port": self._config.get("udp_port"),
+            "transport": config.get("transport", "serial"),
+            "com_port": config["com_port"],
+            "udp_host": config.get("udp_host"),
+            "udp_port": config.get("udp_port"),
             "timeout_ms": timeout_ms,
             "probe_address": status_base,
             "range": {"start": start_id, "end": end_id},
@@ -189,25 +206,39 @@ class PollerService:
         self._log({"timestamp": datetime.now().isoformat(), "direction": "RX", "raw_hex": raw_hex, "parsed": parsed, "response_time_ms": response_time_ms})
 
     def _log(self, entry: Dict[str, Any]):
-        self._last_exchange_at = entry.get("timestamp")
-        self._log_entries.append(entry)
-        if entry.get("direction") == "TX":
-            self._tx_queue.append(entry)
-        elif entry.get("direction") == "RX":
-            self._rx_queue.append(entry)
+        with self._lock:
+            self._last_exchange_at = entry.get("timestamp")
+            self._log_entries.append(entry)
+            if entry.get("direction") == "TX":
+                self._tx_queue.append(entry)
+            elif entry.get("direction") == "RX":
+                self._rx_queue.append(entry)
 
-        max_entries = int(self._config.get("log_max_entries", 1000))
-        if len(self._log_entries) > max_entries:
-            self._log_entries = self._log_entries[-max_entries:]
-        self._write_log_file()
+            max_entries = int(self._config.get("log_max_entries", 1000))
+            if len(self._log_entries) > max_entries:
+                self._log_entries = self._log_entries[-max_entries:]
+            self._log_dirty = True
+            self._flush_log_file()
 
     def _log_exchange(self, exchange: Dict[str, Any]):
-        self._exchange_queue.append(exchange)
+        with self._lock:
+            self._exchange_queue.append(exchange)
+            self._log_dirty = True
+            self._flush_log_file()
+
+    def _flush_log_file(self, force: bool = False):
+        now = time.monotonic()
+        if not self._log_dirty:
+            return
+        if not force and now - self._last_log_write_at < 1.0:
+            return
         self._write_log_file()
+        self._last_log_write_at = now
+        self._log_dirty = False
 
     def _write_log_file(self):
         max_entries = int(self._config.get("log_max_entries", 1000))
-        self._write_json_atomic(
+        atomic_save_json(
             os.path.join(data_dir(), "modbus_log.json"),
             {
                 "max_entries": max_entries,
@@ -218,14 +249,6 @@ class PollerService:
             },
         )
 
-    @staticmethod
-    def _write_json_atomic(path: str, payload: Dict[str, Any]):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        tmp = f"{path}.tmp"
-        with open(tmp, "w", encoding="utf-8") as handle:
-            json.dump(payload, handle, ensure_ascii=False, indent=2)
-        os.replace(tmp, path)
-
     def _read_registers_logged(
         self,
         slave_id: int,
@@ -234,9 +257,11 @@ class PollerService:
         tx_description: str,
         rx_description: Callable[[List[int]], str],
         context: Dict[str, Any],
+        client: ModbusClient = None,
     ) -> List[int]:
+        modbus = client or self._modbus
         try:
-            exchange = self._modbus.read_holding_registers_raw(slave_id, start_addr, count)
+            exchange = modbus.read_holding_registers_raw(slave_id, start_addr, count)
         except ModbusError as error:
             timestamp = datetime.now().isoformat()
             if error.tx_frame:
@@ -382,6 +407,11 @@ class PollerService:
             with self._lock:
                 if not self._running:
                     break
+                if self._pending_config is not None:
+                    self._config = self._pending_config
+                    self._pending_config = None
+                    self._modbus.close()
+                    self._modbus = ModbusClient(self._config)
 
             if not self._modbus.connect():
                 self._state = "error"
@@ -398,8 +428,15 @@ class PollerService:
                 with self._lock:
                     if not self._running:
                         break
+                    if self._pending_config is not None:
+                        self._config = self._pending_config
+                        self._pending_config = None
+                        self._modbus.close()
+                        self._modbus = ModbusClient(self._config)
+                        break
 
                 now_iso = datetime.now().isoformat()
+                cycle_started = time.perf_counter()
                 self._last_poll_at = now_iso
                 self._stats["total_polls"] += 1
                 out_sensors = []
@@ -437,7 +474,10 @@ class PollerService:
                     "sensors": out_sensors,
                     "stats": {**self._stats, "last_error": self._last_error},
                 }
-                self._write_json_atomic(os.path.join(data_dir(), "current.json"), payload)
+                self._last_cycle_duration_ms = round((time.perf_counter() - cycle_started) * 1000, 2)
+                payload["stats"]["last_cycle_duration_ms"] = self._last_cycle_duration_ms
+                atomic_save_json(os.path.join(data_dir(), "current.json"), payload)
+                self._flush_log_file(force=True)
 
                 if cycle_failed:
                     self._stats["failed_polls"] += 1

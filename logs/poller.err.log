@@ -2010,3 +2010,17 @@ OSError: [Errno 22] Invalid argument: 'D:\\123321\\КВТ версия С\\KVT-C\\data\\mo
 127.0.0.1 - - [03/Jun/2026 12:14:57] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
 127.0.0.1 - - [03/Jun/2026 12:15:26] "GET /api/poller/status HTTP/1.1" 200 -
 127.0.0.1 - - [03/Jun/2026 12:15:26] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:16:26] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:16:26] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:17:26] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:17:26] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:18:26] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:18:26] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:18:38] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:18:38] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:19:03] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:19:03] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:31:11] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:31:11] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:31:16] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [03/Jun/2026 12:31:16] "GET /api/poller/log?limit=20 HTTP/1.1" 200 -
