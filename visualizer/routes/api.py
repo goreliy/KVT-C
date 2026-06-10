@@ -83,6 +83,8 @@ def _poller_call(method: str, path: str, payload=None):
         timeout = 25 if '/api/poller/scan' in path else 3
         if method == 'GET':
             response = _LOCAL_HTTP.get(url, timeout=timeout)
+        elif method == 'DELETE':
+            response = _LOCAL_HTTP.delete(url, timeout=timeout)
         else:
             response = _LOCAL_HTTP.post(url, json=payload, timeout=timeout)
         content_type = response.headers.get('Content-Type', '')
@@ -195,8 +197,11 @@ def api_save_poller_config():
     config, errors = validated_poller_config_patch(data, load_poller_config())
     if errors:
         return jsonify({'errors': errors}), 400
+    proxied, code = _poller_call('POST', '/api/poller/config', config)
+    if code < 400:
+        return jsonify(proxied.get('config', config))
     save_poller_config(config)
-    return jsonify(config)
+    return jsonify({**config, '_warning': 'Poller недоступен, конфигурация сохранена локально'}), 202
 
 
 @api_bp.route('/poller/status')
@@ -214,7 +219,9 @@ def api_poller_current():
 @api_bp.route('/poller/log')
 def api_poller_log():
     limit = request.args.get('limit', 100, type=int)
-    data, code = _poller_call('GET', f'/api/poller/log?limit={limit}')
+    poll_port_id = request.args.get('poll_port_id')
+    suffix = f'&poll_port_id={poll_port_id}' if poll_port_id else ''
+    data, code = _poller_call('GET', f'/api/poller/log?limit={limit}{suffix}')
     return jsonify(data), code
 
 
@@ -226,10 +233,12 @@ def api_poller_ports():
 
 @api_bp.route('/poller/scan')
 def api_poller_scan():
+    poll_port_id = request.args.get('poll_port_id')
     start_id = request.args.get('start_id', 1, type=int)
     end_id = request.args.get('end_id', 32, type=int)
     timeout_ms = request.args.get('timeout_ms', 500, type=int)
-    data, code = _poller_call('GET', f'/api/poller/scan?start_id={start_id}&end_id={end_id}&timeout_ms={timeout_ms}')
+    port_arg = f'poll_port_id={poll_port_id}&' if poll_port_id else ''
+    data, code = _poller_call('GET', f'/api/poller/scan?{port_arg}start_id={start_id}&end_id={end_id}&timeout_ms={timeout_ms}')
     return jsonify(data), code
 
 
@@ -254,6 +263,50 @@ def api_poller_stop():
 @api_bp.route('/poller/reload', methods=['POST'])
 def api_poller_reload():
     data, code = _poller_call('POST', '/api/poller/reload')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/poll-ports')
+def api_poller_poll_ports():
+    data, code = _poller_call('GET', '/api/poller/poll-ports')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/poll-ports', methods=['POST'])
+def api_save_poller_poll_ports():
+    payload = request.get_json(silent=True) or {}
+    data, code = _poller_call('POST', '/api/poller/poll-ports', payload)
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/poll-ports/<port_id>', methods=['DELETE'])
+def api_delete_poller_poll_port(port_id):
+    data, code = _poller_call('DELETE', f'/api/poller/poll-ports/{port_id}')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/poll-ports/<port_id>/start', methods=['POST'])
+def api_start_poller_poll_port(port_id):
+    data, code = _poller_call('POST', f'/api/poller/poll-ports/{port_id}/start')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/poll-ports/<port_id>/stop', methods=['POST'])
+def api_stop_poller_poll_port(port_id):
+    data, code = _poller_call('POST', f'/api/poller/poll-ports/{port_id}/stop')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/poll-ports/<port_id>/restart', methods=['POST'])
+def api_restart_poller_poll_port(port_id):
+    data, code = _poller_call('POST', f'/api/poller/poll-ports/{port_id}/restart')
+    return jsonify(data), code
+
+
+@api_bp.route('/poller/poll-ports/<port_id>/log')
+def api_poller_poll_port_log(port_id):
+    limit = request.args.get('limit', 100, type=int)
+    data, code = _poller_call('GET', f'/api/poller/poll-ports/{port_id}/log?limit={limit}')
     return jsonify(data), code
 
 

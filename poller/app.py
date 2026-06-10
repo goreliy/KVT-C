@@ -10,7 +10,7 @@ from shared.python_compat import patch_legacy_werkzeug_ast
 patch_legacy_werkzeug_ast()
 
 from flask import Flask, jsonify, render_template_string, request
-from shared.config_manager import load_poller_config
+from shared.config_manager import load_poller_config, load_system_config
 from .config import validated_poller_config_patch
 from .poller_service import PollerService
 
@@ -307,7 +307,8 @@ def api_current():
 @app.route("/api/poller/log")
 def api_log():
     limit = request.args.get("limit", 100, type=int)
-    return jsonify(SERVICE.log_payload(limit=limit))
+    poll_port_id = request.args.get("poll_port_id")
+    return jsonify(SERVICE.log_payload(limit=limit, poll_port_id=poll_port_id))
 
 
 @app.route("/api/poller/config")
@@ -337,6 +338,62 @@ def api_stop():
     return jsonify({"status": "ok"})
 
 
+@app.route("/api/poller/poll-ports")
+def api_poll_ports():
+    return jsonify({"poll_ports": SERVICE.poll_ports()})
+
+
+@app.route("/api/poller/poll-ports", methods=["POST"])
+def api_poll_ports_save():
+    data = request.get_json(silent=True) or {}
+    current = load_poller_config()
+    ports = data.get("poll_ports")
+    if ports is None:
+        item = data.get("poll_port") or data
+        ports = [p for p in current.get("poll_ports", []) if str(p.get("id")) != str(item.get("id"))]
+        ports.append(item)
+    config, errors = validated_poller_config_patch({"poll_ports": ports}, current)
+    if errors:
+        return jsonify({"errors": errors}), 400
+    SERVICE.apply_config(config)
+    return jsonify({"status": "ok", "poll_ports": SERVICE.poll_ports()})
+
+
+@app.route("/api/poller/poll-ports/<port_id>", methods=["DELETE"])
+def api_poll_port_delete(port_id):
+    current = load_poller_config()
+    sensors = load_system_config().get("sensors", [])
+    if any(str(sensor.get("poll_port_id") or "default") == str(port_id) for sensor in sensors):
+        return jsonify({"error": "Нельзя удалить линию, к которой привязаны датчики"}), 400
+    ports = [p for p in current.get("poll_ports", []) if str(p.get("id")) != str(port_id)]
+    config, errors = validated_poller_config_patch({"poll_ports": ports}, current)
+    if errors:
+        return jsonify({"errors": errors}), 400
+    SERVICE.apply_config(config)
+    return jsonify({"status": "ok", "poll_ports": SERVICE.poll_ports()})
+
+
+@app.route("/api/poller/poll-ports/<port_id>/start", methods=["POST"])
+def api_poll_port_start(port_id):
+    return jsonify(SERVICE.start_port(port_id))
+
+
+@app.route("/api/poller/poll-ports/<port_id>/stop", methods=["POST"])
+def api_poll_port_stop(port_id):
+    return jsonify(SERVICE.stop_port(port_id))
+
+
+@app.route("/api/poller/poll-ports/<port_id>/restart", methods=["POST"])
+def api_poll_port_restart(port_id):
+    return jsonify(SERVICE.restart_port(port_id))
+
+
+@app.route("/api/poller/poll-ports/<port_id>/log")
+def api_poll_port_log(port_id):
+    limit = request.args.get("limit", 100, type=int)
+    return jsonify(SERVICE.log_payload(limit=limit, poll_port_id=port_id))
+
+
 @app.route("/api/poller/reload", methods=["POST"])
 def api_reload():
     return jsonify(SERVICE.reload_sensors())
@@ -349,10 +406,11 @@ def api_ports():
 
 @app.route("/api/poller/scan")
 def api_scan():
+    poll_port_id = request.args.get("poll_port_id")
     start_id = request.args.get("start_id", 1, type=int)
     end_id = request.args.get("end_id", 32, type=int)
     timeout_ms = request.args.get("timeout_ms", 500, type=int)
-    return jsonify(SERVICE.scan_devices(start_id=start_id, end_id=end_id, timeout_ms=timeout_ms))
+    return jsonify(SERVICE.scan_devices(poll_port_id=poll_port_id, start_id=start_id, end_id=end_id, timeout_ms=timeout_ms))
 
 
 def main():

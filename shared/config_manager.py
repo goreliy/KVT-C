@@ -217,6 +217,11 @@ def validate_sensor(sensor, existing_sensors=None, exclude_id=None):
     errors = []
     if not sensor.get('name', '').strip():
         errors.append('Имя датчика обязательно')
+    sensor.setdefault('poll_port_id', 'default')
+    try:
+        sensor['local_number'] = int(sensor.get('local_number') or sensor.get('id') or 0)
+    except (TypeError, ValueError):
+        errors.append('Номер датчика внутри линии должен быть числом')
     slave_id = sensor.get('modbus_slave_id')
     if slave_id is None or not (1 <= slave_id <= 247):
         errors.append('Modbus Slave ID должен быть от 1 до 247')
@@ -232,8 +237,15 @@ def validate_sensor(sensor, existing_sensors=None, exclude_id=None):
         for es in existing_sensors:
             if exclude_id and es['id'] == exclude_id:
                 continue
-            if es.get('modbus_addr_temp') == addr_t:
-                errors.append(f'Адрес Modbus {addr_t} уже используется датчиком "{es["name"]}"')
+            same_port = str(es.get('poll_port_id') or 'default') == str(sensor.get('poll_port_id') or 'default')
+            if same_port and es.get('modbus_addr_temp') == addr_t:
+                errors.append(f'Адрес Modbus {addr_t} уже используется датчиком "{es["name"]}" на этой линии опроса')
+            try:
+                same_local_number = int(es.get('local_number')) == int(sensor.get('local_number'))
+            except (TypeError, ValueError):
+                same_local_number = False
+            if same_port and es.get('local_number') and sensor.get('local_number') and same_local_number:
+                errors.append(f'Номер {sensor["local_number"]} уже используется датчиком "{es["name"]}" на этой линии опроса')
 
     # Limits validation
     for key in ('temp_limits', 'hum_limits'):
@@ -251,6 +263,8 @@ def add_sensor(sensor_data, config=None):
     sensor_data['id'] = config.get('next_sensor_id', 1)
     sensor_data['created_at'] = datetime.now().isoformat()
     sensor_data.setdefault('enabled', True)
+    sensor_data.setdefault('poll_port_id', 'default')
+    sensor_data.setdefault('local_number', sensor_data['id'])
     sensor_data.setdefault('guarded', True)
     sensor_data.setdefault('notifications', {
         'email_on_warning': True, 'email_on_alarm': True, 'telegram_on_alarm': True

@@ -1,4 +1,4 @@
-{
+﻿{
   "plans": [
     {
       "id": "d40f167a",
@@ -93,6 +93,17 @@
           "y": 66.58
         }
       ]
+    },
+    {
+      "id": "ff033b2d",
+      "name": "Болид",
+      "description": "",
+      "parent_id": null,
+      "background": "/static/floorplans/ff033b2d_9d5591.png",
+      "bg_type": "image",
+      "canvas_width": 1200,
+      "canvas_height": 800,
+      "sensors": []
     }
   ]
 }

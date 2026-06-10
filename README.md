@@ -45,6 +45,11 @@ pip install -r requirements.txt
 - Poller API/UI: `http://127.0.0.1:5001/`
 - Poller status API: `http://127.0.0.1:5001/api/poller/status`
 
+При запуске через `python run_kvt.py start` сервисы слушают адреса из `data/config/system_config.json`.
+По умолчанию `web_host` и `poller_host` равны `0.0.0.0`, поэтому интерфейс доступен и по IP машины:
+- Visualizer UI: `http://<IP-компьютера>:5000/`
+- Poller API/UI: `http://<IP-компьютера>:5001/`
+
 ## Визуализация актуальности
 - На каждой плашке датчика на главном экране отображается строка `Последние данные: ...`.
 - Время берется из `sensor.temperature.timestamp` (fallback: общий `current.timestamp`).

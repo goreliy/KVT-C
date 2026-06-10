@@ -64,7 +64,7 @@
       </div>
     </div>
     <div class="sensor-card__meta">
-      Modbus: slave={{ s.modbus_slave_id }}, addr={{ s.modbus_addr_temp }}/{{ s.modbus_addr_hum }}
+      {{ s.display_number or ('#' ~ s.id) }} · {{ s.poll_port_name or s.poll_port_id or 'default' }} · Modbus: slave={{ s.modbus_slave_id }}, addr={{ s.modbus_addr_temp }}/{{ s.modbus_addr_hum }}
     </div>
     <div class="sensor-card__freshness">
       Последние данные: {{ ((s.temperature.timestamp or data.timestamp or '—').replace('T', ' ')[:19]) if (s.temperature.timestamp or data.timestamp) else '—' }}
@@ -196,7 +196,7 @@ setInterval(async () => {
             </div>
           </div>
           <div class="sensor-card__meta">
-            Modbus: slave=${s.modbus_slave_id}, addr=${s.modbus_addr_temp}/${s.modbus_addr_hum}
+            ${(s.display_number || ('#' + s.id))} · ${(s.poll_port_name || s.poll_port_id || 'default')} · Modbus: slave=${s.modbus_slave_id}, addr=${s.modbus_addr_temp}/${s.modbus_addr_hum}
           </div>
           <div class="sensor-card__freshness">
             Последние данные: ${fmtSensorTs((s.temperature && s.temperature.timestamp) || data.timestamp)}

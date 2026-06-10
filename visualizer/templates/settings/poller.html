@@ -1,9 +1,23 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Настройки Modbus{% endblock %}
 
 {% block content %}
 <h1 class="page-title">Настройки Modbus опросчика</h1>
 {% include "settings/_nav.html" %}
+
+<style>
+  .poller-grid { display: grid; grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr); gap: 16px; align-items: start; }
+  .port-list { width: 100%; border-collapse: collapse; }
+  .port-list th, .port-list td { padding: 8px; border-bottom: 1px solid var(--border-color); text-align: left; font-size: 13px; }
+  .port-list tr.active { background: var(--bg-input); }
+  .port-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .port-actions .btn { padding: 6px 10px; }
+  .small-muted { color: var(--text-secondary); font-size: 12px; }
+  .transport-fields { display: none; }
+  .transport-fields.active { display: block; }
+  .log-pane { max-height: 300px; overflow: auto; background: var(--bg-input); padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 12px; }
+  @media (max-width: 980px) { .poller-grid { grid-template-columns: 1fr; } }
+</style>
 
 <div class="form-section">
   <div class="form-section__title">Тестовый Mock Server</div>
@@ -20,7 +34,7 @@
     </div>
     <div class="form-group">
       <label>Статус</label>
-      <div id="mock-status" style="margin-top:10px;">—</div>
+      <div id="mock-status" style="margin-top:10px;">-</div>
     </div>
   </div>
   <div class="form-row">
@@ -31,223 +45,348 @@
 </div>
 
 <div class="form-section">
-  <div class="form-section__title">Управление Poller</div>
+  <div class="form-section__title">Менеджер портов опроса</div>
   <div class="form-row">
-    <div class="form-group">
-      <label style="display:flex;align-items:center;gap:8px;margin-top:28px;">
-        <input type="checkbox" id="p-auto-start" {{ 'checked' if poller.auto_start else '' }}>
-        Автостарт Poller при запуске сервиса
-      </label>
-    </div>
-    <div class="form-group">
-      <label>Статус Poller</label>
-      <div id="poller-status" style="margin-top:10px;">—</div>
-    </div>
-  </div>
-  <div class="form-row">
-    <button class="btn" onclick="startPoller()">Запустить Poller</button>
-    <button class="btn" onclick="stopPoller()">Остановить Poller</button>
+    <label style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="p-auto-start" {{ 'checked' if poller.auto_start else '' }}>
+      Автостарт Poller
+    </label>
+    <button class="btn" onclick="startPoller()">Запустить все</button>
+    <button class="btn" onclick="stopPoller()">Остановить все</button>
     <button class="btn" onclick="reloadPoller()">Перезагрузить датчики</button>
-    <button class="btn" onclick="refreshPollerAll()">Обновить статус и лог</button>
-  </div>
-  <div class="form-row">
-    <div class="form-group" style="width:100%;">
-      <label>Последние записи Modbus лога</label>
-      <pre id="poller-log" style="max-height:260px;overflow:auto;background:var(--bg-input);padding:12px;border:1px solid var(--border-color);border-radius:8px;">—</pre>
-    </div>
-  </div>
-</div>
-
-<div class="form-section">
-  <div class="form-section__title">Параметры подключения Modbus</div>
-  <div class="form-row">
-    <div class="form-group">
-      <label>Транспорт</label>
-      <select id="p-transport">
-        <option value="serial" {{ 'selected' if (poller.transport or 'serial') == 'serial' }}>COM</option>
-        <option value="udp" {{ 'selected' if (poller.transport or 'serial') == 'udp' }}>UDP</option>
-      </select>
-    </div>
-    <div class="form-group serial-only">
-      <label>COM-порт</label>
-      <input type="text" id="p-com" value="{{ poller.com_port }}">
-    </div>
-    <div class="form-group">
-      <label>Адрес Modbus устройства (Slave ID)</label>
-      <input type="number" id="p-device-slave" value="{{ poller.device_slave_id or 16 }}" min="1" max="247">
-    </div>
-    <div class="form-group serial-only">
-      <label>Скорость (бод)</label>
-      <select id="p-baud">
-        {% for b in [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200] %}
-        <option value="{{ b }}" {{ 'selected' if poller.baudrate == b }}>{{ b }}</option>
-        {% endfor %}
-      </select>
-    </div>
-  </div>
-  <div class="form-row udp-only">
-    <div class="form-group">
-      <label>UDP IP</label>
-      <input type="text" id="p-udp-host" value="{{ poller.udp_host or '127.0.0.1' }}">
-    </div>
-    <div class="form-group">
-      <label>UDP порт</label>
-      <input type="number" id="p-udp-port" value="{{ poller.udp_port or 502 }}" min="1" max="65535">
-    </div>
-  </div>
-  <div class="form-row serial-only">
-    <div class="form-group">
-      <label>Биты данных</label>
-      <select id="p-bytesize">
-        <option value="7" {{ 'selected' if poller.bytesize == 7 }}>7</option>
-        <option value="8" {{ 'selected' if poller.bytesize == 8 }}>8</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Чётность</label>
-      <select id="p-parity">
-        <option value="N" {{ 'selected' if poller.parity == 'N' }}>None</option>
-        <option value="E" {{ 'selected' if poller.parity == 'E' }}>Even</option>
-        <option value="O" {{ 'selected' if poller.parity == 'O' }}>Odd</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Стоп-биты</label>
-      <select id="p-stopbits">
-        <option value="1" {{ 'selected' if poller.stopbits == 1 }}>1</option>
-        <option value="2" {{ 'selected' if poller.stopbits == 2 }}>2</option>
-      </select>
-    </div>
-  </div>
-  <div class="form-row">
-    <input id="scan-start" type="number" min="1" max="247" value="1" style="width:100px;">
-    <input id="scan-end" type="number" min="1" max="247" value="32" style="width:100px;">
-    <input id="scan-timeout" type="number" min="50" max="10000" value="500" style="width:120px;">
-    <button class="btn" onclick="scanModbusDevices()">Поиск Modbus устройств</button>
+    <button class="btn" onclick="refreshPollerAll()">Обновить</button>
     <button class="btn" onclick="openPollerServicePage()">Открыть страницу Poller</button>
-    <div id="scan-result" style="margin-top:10px;">—</div>
+  </div>
+  <div id="poller-status" class="small-muted" style="margin-top:8px;">-</div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Общие параметры опроса</div>
+  <div class="form-row">
+    <div class="form-group"><label>Период опроса, мс</label><input type="number" id="p-period" value="{{ poller.poll_period_ms }}" min="100" max="60000"></div>
+    <div class="form-group"><label>Таймаут по умолчанию, мс</label><input type="number" id="p-timeout" value="{{ poller.timeout_ms }}" min="50" max="10000"></div>
+    <div class="form-group"><label>Повторы</label><input type="number" id="p-retry" value="{{ poller.retry_count }}" min="0" max="10"></div>
+    <div class="form-group"><label>База значений</label><input type="number" id="p-val-base" value="{{ poller.value_register_base }}"></div>
+    <div class="form-group"><label>База статусов</label><input type="number" id="p-stat-base" value="{{ poller.status_register_base }}"></div>
+    <div class="form-group"><label>Макс. записей лога</label><input type="number" id="p-log-max" value="{{ poller.log_max_entries }}" min="1" max="50000"></div>
+  </div>
+</div>
+
+<div class="poller-grid">
+  <div class="form-section">
+    <div class="form-section__title">Линии опроса COM / Ethernet</div>
+    <div class="port-actions" style="margin-bottom:10px;">
+      <button class="btn" onclick="addPort('serial')">+ COM</button>
+      <button class="btn" onclick="addPort('udp_rtu')">+ UDP RTU</button>
+      <button class="btn" onclick="addPort('udp_c2000pp')">+ Ethernet С2000-ПП</button>
+    </div>
+    <table class="port-list">
+      <thead><tr><th>Имя</th><th>Транспорт</th><th>Состояние</th><th>Endpoint</th></tr></thead>
+      <tbody id="ports-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section__title">Редактор выбранной линии</div>
+    <div id="port-editor-empty" class="small-muted">Выберите или создайте линию опроса.</div>
+    <div id="port-editor" style="display:none;">
+      <div class="form-row">
+        <div class="form-group"><label>ID</label><input id="port-id" type="text"></div>
+        <div class="form-group"><label>Уникальное имя</label><input id="port-name" type="text"></div>
+        <div class="form-group">
+          <label>Транспорт</label>
+          <select id="port-transport" onchange="refreshPortTransportFields()">
+            <option value="serial">COM</option>
+            <option value="udp_rtu">UDP RTU</option>
+            <option value="udp_c2000pp">Ethernet С2000-ПП</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;margin-top:28px;"><input type="checkbox" id="port-enabled"> Включена</label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group"><label>Slave ID</label><input id="port-slave" type="number" min="0" max="247"></div>
+        <div class="form-group"><label>Таймаут, мс</label><input id="port-timeout" type="number" min="50" max="10000"></div>
+      </div>
+
+      <div class="transport-fields" data-transport="serial">
+        <div class="form-row">
+          <div class="form-group"><label>COM-порт</label><input id="port-com" type="text"></div>
+          <div class="form-group"><label>Скорость</label><input id="port-baud" type="number"></div>
+          <div class="form-group"><label>Биты данных</label><input id="port-bytesize" type="number" min="5" max="8"></div>
+          <div class="form-group"><label>Чётность</label><input id="port-parity" type="text" maxlength="1"></div>
+          <div class="form-group"><label>Стоп-биты</label><input id="port-stopbits" type="number" min="1" max="2"></div>
+        </div>
+      </div>
+
+      <div class="transport-fields" data-transport="udp_rtu,udp_c2000pp">
+        <div class="form-row">
+          <div class="form-group"><label>Локальный IP</label><input id="port-local-host" type="text" placeholder="192.168.66.97"></div>
+          <div class="form-group"><label>Локальный порт</label><input id="port-local-port" type="number" min="0" max="65535"></div>
+          <div class="form-group"><label>IP прибора</label><input id="port-remote-host" type="text" placeholder="192.168.66.100"></div>
+          <div class="form-group"><label>Порт прибора</label><input id="port-remote-port" type="number" min="1" max="65535"></div>
+        </div>
+      </div>
+
+      <div class="transport-fields" data-transport="udp_c2000pp">
+        <div class="form-row">
+          <div class="form-group"><label>Prefix</label><input id="port-prefix" type="text" value="0x10"></div>
+          <div class="form-group"><label>Channel</label><input id="port-channel" type="text" value="0x10"></div>
+          <div class="form-group"><label>SEQ старт</label><input id="port-seq-start" type="text" value="0x21D1"></div>
+          <div class="form-group"><label style="display:flex;align-items:center;gap:8px;margin-top:28px;"><input type="checkbox" id="port-seq-persist"> Хранить SEQ</label></div>
+        </div>
+      </div>
+
+      <div class="port-actions" style="margin-top:12px;">
+        <button class="btn btn-primary" onclick="saveSelectedPort()">Сохранить линию</button>
+        <button class="btn" onclick="startSelectedPort()">Старт</button>
+        <button class="btn" onclick="stopSelectedPort()">Стоп</button>
+        <button class="btn" onclick="restartSelectedPort()">Рестарт</button>
+        <button class="btn btn-danger" onclick="deleteSelectedPort()">Удалить</button>
+      </div>
+
+      <div class="form-row" style="margin-top:12px;">
+        <input id="scan-start" type="number" min="1" max="247" value="1" style="width:100px;">
+        <input id="scan-end" type="number" min="1" max="247" value="32" style="width:100px;">
+        <input id="scan-timeout" type="number" min="50" max="10000" value="500" style="width:120px;">
+        <button class="btn" onclick="scanModbusDevices()">Поиск на выбранной линии</button>
+      </div>
+      <div id="scan-result" class="small-muted" style="margin-top:8px;">-</div>
+    </div>
   </div>
 </div>
 
 <div class="form-section">
-  <div class="form-section__title">Параметры опроса</div>
-  <div class="form-row">
-    <div class="form-group">
-      <label>Период опроса (мс)</label>
-      <input type="number" id="p-period" value="{{ poller.poll_period_ms }}" min="100" max="60000">
-    </div>
-    <div class="form-group">
-      <label>Таймаут (мс)</label>
-      <input type="number" id="p-timeout" value="{{ poller.timeout_ms }}" min="100" max="5000">
-    </div>
-    <div class="form-group">
-      <label>Повторы</label>
-      <input type="number" id="p-retry" value="{{ poller.retry_count }}" min="0" max="10">
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group">
-      <label>Базовый адрес значений</label>
-      <input type="number" id="p-val-base" value="{{ poller.value_register_base }}">
-    </div>
-    <div class="form-group">
-      <label>Базовый адрес статусов</label>
-      <input type="number" id="p-stat-base" value="{{ poller.status_register_base }}">
-    </div>
-    <div class="form-group">
-      <label>Макс. записей лога</label>
-      <input type="number" id="p-log-max" value="{{ poller.log_max_entries }}" min="100" max="10000">
-    </div>
-  </div>
+  <div class="form-section__title">Лог выбранной линии</div>
+  <pre id="poller-log" class="log-pane">-</pre>
 </div>
-
-<button class="btn btn-primary" onclick="savePoller()">Сохранить</button>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function refreshTransportFields() {
-  const transport = document.getElementById('p-transport').value;
-  document.querySelectorAll('.serial-only').forEach(el => { el.style.display = transport === 'serial' ? '' : 'none'; });
-  document.querySelectorAll('.udp-only').forEach(el => { el.style.display = transport === 'udp' ? '' : 'none'; });
+let pollerConfig = {{ poller | tojson }};
+let pollerStatus = {};
+let selectedPortId = (pollerConfig.poll_ports && pollerConfig.poll_ports[0] && pollerConfig.poll_ports[0].id) || null;
+
+function portEndpoint(port) {
+  if (port.transport === 'serial') return port.com_port || '';
+  return `${port.local_host || '0.0.0.0'}:${port.local_port || 0} -> ${port.remote_host || ''}:${port.remote_port || ''}`;
 }
 
-async function savePoller() {
-  const data = {
-    transport: document.getElementById('p-transport').value,
-    auto_start: document.getElementById('p-auto-start').checked,
-    use_mock_server: document.getElementById('p-use-mock').checked,
-    mock_server_url: document.getElementById('p-mock-url').value.trim(),
-    com_port: document.getElementById('p-com').value,
-    device_slave_id: parseInt(document.getElementById('p-device-slave').value),
-    baudrate: parseInt(document.getElementById('p-baud').value),
-    bytesize: parseInt(document.getElementById('p-bytesize').value),
-    parity: document.getElementById('p-parity').value,
-    stopbits: parseInt(document.getElementById('p-stopbits').value),
-    udp_host: document.getElementById('p-udp-host').value.trim(),
-    udp_port: parseInt(document.getElementById('p-udp-port').value || '0'),
-    poll_period_ms: parseInt(document.getElementById('p-period').value),
-    timeout_ms: parseInt(document.getElementById('p-timeout').value),
-    retry_count: parseInt(document.getElementById('p-retry').value),
-    value_register_base: parseInt(document.getElementById('p-val-base').value),
-    status_register_base: parseInt(document.getElementById('p-stat-base').value),
-    log_max_entries: parseInt(document.getElementById('p-log-max').value)
+function renderPorts() {
+  const statuses = new Map(((pollerStatus.poll_ports || [])).map(p => [String(p.id), p]));
+  const tbody = document.getElementById('ports-tbody');
+  tbody.innerHTML = (pollerConfig.poll_ports || []).map(port => {
+    const state = statuses.get(String(port.id))?.state || (port.enabled ? 'stopped' : 'disabled');
+    return `<tr class="${port.id === selectedPortId ? 'active' : ''}" onclick="selectPort('${port.id}')">
+      <td><b>${port.name || port.id}</b><br><span class="small-muted">${port.id}</span></td>
+      <td>${port.transport}</td>
+      <td>${state}</td>
+      <td>${portEndpoint(port)}</td>
+    </tr>`;
+  }).join('');
+  if (selectedPortId) fillPortEditor();
+}
+
+function selectPort(id) {
+  selectedPortId = id;
+  renderPorts();
+  refreshPollerLog();
+}
+
+function selectedPort() {
+  return (pollerConfig.poll_ports || []).find(p => String(p.id) === String(selectedPortId));
+}
+
+function slugBase(prefix) {
+  return `${prefix}_${Date.now().toString(36)}`;
+}
+
+function addPort(transport) {
+  const id = slugBase(transport === 'serial' ? 'com' : 'udp');
+  const port = {
+    id,
+    name: transport === 'serial' ? 'COM-new' : (transport === 'udp_c2000pp' ? 'UDP-C2000PP-new' : 'UDP-RTU-new'),
+    enabled: true,
+    transport,
+    com_port: 'COM8',
+    device_slave_id: 16,
+    baudrate: 9600,
+    bytesize: 8,
+    parity: 'N',
+    stopbits: 1,
+    local_host: transport === 'serial' ? '' : '192.168.66.97',
+    local_port: transport === 'serial' ? 0 : 40005,
+    remote_host: transport === 'serial' ? '127.0.0.1' : '192.168.66.100',
+    remote_port: transport === 'serial' ? 502 : 40005,
+    timeout_ms: parseInt(document.getElementById('p-timeout').value || '500'),
+    prefix: '0x10',
+    channel: '0x10',
+    seq_start: '0x21D1',
+    seq_persist: true
   };
-
-  if (data.transport === 'udp') {
-    if (!data.udp_host) throw new Error('UDP IP обязателен');
-    if (!(data.udp_port >= 1 && data.udp_port <= 65535)) throw new Error('UDP порт должен быть 1..65535');
-  }
-
-  await apiFetch('/api/poller/config', { method: 'POST', body: JSON.stringify(data) });
-  showToast('Настройки Modbus сохранены');
+  pollerConfig.poll_ports = pollerConfig.poll_ports || [];
+  pollerConfig.poll_ports.push(port);
+  selectedPortId = id;
+  renderPorts();
 }
 
-async function refreshMockStatus() { /* unchanged */
+function fillPortEditor() {
+  const port = selectedPort();
+  document.getElementById('port-editor-empty').style.display = port ? 'none' : '';
+  document.getElementById('port-editor').style.display = port ? '' : 'none';
+  if (!port) return;
+  document.getElementById('port-id').value = port.id || '';
+  document.getElementById('port-name').value = port.name || '';
+  document.getElementById('port-transport').value = port.transport || 'serial';
+  document.getElementById('port-enabled').checked = port.enabled !== false;
+  document.getElementById('port-slave').value = port.device_slave_id ?? 16;
+  document.getElementById('port-timeout').value = port.timeout_ms ?? 500;
+  document.getElementById('port-com').value = port.com_port || 'COM8';
+  document.getElementById('port-baud').value = port.baudrate ?? 9600;
+  document.getElementById('port-bytesize').value = port.bytesize ?? 8;
+  document.getElementById('port-parity').value = port.parity || 'N';
+  document.getElementById('port-stopbits').value = port.stopbits ?? 1;
+  document.getElementById('port-local-host').value = port.local_host || '';
+  document.getElementById('port-local-port').value = port.local_port ?? 0;
+  document.getElementById('port-remote-host').value = port.remote_host || port.udp_host || '127.0.0.1';
+  document.getElementById('port-remote-port').value = port.remote_port || port.udp_port || 502;
+  document.getElementById('port-prefix').value = port.prefix || '0x10';
+  document.getElementById('port-channel').value = port.channel || '0x10';
+  document.getElementById('port-seq-start').value = port.seq_start || '0x21D1';
+  document.getElementById('port-seq-persist').checked = port.seq_persist !== false;
+  refreshPortTransportFields();
+}
+
+function refreshPortTransportFields() {
+  const transport = document.getElementById('port-transport').value;
+  document.querySelectorAll('.transport-fields').forEach(el => {
+    const variants = (el.dataset.transport || '').split(',');
+    el.classList.toggle('active', variants.includes(transport));
+  });
+}
+
+function readSelectedPortForm() {
+  return {
+    id: document.getElementById('port-id').value.trim(),
+    name: document.getElementById('port-name').value.trim(),
+    enabled: document.getElementById('port-enabled').checked,
+    transport: document.getElementById('port-transport').value,
+    device_slave_id: parseInt(document.getElementById('port-slave').value || '16'),
+    timeout_ms: parseInt(document.getElementById('port-timeout').value || '500'),
+    com_port: document.getElementById('port-com').value.trim(),
+    baudrate: parseInt(document.getElementById('port-baud').value || '9600'),
+    bytesize: parseInt(document.getElementById('port-bytesize').value || '8'),
+    parity: document.getElementById('port-parity').value.trim().toUpperCase() || 'N',
+    stopbits: parseInt(document.getElementById('port-stopbits').value || '1'),
+    local_host: document.getElementById('port-local-host').value.trim(),
+    local_port: parseInt(document.getElementById('port-local-port').value || '0'),
+    remote_host: document.getElementById('port-remote-host').value.trim(),
+    remote_port: parseInt(document.getElementById('port-remote-port').value || '502'),
+    prefix: document.getElementById('port-prefix').value.trim() || '0x10',
+    channel: document.getElementById('port-channel').value.trim() || '0x10',
+    seq_start: document.getElementById('port-seq-start').value.trim() || '0x21D1',
+    seq_persist: document.getElementById('port-seq-persist').checked
+  };
+}
+
+async function saveAllConfig() {
+  pollerConfig.auto_start = document.getElementById('p-auto-start').checked;
+  pollerConfig.use_mock_server = document.getElementById('p-use-mock').checked;
+  pollerConfig.mock_server_url = document.getElementById('p-mock-url').value.trim();
+  pollerConfig.poll_period_ms = parseInt(document.getElementById('p-period').value || '1000');
+  pollerConfig.timeout_ms = parseInt(document.getElementById('p-timeout').value || '500');
+  pollerConfig.retry_count = parseInt(document.getElementById('p-retry').value || '3');
+  pollerConfig.value_register_base = parseInt(document.getElementById('p-val-base').value || '30000');
+  pollerConfig.status_register_base = parseInt(document.getElementById('p-stat-base').value || '40000');
+  pollerConfig.log_max_entries = parseInt(document.getElementById('p-log-max').value || '1000');
+  await apiFetch('/api/poller/config', { method: 'POST', body: JSON.stringify(pollerConfig) });
+  await refreshPollerAll();
+}
+
+async function saveSelectedPort() {
+  const updated = readSelectedPortForm();
+  if (!updated.id || !updated.name) throw new Error('ID и имя линии обязательны');
+  const oldId = selectedPortId;
+  pollerConfig.poll_ports = (pollerConfig.poll_ports || []).filter(p => String(p.id) !== String(oldId));
+  pollerConfig.poll_ports.push(updated);
+  selectedPortId = updated.id;
+  await saveAllConfig();
+  showToast('Линия опроса сохранена');
+}
+
+async function deleteSelectedPort() {
+  if (!selectedPortId) return;
+  if (!confirm('Удалить выбранную линию опроса?')) return;
+  await apiFetch(`/api/poller/poll-ports/${selectedPortId}`, { method: 'DELETE' });
+  pollerConfig.poll_ports = (pollerConfig.poll_ports || []).filter(p => String(p.id) !== String(selectedPortId));
+  selectedPortId = (pollerConfig.poll_ports[0] && pollerConfig.poll_ports[0].id) || null;
+  await refreshPollerAll();
+}
+
+async function startSelectedPort(){ if (selectedPortId) { await apiFetch(`/api/poller/poll-ports/${selectedPortId}/start`, {method:'POST'}); await refreshPollerAll(); } }
+async function stopSelectedPort(){ if (selectedPortId) { await apiFetch(`/api/poller/poll-ports/${selectedPortId}/stop`, {method:'POST'}); await refreshPollerAll(); } }
+async function restartSelectedPort(){ if (selectedPortId) { await apiFetch(`/api/poller/poll-ports/${selectedPortId}/restart`, {method:'POST'}); await refreshPollerAll(); } }
+
+async function refreshMockStatus() {
   try {
     const data = await apiFetch('/api/mockserver/status');
-    const status = data.reachable ? 'доступен' : 'недоступен';
-    const proc = data.process_running ? 'процесс запущен' : 'процесс не запущен';
-    document.getElementById('mock-status').textContent = `${status}, ${proc}`;
-  } catch (e) {
-    document.getElementById('mock-status').textContent = 'ошибка получения статуса';
-  }
+    document.getElementById('mock-status').textContent = `${data.reachable ? 'доступен' : 'недоступен'}, ${data.process_running ? 'процесс запущен' : 'процесс не запущен'}`;
+  } catch (e) { document.getElementById('mock-status').textContent = 'ошибка получения статуса'; }
 }
-
 async function startMockServer(){ await apiFetch('/api/mockserver/start',{method:'POST'}); showToast('Mock Server запущен'); await refreshMockStatus(); }
 async function stopMockServer(){ await apiFetch('/api/mockserver/stop',{method:'POST'}); showToast('Mock Server остановлен'); await refreshMockStatus(); }
 function openMockServerPage(){ const url=document.getElementById('p-mock-url').value.trim()||'http://127.0.0.1:8000'; window.open(url,'_blank'); }
-refreshMockStatus();
 
 async function refreshPollerStatus(){
   try {
-    const data = await apiFetch('/api/poller/status');
-    const err = data.last_error ? `, ошибка: ${data.last_error}` : '';
-    document.getElementById('poller-status').textContent = `${data.state}, опросов: ${data.total_polls || 0}, успешных: ${data.successful_polls || 0}, неуспешных: ${data.failed_polls || 0}${err}`;
+    pollerStatus = await apiFetch('/api/poller/status');
+    const err = pollerStatus.last_error ? `, ошибка: ${pollerStatus.last_error}` : '';
+    document.getElementById('poller-status').textContent = `${pollerStatus.state}, портов: ${(pollerStatus.poll_ports || []).length}, опросов: ${pollerStatus.total_polls || 0}, успешных: ${pollerStatus.successful_polls || 0}, неуспешных: ${pollerStatus.failed_polls || 0}${err}`;
   } catch (e) { document.getElementById('poller-status').textContent = 'poller недоступен'; }
+}
+
+async function refreshConfig(){
+  try {
+    pollerConfig = await apiFetch('/api/poller/config');
+    if (!selectedPortId && pollerConfig.poll_ports && pollerConfig.poll_ports[0]) selectedPortId = pollerConfig.poll_ports[0].id;
+  } catch (e) {}
 }
 
 async function refreshPollerLog(){
   try {
-    const data = await apiFetch('/api/poller/log?limit=20');
-    const entries = data.entries || [];
+    const suffix = selectedPortId ? `&poll_port_id=${encodeURIComponent(selectedPortId)}` : '';
+    const data = await apiFetch(`/api/poller/log?limit=40${suffix}`);
+    const entries = data.exchange_queue || data.entries || [];
     if (!entries.length) { document.getElementById('poller-log').textContent = 'Лог пуст'; return; }
-    document.getElementById('poller-log').textContent = entries.map(e => `[${e.timestamp || ''}] ${e.direction || ''}: ${(e.parsed && e.parsed.description) ? e.parsed.description : ''}${e.response_time_ms != null ? `, ${e.response_time_ms} ms` : ''}`).join('\n');
+    document.getElementById('poller-log').textContent = entries.map(e => {
+      const port = e.poll_port_name || (e.source && e.source.poll_port_name) || '';
+      const transport = e.transport && e.transport.udp ? `\n  UDP SEQ: tx=${e.transport.udp.tx_seq || ''}, rx=${e.transport.udp.rx_seq || ''}\n  UDP TX: ${e.transport.udp.wrapped_tx_hex || ''}\n  UDP RX: ${e.transport.udp.wrapped_rx_hex || ''}` : '';
+      return `[${e.timestamp || ''}] ${port} ${e.status || e.direction || ''}: ${e.result || (e.parsed && e.parsed.description) || ''}\n  TX: ${e.tx_hex || e.raw_hex || ''}\n  RX: ${e.rx_hex || ''}${transport}`;
+    }).join('\n\n');
   } catch (e) { document.getElementById('poller-log').textContent = `Ошибка чтения лога: ${e.message}`; }
 }
 
-async function refreshPollerAll(){ await refreshPollerStatus(); await refreshPollerLog(); }
+async function refreshPollerAll(){
+  await refreshConfig();
+  await refreshPollerStatus();
+  renderPorts();
+  await refreshPollerLog();
+}
 
 async function scanModbusDevices(){
   const resultEl = document.getElementById('scan-result');
+  if (!selectedPortId) return;
   resultEl.textContent = 'Сканирование...';
   try {
     const start = parseInt(document.getElementById('scan-start').value || '1');
     const end = parseInt(document.getElementById('scan-end').value || '32');
     const timeout = parseInt(document.getElementById('scan-timeout').value || '500');
-    const data = await apiFetch(`/api/poller/scan?start_id=${start}&end_id=${end}&timeout_ms=${timeout}`);
+    const data = await apiFetch(`/api/poller/scan?poll_port_id=${encodeURIComponent(selectedPortId)}&start_id=${start}&end_id=${end}&timeout_ms=${timeout}`);
     const found = data.found || [];
-    resultEl.textContent = found.length ? `Найдено: ${found.map(x => x.slave_id).join(', ')}` : 'Устройства не найдены';
+    resultEl.textContent = found.length ? `Найдено: ${found.map(x => x.slave_id).join(', ')}` : (data.error || 'Устройства не найдены');
   } catch (e) { resultEl.textContent = `Ошибка поиска: ${e.message}`; }
 }
 
@@ -264,8 +403,7 @@ async function startPoller(){ await apiFetch('/api/poller/start',{method:'POST'}
 async function stopPoller(){ await apiFetch('/api/poller/stop',{method:'POST'}); showToast('Poller остановлен'); await refreshPollerAll(); }
 async function reloadPoller(){ await apiFetch('/api/poller/reload',{method:'POST'}); showToast('Конфигурация датчиков обновлена'); await refreshPollerAll(); }
 
-refreshTransportFields();
-document.getElementById('p-transport').addEventListener('change', refreshTransportFields);
+refreshMockStatus();
 refreshPollerAll();
 setInterval(refreshPollerAll, 5000);
 </script>

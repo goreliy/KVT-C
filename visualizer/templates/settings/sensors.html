@@ -21,6 +21,8 @@
       <thead>
         <tr>
           <th>ID</th>
+          <th>Линия</th>
+          <th>Номер</th>
           <th>Имя</th>
           <th>Описание</th>
           <th>Slave ID</th>
@@ -37,6 +39,8 @@
         {% for s in config.sensors %}
         <tr id="row-{{ s.id }}">
           <td>{{ s.id }}</td>
+          <td>{{ s.poll_port_id or 'default' }}</td>
+          <td>{{ s.local_number or s.id }}</td>
           <td>{{ s.name }}</td>
           <td class="text-muted">{{ s.description or '—' }}</td>
           <td>{{ s.modbus_slave_id }}</td>
@@ -71,6 +75,21 @@
       <div class="form-group">
         <label>Описание</label>
         <input type="text" id="f-desc" placeholder="Хранилище 11, зона C">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Линия опроса *</label>
+        <select id="f-poll-port">
+          {% for p in poller.poll_ports or [] %}
+          <option value="{{ p.id }}">{{ p.name }} ({{ p.transport }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Номер внутри линии *</label>
+        <input type="number" id="f-local-number" min="1" max="9999" value="1">
       </div>
     </div>
 
@@ -139,6 +158,8 @@ async function openEditModal(id) {
   document.getElementById('edit-id').value = s.id;
   document.getElementById('f-name').value = s.name;
   document.getElementById('f-desc').value = s.description || '';
+  document.getElementById('f-poll-port').value = s.poll_port_id || 'default';
+  document.getElementById('f-local-number').value = s.local_number || s.id;
   document.getElementById('f-slave').value = s.modbus_slave_id;
   document.getElementById('f-addr-temp').value = s.modbus_addr_temp;
   document.getElementById('f-addr-hum').value = s.modbus_addr_hum;
@@ -161,6 +182,8 @@ function closeModal() {
 
 function clearForm() {
   ['f-name','f-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-poll-port').value = 'default';
+  document.getElementById('f-local-number').value = 1;
   document.getElementById('f-slave').value = 16;
   document.getElementById('f-addr-temp').value = '';
   document.getElementById('f-addr-hum').value = '';
@@ -179,20 +202,31 @@ function clearForm() {
 async function suggestNextAddress() {
   const sensors = await apiFetch('/api/sensors');
   let maxAddr = 0;
-  sensors.forEach(s => { if (s.modbus_addr_hum > maxAddr) maxAddr = s.modbus_addr_hum; });
+  let maxLocal = 0;
+  const portId = document.getElementById('f-poll-port').value || 'default';
+  sensors.forEach(s => {
+    if ((s.poll_port_id || 'default') === portId) {
+      if (s.modbus_addr_hum > maxAddr) maxAddr = s.modbus_addr_hum;
+      if ((s.local_number || s.id) > maxLocal) maxLocal = (s.local_number || s.id);
+    }
+  });
   document.getElementById('f-addr-temp').value = maxAddr + 1;
   document.getElementById('f-addr-hum').value = maxAddr + 2;
+  document.getElementById('f-local-number').value = maxLocal + 1;
 }
 
 // Auto-fill hum address when temp changes
 document.getElementById('f-addr-temp').addEventListener('input', function() {
   document.getElementById('f-addr-hum').value = parseInt(this.value) + 1 || '';
 });
+document.getElementById('f-poll-port').addEventListener('change', suggestNextAddress);
 
 function buildSensorData() {
   return {
     name: document.getElementById('f-name').value.trim(),
     description: document.getElementById('f-desc').value.trim(),
+    poll_port_id: document.getElementById('f-poll-port').value || 'default',
+    local_number: parseInt(document.getElementById('f-local-number').value),
     modbus_slave_id: parseInt(document.getElementById('f-slave').value),
     modbus_addr_temp: parseInt(document.getElementById('f-addr-temp').value),
     modbus_addr_hum: parseInt(document.getElementById('f-addr-hum').value),

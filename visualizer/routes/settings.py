@@ -5,6 +5,7 @@ from shared.config_manager import (
     load_archive_config, load_notifications_config,
     load_theme_config
 )
+from poller.config import normalized_poller_config
 
 settings_bp = Blueprint('settings', __name__)
 
@@ -18,12 +19,13 @@ def settings_index():
 @settings_bp.route('/sensors')
 def settings_sensors():
     config = load_system_config()
-    return render_template('settings/sensors.html', config=config)
+    poller = normalized_poller_config()
+    return render_template('settings/sensors.html', config=config, poller=poller)
 
 
 @settings_bp.route('/poller')
 def settings_poller():
-    poller = load_poller_config()
+    poller = normalized_poller_config()
     return render_template('settings/poller.html', poller=poller)
 
 

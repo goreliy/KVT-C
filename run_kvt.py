@@ -1,19 +1,24 @@
-﻿import argparse
+import argparse
+import json
 import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
+
 ROOT = Path(__file__).resolve().parent
 LOG_DIR = ROOT / "logs"
 PID_DIR = ROOT / ".run"
+SYSTEM_CONFIG = ROOT / "data" / "config" / "system_config.json"
 
 SERVICES = {
     "poller": {
         "module": "poller.app",
         "port": 5001,
-        "host": "127.0.0.1",
+        "host": "0.0.0.0",
+        "network_host_key": "poller_host",
+        "network_port_key": "poller_port",
         "pid_file": PID_DIR / "poller.pid",
         "stdout": LOG_DIR / "poller.out.log",
         "stderr": LOG_DIR / "poller.err.log",
@@ -21,7 +26,9 @@ SERVICES = {
     "visualizer": {
         "module": "visualizer.app",
         "port": 5000,
-        "host": "127.0.0.1",
+        "host": "0.0.0.0",
+        "network_host_key": "web_host",
+        "network_port_key": "web_port",
         "pid_file": PID_DIR / "visualizer.pid",
         "stdout": LOG_DIR / "visualizer.out.log",
         "stderr": LOG_DIR / "visualizer.err.log",
@@ -36,6 +43,22 @@ def _ensure_dirs() -> None:
 
 def _is_windows() -> bool:
     return os.name == "nt"
+
+
+def _network_config() -> dict:
+    try:
+        with open(SYSTEM_CONFIG, "r", encoding="utf-8-sig") as handle:
+            return (json.load(handle).get("network") or {})
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _service_bind(name: str) -> tuple[str, int]:
+    cfg = SERVICES[name]
+    network = _network_config()
+    host = str(network.get(cfg["network_host_key"], cfg["host"]) or cfg["host"]).strip()
+    port = int(network.get(cfg["network_port_key"], cfg["port"]) or cfg["port"])
+    return host, port
 
 
 def _pid_alive(pid: int) -> bool:
@@ -83,14 +106,15 @@ def _remove_pid(path: Path) -> None:
 
 def start_service(name: str) -> None:
     cfg = SERVICES[name]
+    host, port = _service_bind(name)
     pid = _read_pid(cfg["pid_file"])
     if pid and _pid_alive(pid):
-        print(f"{name}: already running (pid={pid})")
+        print(f"{name}: already running (pid={pid}, host={host}, port={port})")
         return
     if pid and not _pid_alive(pid):
         _remove_pid(cfg["pid_file"])
 
-    cmd = [sys.executable, "-m", cfg["module"], "--host", cfg["host"], "--port", str(cfg["port"])]
+    cmd = [sys.executable, "-m", cfg["module"], "--host", host, "--port", str(port)]
 
     creationflags = 0
     if _is_windows():
@@ -99,7 +123,7 @@ def start_service(name: str) -> None:
     with open(cfg["stdout"], "a", encoding="utf-8") as stdout, open(cfg["stderr"], "a", encoding="utf-8") as stderr:
         proc = subprocess.Popen(cmd, cwd=str(ROOT), stdout=stdout, stderr=stderr, creationflags=creationflags)
     _write_pid(cfg["pid_file"], proc.pid)
-    print(f"{name}: started (pid={proc.pid}, port={cfg['port']})")
+    print(f"{name}: started (pid={proc.pid}, host={host}, port={port})")
 
 
 def stop_service(name: str) -> None:
@@ -132,13 +156,14 @@ def stop_service(name: str) -> None:
 
 def status_services() -> None:
     for name, cfg in SERVICES.items():
+        host, port = _service_bind(name)
         pid = _read_pid(cfg["pid_file"])
         if pid and _pid_alive(pid):
-            print(f"{name}: running (pid={pid}, port={cfg['port']})")
+            print(f"{name}: running (pid={pid}, host={host}, port={port})")
         elif pid:
             print(f"{name}: stale pid={pid}")
         else:
-            print(f"{name}: stopped")
+            print(f"{name}: stopped (host={host}, port={port})")
 
 
 def parse_args():
@@ -163,9 +188,12 @@ def main() -> int:
     elif args.command == "stop":
         for name in reversed(targets):
             stop_service(name)
+        # A tiny pause avoids Windows reporting recently killed sockets as still bound.
+        time.sleep(0.5)
     elif args.command == "restart":
         for name in reversed(targets):
             stop_service(name)
+        time.sleep(0.5)
         for name in targets:
             start_service(name)
     else:
