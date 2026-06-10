@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-03T12:49:23.152202",
+  "timestamp": "2026-06-03T12:52:54.875928",
   "transport": "serial",
   "poll_period_ms": 1000,
   "com_port": "COM8",
@@ -18,14 +18,14 @@
         "raw": 6560,
         "status": "normal",
         "modbus_status": 64256,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "humidity": {
         "value": 51.0,
         "raw": 13056,
         "status": "normal",
         "modbus_status": 18427,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "combined_status": "guarded"
     },
@@ -40,14 +40,14 @@
         "raw": 6576,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "humidity": {
         "value": 53.0,
         "raw": 13568,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "combined_status": "guarded"
     },
@@ -58,18 +58,18 @@
       "modbus_addr_temp": 5,
       "modbus_addr_hum": 6,
       "temperature": {
-        "value": 25.5625,
-        "raw": 6544,
+        "value": 25.625,
+        "raw": 6560,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "humidity": {
         "value": 50.0,
         "raw": 12800,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "combined_status": "guarded"
     },
@@ -84,14 +84,14 @@
         "raw": 6544,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "humidity": {
         "value": 48.0,
         "raw": 12288,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "combined_status": "guarded"
     },
@@ -102,18 +102,18 @@
       "modbus_addr_temp": 9,
       "modbus_addr_hum": 10,
       "temperature": {
-        "value": 25.5625,
-        "raw": 6544,
+        "value": 25.625,
+        "raw": 6560,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "humidity": {
         "value": 49.0,
         "raw": 12544,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "combined_status": "guarded"
     },
@@ -124,18 +124,18 @@
       "modbus_addr_temp": 11,
       "modbus_addr_hum": 12,
       "temperature": {
-        "value": 25.1875,
-        "raw": 6448,
+        "value": 25.3125,
+        "raw": 6480,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "humidity": {
         "value": 48.0,
         "raw": 12288,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "combined_status": "guarded"
     },
@@ -146,18 +146,18 @@
       "modbus_addr_temp": 13,
       "modbus_addr_hum": 14,
       "temperature": {
-        "value": 25.875,
-        "raw": 6624,
+        "value": 25.9375,
+        "raw": 6640,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "humidity": {
         "value": 48.0,
         "raw": 12288,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "combined_status": "guarded"
     },
@@ -168,28 +168,28 @@
       "modbus_addr_temp": 15,
       "modbus_addr_hum": 16,
       "temperature": {
-        "value": 25.375,
-        "raw": 6496,
+        "value": 25.4375,
+        "raw": 6512,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "humidity": {
         "value": 46.0,
         "raw": 11776,
         "status": "normal",
         "modbus_status": 28092,
-        "timestamp": "2026-06-03T12:49:23.152202"
+        "timestamp": "2026-06-03T12:52:54.875928"
       },
       "combined_status": "guarded"
     }
   ],
   "stats": {
-    "total_polls": 18,
-    "successful_polls": 17,
+    "total_polls": 114,
+    "successful_polls": 113,
     "failed_polls": 0,
     "skipped_status_reads": 0,
     "last_error": null,
-    "last_cycle_duration_ms": 810.02
+    "last_cycle_duration_ms": 977.55
   }
 }
