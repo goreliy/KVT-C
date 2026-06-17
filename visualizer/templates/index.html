@@ -15,24 +15,65 @@
   }
   .summary-bar__item .val { font-size: 24px; font-weight: 700; }
   .summary-bar__item .lbl { font-size: 11px; color: var(--text-secondary); }
-  .port-availability { margin-bottom: 20px; }
-  .port-availability__title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
-  .port-availability__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
-  .port-availability__card {
-    background: var(--bg-card); border: 1px solid var(--border-color);
-    border-radius: 8px; padding: 12px; min-height: 136px;
+  /* --- Дерево датчиков --- */
+  .tree-section { margin-bottom: 24px; }
+  .tree-section__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .tree-section__title { font-size: 16px; font-weight: 600; }
+  .tree { display: flex; flex-direction: column; gap: 8px; }
+  .tree--child { margin-left: 22px; margin-top: 8px; border-left: 2px solid var(--border-color); padding-left: 12px; }
+  .branch {
+    background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;
   }
-  .port-availability__head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
-  .port-availability__name { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .port-availability__meta { color: var(--text-secondary); font-size: 11px; margin-bottom: 8px; }
-  .port-availability__chart { height: 64px; }
+  .branch__head {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer;
+    flex-wrap: wrap;
+  }
+  .branch__toggle { width: 14px; color: var(--text-secondary); transition: transform .15s; flex: none; }
+  .branch.collapsed .branch__toggle { transform: rotate(-90deg); }
+  .branch.collapsed .branch__body { display: none; }
+  .branch__name { font-weight: 600; font-size: 14px; }
+  .branch__count { color: var(--text-secondary); font-size: 12px; }
+  .branch__stats { margin-left: auto; display: flex; gap: 14px; font-size: 12px; flex-wrap: wrap; }
+  .branch__stat b { font-weight: 700; }
+  .branch__stat .lbl { color: var(--text-secondary); margin-right: 4px; }
+  .branch__body { padding: 0 12px 12px; }
+  .branch__sensors { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+  .branch-leaf {
+    display: flex; flex-direction: column; gap: 3px;
+    background: var(--bg-input); border-radius: 6px; padding: 8px 10px;
+    text-decoration: none; color: inherit; border-left: 3px solid var(--color-offline);
+  }
+  .branch-leaf--normal { border-left-color: var(--color-normal); }
+  .branch-leaf--warning { border-left-color: var(--color-warning); }
+  .branch-leaf--alarm { border-left-color: var(--color-alarm); }
+  .branch-leaf--guarded { border-left-color: var(--color-guarded); }
+  .branch-leaf__top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+  .branch-leaf__name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .branch-leaf__val { font-size: 13px; white-space: nowrap; }
+  .branch-leaf__meta { font-size: 11px; color: var(--text-secondary); }
+  .tree-empty { color: var(--text-secondary); font-size: 13px; padding: 10px 0; }
+
+  /* Редактор дерева */
+  .tree-editor { margin-top: 14px; padding: 14px; border: 1px dashed var(--color-guarded); border-radius: 10px; background: var(--bg-card); }
+  .tree-editor__bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+  .te-flag { display: flex; gap: 6px; align-items: center; font-size: 13px; margin-left: 6px; cursor: pointer; }
+  .te-branch { border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+  .te-branch__row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .te-branch__row input[type="text"] { flex: 1; }
+  .te-sensors { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px; max-height: 160px; overflow-y: auto; padding: 6px; background: var(--bg-input); border-radius: 6px; }
+  .te-sensor { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+  .te-children { margin-left: 18px; margin-top: 8px; border-left: 2px solid var(--border-color); padding-left: 10px; }
+  .te-input { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 10px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; flex-wrap:wrap;">
   <h1 class="page-title" style="margin-bottom:0;">Текущие показания</h1>
-  <span class="text-muted" id="last-update">{{ data.timestamp or '—' }}</span>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <span class="text-muted" id="last-update">{{ data.timestamp or '—' }}</span>
+    <button class="btn btn-secondary btn-sm" id="edit-mode-btn" onclick="toggleEditMode()">✏ Режим редактирования</button>
+  </div>
 </div>
 
 <!-- Summary bar -->
@@ -59,9 +100,27 @@
   </div>
 </div>
 
-<div class="port-availability" id="port-availability" style="display:none;">
-  <div class="port-availability__title">Р”РѕСЃС‚СѓРїРЅРѕСЃС‚СЊ Ethernet-Р»РёРЅРёР№</div>
-  <div class="port-availability__grid" id="port-availability-grid"></div>
+<!-- Дерево датчиков -->
+<div class="tree-section" id="tree-section">
+  <div class="tree-section__head">
+    <div class="tree-section__title">Дерево датчиков</div>
+    <span class="text-muted" id="tree-edit-hint" style="display:none;">Режим редактирования включён</span>
+  </div>
+  <div class="tree" id="tree-root"></div>
+
+  <!-- Встроенный редактор дерева (виден в режиме редактирования) -->
+  <div class="tree-editor" id="tree-editor" style="display:none;">
+    <div class="tree-editor__bar">
+      <button class="btn btn-secondary btn-sm" onclick="addRootBranch()">+ Добавить ветку</button>
+      <button class="btn btn-primary btn-sm" onclick="saveTreeEditor()">Сохранить дерево</button>
+      <button class="btn btn-secondary btn-sm" onclick="cancelTreeEditor()">Отменить изменения</button>
+      <label class="te-flag">
+        <input type="checkbox" id="flag-show-flat" checked onchange="setShowFlat(this.checked)">
+        <span>Показывать плашки вне дерева (все плашки)</span>
+      </label>
+    </div>
+    <div id="tree-editor-body"></div>
+  </div>
 </div>
 
 <div class="sensor-grid" id="sensor-grid">
@@ -86,6 +145,7 @@
       Последние данные: {{ ((s.temperature.timestamp or data.timestamp or '—').replace('T', ' ')[:19]) if (s.temperature.timestamp or data.timestamp) else '—' }}
       <br>
       Получено данных сегодня: <span id="today-count-{{ s.id }}">—</span>
+      <span id="ping-line-{{ s.id }}" style="display:none;"><br>Ping линии: <span id="ping-{{ s.id }}">—</span></span>
     </div>
     <div class="sensor-card__mini-chart">
       <canvas id="mini-{{ s.id }}"></canvas>
@@ -99,7 +159,6 @@
 <script>
 const miniCharts = {};
 const todayCounts = {};
-let availabilityCharts = {};
 let availabilityState = { sensors: {}, ports: {} };
 let lastAvailabilityLoadAt = 0;
 
@@ -179,91 +238,327 @@ function applyTodayCounts(sensors) {
   }
 }
 
-function renderPortAvailability(payload) {
-  const section = document.getElementById('port-availability');
-  const grid = document.getElementById('port-availability-grid');
-  const ports = Object.values(payload.ports || {}).filter(p => isEthernetTransport(p.transport));
-  Object.values(availabilityCharts).forEach(chart => chart.destroy());
-  availabilityCharts = {};
+// Определить, привязан ли датчик к Ethernet-линии (для отображения ping в его плашке)
+function sensorEthernetPort(sensor) {
+  const port = availabilityState.ports?.[String(sensor.poll_port_id ?? 'default')];
+  return (port && isEthernetTransport(port.transport)) ? port : null;
+}
 
-  if (!ports.length) {
-    section.style.display = 'none';
-    grid.innerHTML = '';
-    return;
+function pingTextForPort(port) {
+  if (port.last_ping_ms != null) return `${port.last_ping_ms} мс`;
+  if (port.last_network_available === false) return 'нет связи';
+  return '—';
+}
+
+// Ping выводится в плашке КАЖДОГО датчика — только если он подключён по Ethernet
+function applyPings(sensors) {
+  for (const s of sensors) {
+    const line = document.getElementById(`ping-line-${s.id}`);
+    const el = document.getElementById(`ping-${s.id}`);
+    const port = sensorEthernetPort(s);
+    if (line) line.style.display = port ? '' : 'none';
+    if (el && port) el.textContent = pingTextForPort(port);
   }
-
-  section.style.display = '';
-  grid.innerHTML = ports.map(port => {
-    const chartId = `availability-chart-${safeDomId(port.id)}`;
-    const percent = port.network_availability_percent == null ? '—' : `${port.network_availability_percent}%`;
-    const last = port.last_network_available == null ? '—' : (port.last_network_available ? 'OK' : 'Нет связи');
-    const ping = port.last_ping_ms == null ? 'ping —' : `ping ${port.last_ping_ms} мс`;
-    const checks = `проверок: ${port.network_checks || 0}`;
-    const endpoint = `${port.remote_host || ''}${port.remote_port ? ':' + port.remote_port : ''}`;
-    return `
-      <div class="port-availability__card">
-        <div class="port-availability__head">
-          <div class="port-availability__name">${escapeHtml(port.name || port.id)}</div>
-          <div>${percent}</div>
-        </div>
-        <div class="port-availability__meta">${escapeHtml(port.transport)} · ${escapeHtml(endpoint)} · ${last} · ${ping} · ${checks}</div>
-        <div class="port-availability__chart"><canvas id="${chartId}"></canvas></div>
-      </div>`;
-  }).join('');
-
-  ports.forEach(port => {
-    const chartId = `availability-chart-${safeDomId(port.id)}`;
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-    const history = port.network_history || [];
-    availabilityCharts[port.id] = new Chart(canvas.getContext('2d'), {
-      type: 'line',
-      data: {
-        datasets: [{
-          data: history.map(item => ({ x: item.timestamp, y: item.available ? 1 : 0 })),
-          borderColor: 'var(--color-normal)',
-          backgroundColor: 'rgba(76, 175, 80, .12)',
-          borderWidth: 1.5,
-          pointRadius: 2,
-          pointHoverRadius: 3,
-          stepped: true,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        scales: {
-          x: { display: false, type: 'time' },
-          y: { display: false, min: -0.05, max: 1.05 }
-        }
-      }
-    });
-  });
 }
 
 async function loadDailyAvailability(sensors) {
   try {
     availabilityState = await apiFetch('/api/availability/daily');
     applyTodayCounts(sensors);
-    renderPortAvailability(availabilityState);
+    applyPings(sensors);
     lastAvailabilityLoadAt = Date.now();
+  } catch (e) {}
+}
+
+// ---------- Дерево датчиков ----------
+let mnemoTree = { branches: [], show_flat_cards: true };
+let latestSensors = [];
+let treeTmpCounter = 0;
+
+// Показывать/скрывать сетку плашек вне дерева
+function applyFlatVisibility(show) {
+  const grid = document.getElementById('sensor-grid');
+  if (grid) grid.style.display = show ? '' : 'none';
+}
+
+function sensorsById() {
+  const map = {};
+  for (const s of latestSensors) map[String(s.id)] = s;
+  return map;
+}
+
+// Рекурсивно собрать id всех датчиков ветки и её подветок
+function collectBranchSensorIds(branch, acc) {
+  for (const sid of (branch.sensor_ids || [])) acc.add(Number(sid));
+  for (const child of (branch.children || [])) collectBranchSensorIds(child, acc);
+  return acc;
+}
+
+function branchStats(branch, byId) {
+  const ids = collectBranchSensorIds(branch, new Set());
+  const stat = { count: ids.size, tMin: null, tMax: null, hMin: null, hMax: null };
+  for (const sid of ids) {
+    const s = byId[String(sid)];
+    if (!s) continue;
+    const t = s.temperature?.value;
+    const h = s.humidity?.value;
+    if (t != null) {
+      stat.tMin = stat.tMin == null ? t : Math.min(stat.tMin, t);
+      stat.tMax = stat.tMax == null ? t : Math.max(stat.tMax, t);
+    }
+    if (h != null) {
+      stat.hMin = stat.hMin == null ? h : Math.min(stat.hMin, h);
+      stat.hMax = stat.hMax == null ? h : Math.max(stat.hMax, h);
+    }
+  }
+  return stat;
+}
+
+function fmtRange(min, max, suffix) {
+  if (min == null || max == null) return '—';
+  if (min === max) return `${min.toFixed(1)}${suffix}`;
+  return `${min.toFixed(1)} … ${max.toFixed(1)}${suffix}`;
+}
+
+function renderBranch(branch, byId) {
+  const st = branchStats(branch, byId);
+  const sensorsHtml = (branch.sensor_ids || []).map(sid => {
+    const s = byId[String(sid)];
+    if (!s) return '';
+    const base = statusBase(s.combined_status || 'offline');
+    const t = s.temperature?.value == null ? '—' : s.temperature.value.toFixed(1) + '°C';
+    const h = s.humidity?.value == null ? '—' : s.humidity.value.toFixed(1) + '%';
+    const line = escapeHtml(s.poll_port_name || s.poll_port_id || 'default');
+    const last = fmtSensorTs((s.temperature && s.temperature.timestamp) || null);
+    const item = availabilityState.sensors?.[String(s.id)];
+    const received = item ? (item.received_today || 0) : (todayCounts[s.id] ?? '—');
+    const port = sensorEthernetPort(s);
+    const pingHtml = port
+      ? `<div class="branch-leaf__meta">Ping линии: ${pingTextForPort(port)}</div>`
+      : '';
+    return `<a href="/sensor/${s.id}" class="branch-leaf branch-leaf--${base}">
+      <div class="branch-leaf__top">
+        <span class="branch-leaf__name">${escapeHtml(s.name)}</span>
+        <span class="branch-leaf__val">${t} · ${h}</span>
+      </div>
+      <div class="branch-leaf__meta">Линия: ${line}</div>
+      <div class="branch-leaf__meta">Последние данные: ${last}</div>
+      <div class="branch-leaf__meta">Получено данных сегодня: ${received}</div>
+      ${pingHtml}
+    </a>`;
+  }).join('');
+  const childrenHtml = (branch.children || []).length
+    ? `<div class="tree tree--child">${branch.children.map(c => renderBranch(c, byId)).join('')}</div>`
+    : '';
+  const bodyHtml = (sensorsHtml || childrenHtml)
+    ? `${sensorsHtml ? `<div class="branch__sensors">${sensorsHtml}</div>` : ''}${childrenHtml}`
+    : `<div class="tree-empty">Нет датчиков в этой ветке</div>`;
+  return `
+    <div class="branch" data-branch="${escapeHtml(branch.id)}">
+      <div class="branch__head" onclick="this.parentNode.classList.toggle('collapsed')">
+        <span class="branch__toggle">▾</span>
+        <span class="branch__name">${escapeHtml(branch.name)}</span>
+        <span class="branch__count">(${st.count})</span>
+        <span class="branch__stats">
+          <span class="branch__stat"><span class="lbl">t°</span><b>${fmtRange(st.tMin, st.tMax, '°C')}</b></span>
+          <span class="branch__stat"><span class="lbl">влажн.</span><b>${fmtRange(st.hMin, st.hMax, '%')}</b></span>
+        </span>
+      </div>
+      <div class="branch__body">${bodyHtml}</div>
+    </div>`;
+}
+
+function renderTree() {
+  const root = document.getElementById('tree-root');
+  if (!root) return;
+  const byId = sensorsById();
+  if (!mnemoTree.branches || !mnemoTree.branches.length) {
+    root.innerHTML = '<div class="tree-empty">Дерево пустое. Включите «Режим редактирования», чтобы создать ветки и добавить датчики.</div>';
+    return;
+  }
+  // Сохранить состояние свёрнутых веток между перерисовками
+  const collapsed = new Set(
+    Array.from(root.querySelectorAll('.branch.collapsed')).map(el => el.dataset.branch)
+  );
+  root.innerHTML = mnemoTree.branches.map(b => renderBranch(b, byId)).join('');
+  collapsed.forEach(id => {
+    const el = root.querySelector(`.branch[data-branch="${CSS.escape(id)}"]`);
+    if (el) el.classList.add('collapsed');
+  });
+}
+
+async function loadTree() {
+  try {
+    const data = await apiFetch('/api/mnemo/tree');
+    mnemoTree = { branches: data.branches || [], show_flat_cards: data.show_flat_cards !== false };
+    renderTree();
+    applyFlatVisibility(mnemoTree.show_flat_cards);
+  } catch (e) {}
+}
+
+// ---------- Редактор дерева ----------
+let editorTree = { branches: [], show_flat_cards: true };
+
+function deepCloneTree(tree) {
+  return JSON.parse(JSON.stringify(tree));
+}
+
+function newBranch() {
+  treeTmpCounter += 1;
+  return { id: 'tmp' + treeTmpCounter, name: 'Новая ветка', sensor_ids: [], children: [] };
+}
+
+function findParentList(branches, id) {
+  for (const b of branches) {
+    if (b.id === id) return branches;
+    const found = findParentList(b.children || [], id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function findBranch(branches, id) {
+  for (const b of branches) {
+    if (b.id === id) return b;
+    const found = findBranch(b.children || [], id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function renderEditorBranch(branch) {
+  const sensorsChecklist = latestSensors.map(s => {
+    const checked = (branch.sensor_ids || []).includes(Number(s.id)) ? 'checked' : '';
+    return `<label class="te-sensor">
+      <input type="checkbox" ${checked} onchange="toggleSensor('${branch.id}', ${s.id}, this.checked)">
+      <span>${escapeHtml(s.name)} <span class="text-muted">#${s.id}</span></span>
+    </label>`;
+  }).join('');
+  const childrenHtml = (branch.children || []).map(renderEditorBranch).join('');
+  return `
+    <div class="te-branch" data-branch="${escapeHtml(branch.id)}">
+      <div class="te-branch__row">
+        <input type="text" class="te-input" value="${escapeHtml(branch.name)}"
+               oninput="renameBranch('${branch.id}', this.value)" placeholder="Название ветки">
+        <button class="btn btn-secondary btn-sm" onclick="addChildBranch('${branch.id}')">+ подветка</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteBranch('${branch.id}')">Удалить</button>
+      </div>
+      <div class="te-sensors">${sensorsChecklist || '<span class="text-muted">Нет датчиков</span>'}</div>
+      ${childrenHtml ? `<div class="te-children">${childrenHtml}</div>` : ''}
+    </div>`;
+}
+
+function renderEditor() {
+  const body = document.getElementById('tree-editor-body');
+  if (!body) return;
+  body.innerHTML = editorTree.branches.length
+    ? editorTree.branches.map(renderEditorBranch).join('')
+    : '<div class="tree-empty">Веток пока нет. Нажмите «+ Добавить ветку».</div>';
+}
+
+// ---------- Режим редактирования мнемосхемы ----------
+let editMode = false;
+
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = document.getElementById('edit-mode-btn');
+  const editor = document.getElementById('tree-editor');
+  const hint = document.getElementById('tree-edit-hint');
+  if (editMode) {
+    editorTree = deepCloneTree(mnemoTree);
+    renderEditor();
+    const flag = document.getElementById('flag-show-flat');
+    if (flag) flag.checked = editorTree.show_flat_cards !== false;
+    editor.style.display = '';
+    hint.style.display = '';
+    btn.textContent = '✓ Завершить редактирование';
+    btn.classList.remove('btn-secondary');
+    btn.classList.add('btn-primary');
+    editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    editor.style.display = 'none';
+    hint.style.display = 'none';
+    btn.textContent = '✏ Режим редактирования';
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-secondary');
+  }
+}
+
+function setShowFlat(checked) {
+  editorTree.show_flat_cards = checked;
+  applyFlatVisibility(checked); // живой предпросмотр
+}
+
+function cancelTreeEditor() {
+  // откатить несохранённые изменения (включая флаг) и выйти из режима
+  editorTree = deepCloneTree(mnemoTree);
+  applyFlatVisibility(mnemoTree.show_flat_cards);
+  if (editMode) toggleEditMode();
+}
+
+function addRootBranch() {
+  editorTree.branches.push(newBranch());
+  renderEditor();
+}
+
+function addChildBranch(id) {
+  const b = findBranch(editorTree.branches, id);
+  if (b) { (b.children = b.children || []).push(newBranch()); renderEditor(); }
+}
+
+function deleteBranch(id) {
+  const list = findParentList(editorTree.branches, id);
+  if (list) {
+    const idx = list.findIndex(b => b.id === id);
+    if (idx >= 0) list.splice(idx, 1);
+    renderEditor();
+  }
+}
+
+function renameBranch(id, name) {
+  const b = findBranch(editorTree.branches, id);
+  if (b) b.name = name;
+}
+
+function toggleSensor(id, sensorId, checked) {
+  const b = findBranch(editorTree.branches, id);
+  if (!b) return;
+  b.sensor_ids = b.sensor_ids || [];
+  const num = Number(sensorId);
+  const idx = b.sensor_ids.indexOf(num);
+  if (checked && idx < 0) b.sensor_ids.push(num);
+  else if (!checked && idx >= 0) b.sensor_ids.splice(idx, 1);
+}
+
+async function saveTreeEditor() {
+  try {
+    const saved = await apiFetch('/api/mnemo/tree', {
+      method: 'POST',
+      body: JSON.stringify({ branches: editorTree.branches, show_flat_cards: editorTree.show_flat_cards })
+    });
+    mnemoTree = { branches: saved.branches || [], show_flat_cards: saved.show_flat_cards !== false };
+    editorTree = deepCloneTree(mnemoTree);
+    renderTree();
+    renderEditor();
+    applyFlatVisibility(mnemoTree.show_flat_cards);
+    showToast('Дерево сохранено');
   } catch (e) {}
 }
 
 // Init
 const initialSensors = {{ data.sensors | tojson }};
+latestSensors = initialSensors;
 initMiniCharts(initialSensors);
 loadMiniCharts();
 loadDailyAvailability(initialSensors);
+loadTree();
 
 // Auto-refresh current values
 setInterval(async () => {
   try {
     const data = await apiFetch('/api/current');
     document.getElementById('last-update').textContent = data.timestamp || '—';
+    latestSensors = data.sensors;
 
     let ok = 0, warn = 0, alarm = 0, offline = 0;
     const grid = document.getElementById('sensor-grid');
@@ -297,6 +592,7 @@ setInterval(async () => {
             Последние данные: ${fmtSensorTs((s.temperature && s.temperature.timestamp) || data.timestamp)}
             <br>
             Получено данных сегодня: <span id="today-count-${s.id}">${todayCounts[s.id] ?? '—'}</span>
+            <span id="ping-line-${s.id}" style="display:none;"><br>Ping линии: <span id="ping-${s.id}">—</span></span>
           </div>
           <div class="sensor-card__mini-chart">
             <canvas id="mini-${s.id}"></canvas>
@@ -311,6 +607,8 @@ setInterval(async () => {
     document.getElementById('sum-offline').textContent = offline;
 
     applyTodayCounts(data.sensors);
+    applyPings(data.sensors);
+    renderTree();
     if (Date.now() - lastAvailabilityLoadAt > 30000) {
       loadDailyAvailability(data.sensors);
     }

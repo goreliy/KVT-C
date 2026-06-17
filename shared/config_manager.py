@@ -17,6 +17,7 @@ NOTIFICATIONS_CONFIG_PATH = os.path.join(CONFIG_DIR, 'notifications.json')
 LAYOUT_CONFIG_PATH = os.path.join(CONFIG_DIR, 'layout.json')
 THEME_CONFIG_PATH = os.path.join(CONFIG_DIR, 'theme_config.json')
 FLOORPLAN_CONFIG_PATH = os.path.join(CONFIG_DIR, 'floorplan_config.json')
+MNEMO_TREE_CONFIG_PATH = os.path.join(CONFIG_DIR, 'mnemo_tree.json')
 BACKUP_DIR = os.path.join(CONFIG_DIR, 'backups')
 
 
@@ -195,6 +196,75 @@ def load_floorplan_config():
 def save_floorplan_config(config):
     save_json(FLOORPLAN_CONFIG_PATH, config)
     return config
+
+
+# --- Mnemoscheme tree (группировка датчиков по веткам) ---
+
+def _default_mnemo_tree():
+    return {"branches": [], "show_flat_cards": True}
+
+
+def _next_branch_id(existing_ids):
+    n = 1
+    while f"br{n}" in existing_ids:
+        n += 1
+    return f"br{n}"
+
+
+def _sanitize_branches(raw, existing_ids, depth=0):
+    """Рекурсивная очистка/валидация веток дерева мнемосхемы."""
+    result = []
+    if not isinstance(raw, list) or depth > 8:
+        return result
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        branch_id = str(item.get('id') or '').strip()
+        if not branch_id or branch_id in existing_ids:
+            branch_id = _next_branch_id(existing_ids)
+        existing_ids.add(branch_id)
+        name = str(item.get('name') or '').strip() or 'Ветка'
+        sensor_ids = []
+        seen = set()
+        for sid in (item.get('sensor_ids') or []):
+            try:
+                sid_int = int(sid)
+            except (TypeError, ValueError):
+                continue
+            if sid_int not in seen:
+                seen.add(sid_int)
+                sensor_ids.append(sid_int)
+        result.append({
+            'id': branch_id,
+            'name': name[:80],
+            'sensor_ids': sensor_ids,
+            'children': _sanitize_branches(item.get('children'), existing_ids, depth + 1),
+        })
+    return result
+
+
+def load_mnemo_tree():
+    try:
+        data = load_json(MNEMO_TREE_CONFIG_PATH)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = _default_mnemo_tree()
+        save_json(MNEMO_TREE_CONFIG_PATH, data)
+        return data
+    data.setdefault('branches', [])
+    data.setdefault('show_flat_cards', True)
+    return data
+
+
+def save_mnemo_tree(config):
+    config = config or {}
+    branches = _sanitize_branches(config.get('branches'), set())
+    payload = {
+        'branches': branches,
+        'show_flat_cards': bool(config.get('show_flat_cards', True)),
+        'updated_at': datetime.now().isoformat(),
+    }
+    save_json(MNEMO_TREE_CONFIG_PATH, payload)
+    return payload
 
 
 # --- Sensor CRUD ---

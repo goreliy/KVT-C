@@ -43,6 +43,11 @@ def create_app():
                 template_folder='templates',
                 static_folder='static')
     app.secret_key = _load_secret_key()
+    # Шаблоны и статику перечитывать без рестарта процесса (иначе правки index.html/style.css
+    # не видны, пока visualizer запущен через run_kvt.py без debug).
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.jinja_env.auto_reload = True
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
     @app.context_processor
     def inject_theme():

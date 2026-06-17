@@ -13,6 +13,7 @@ from shared.config_manager import (
     load_poller_config, save_poller_config,
     load_notifications_config, save_notifications_config,
     load_theme_config, save_theme_config,
+    load_mnemo_tree, save_mnemo_tree,
     load_runtime_json,
     get_sensors, get_sensor_by_id, add_sensor, update_sensor, delete_sensor,
     validate_sensor
@@ -566,6 +567,21 @@ def api_archive_summary():
             }
 
     return jsonify(summary)
+
+
+# --- Mnemoscheme tree ---
+
+@api_bp.route('/mnemo/tree')
+def api_mnemo_tree():
+    return jsonify(load_mnemo_tree())
+
+
+@api_bp.route('/mnemo/tree', methods=['POST'])
+def api_save_mnemo_tree():
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({'error': 'Нет данных'}), 400
+    return jsonify(save_mnemo_tree(data))
 
 
 # --- Theme config ---
