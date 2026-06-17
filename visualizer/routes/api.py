@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request
 import requests
 from poller.config import validated_poller_config_patch
+from shared.availability import is_ethernet_port, sync_daily_availability_from_current
 from shared.config_manager import (
     load_system_config, save_system_config,
     load_poller_config, save_poller_config,
@@ -121,6 +122,31 @@ def api_current():
     if not current:
         return jsonify({'error': 'Нет данных'}), 404
     return jsonify(current)
+
+
+@api_bp.route('/availability/daily')
+def api_availability_daily():
+    current = load_runtime_json(os.path.join(DATA_DIR, 'current.json'), default={})
+    poller_config = load_poller_config()
+    payload = sync_daily_availability_from_current(current, poller_config, ping_ethernet=True)
+    for port in poller_config.get('poll_ports', []):
+        if not is_ethernet_port(port):
+            continue
+        port_id = str(port.get('id') or 'default')
+        payload.setdefault('ports', {}).setdefault(port_id, {
+            'id': port_id,
+            'name': port.get('name') or port_id,
+            'transport': port.get('transport'),
+            'remote_host': port.get('remote_host') or port.get('udp_host'),
+            'remote_port': port.get('remote_port') or port.get('udp_port'),
+            'poll_cycles': 0,
+            'poll_ok_cycles': 0,
+            'poll_failed_cycles': 0,
+            'network_checks': 0,
+            'network_ok_checks': 0,
+            'network_history': [],
+        })
+    return jsonify(payload)
 
 
 @api_bp.route('/config')

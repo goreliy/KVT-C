@@ -10,9 +10,9 @@
       "priority": "medium",
       "value": -12.2,
       "message": "Датчик 3: Низкая температура -12.2°C",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "operator",
+      "acknowledged_at": "2026-06-11T11:40:53.951913"
     },
     {
       "id": 77,
@@ -22,9 +22,9 @@
       "priority": "medium",
       "value": 42.8,
       "message": "Датчик 8: Высокая температура 42.8°C",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "operator",
+      "acknowledged_at": "2026-06-11T11:40:54.639949"
     },
     {
       "id": 76,
@@ -46,9 +46,9 @@
       "priority": "medium",
       "value": -11.6,
       "message": "Датчик 10: Низкая температура -11.6°C",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "operator",
+      "acknowledged_at": "2026-06-11T11:40:55.424363"
     },
     {
       "id": 74,

@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from serial.tools import list_ports
 
+from shared.availability import is_ethernet_port, ping_port_host, update_daily_availability
 from shared.config_manager import atomic_save_json, load_runtime_json, load_system_config, save_poller_config
 from .config import data_dir, normalized_poller_config
 from .modbus_client import ModbusClient, ModbusError
@@ -41,6 +42,8 @@ class PollPortWorker:
         self._last_poll_at = None
         self._last_success_at = None
         self._last_cycle_duration_ms = 0
+        self._last_network_check_at = 0.0
+        self._network_check_interval_s = 30.0
         self._stats = {
             "total_polls": 0,
             "successful_polls": 0,
@@ -144,6 +147,16 @@ class PollPortWorker:
 
     def _log_exchange(self, exchange: Dict[str, Any]):
         self.manager.log_exchange(exchange)
+
+    def _network_check_if_due(self, now_iso: str) -> Optional[Dict[str, Any]]:
+        if not is_ethernet_port(self.port_config):
+            return None
+        now = time.monotonic()
+        if now - self._last_network_check_at < self._network_check_interval_s:
+            return None
+        self._last_network_check_at = now
+        timeout_ms = min(1500, max(300, int(self.port_config.get("timeout_ms") or self.global_config.get("timeout_ms", 500))))
+        return ping_port_host(self.port_config, timeout_ms=timeout_ms, now_iso=now_iso)
 
     def _log_status_skipped_after_values_failure(self, context: Dict[str, Any], slave_id: int, start_addr: int, count: int, error: ModbusError):
         timestamp = datetime.now().isoformat()
@@ -410,10 +423,11 @@ class PollPortWorker:
         reconnect_pause = 5.0
         while not self._stop.is_set():
             if not self._client.connect():
+                now_iso = datetime.now().isoformat()
                 with self._lock:
                     self._state = "error"
                     self._last_error = f"Cannot open {self.port_name}"
-                self.manager.update_port_snapshot(self.port_id, self.status(), [], self._stats)
+                self.manager.update_port_snapshot(self.port_id, self.status(), [], self._stats, self._network_check_if_due(now_iso))
                 time.sleep(reconnect_pause)
                 continue
 
@@ -471,7 +485,13 @@ class PollPortWorker:
                         self._last_success_at = now_iso
                         self._last_error = None
 
-                self.manager.update_port_snapshot(self.port_id, self.status(), out_sensors, self._stats)
+                self.manager.update_port_snapshot(
+                    self.port_id,
+                    self.status(),
+                    out_sensors,
+                    self._stats,
+                    self._network_check_if_due(now_iso),
+                )
                 time.sleep(max(0.1, int(self.global_config["poll_period_ms"]) / 1000.0))
 
             self._client.close()
@@ -647,7 +667,14 @@ class PollerService:
         sensors = load_system_config().get("sensors", [])
         return [sensor for sensor in sensors if sensor.get("enabled", True)]
 
-    def update_port_snapshot(self, port_id: str, port_status: Dict[str, Any], sensors: List[Dict[str, Any]], stats: Dict[str, Any]):
+    def update_port_snapshot(
+        self,
+        port_id: str,
+        port_status: Dict[str, Any],
+        sensors: List[Dict[str, Any]],
+        stats: Dict[str, Any],
+        network_check: Optional[Dict[str, Any]] = None,
+    ):
         with self._lock:
             self._port_snapshots[port_id] = port_status
             self._sensor_snapshots[port_id] = sensors
@@ -658,6 +685,15 @@ class PollerService:
                 "skipped_status_reads": sum(int(p.get("skipped_status_reads", 0)) for p in self._port_snapshots.values()),
             }
             self._write_current_file_locked()
+            try:
+                update_daily_availability(
+                    self._port_config(port_id) or port_status,
+                    port_status,
+                    sensors,
+                    network_check=network_check,
+                )
+            except Exception as error:
+                self._port_snapshots[port_id]["availability_error"] = str(error)
 
     def _write_current_file(self):
         with self._lock:

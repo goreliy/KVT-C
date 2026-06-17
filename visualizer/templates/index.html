@@ -15,6 +15,17 @@
   }
   .summary-bar__item .val { font-size: 24px; font-weight: 700; }
   .summary-bar__item .lbl { font-size: 11px; color: var(--text-secondary); }
+  .port-availability { margin-bottom: 20px; }
+  .port-availability__title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+  .port-availability__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .port-availability__card {
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 8px; padding: 12px; min-height: 136px;
+  }
+  .port-availability__head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; }
+  .port-availability__name { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .port-availability__meta { color: var(--text-secondary); font-size: 11px; margin-bottom: 8px; }
+  .port-availability__chart { height: 64px; }
 </style>
 {% endblock %}
 
@@ -46,6 +57,11 @@
     <div class="val" style="color:var(--color-offline)" id="sum-offline">0</div>
     <div class="lbl">Нет связи</div>
   </div>
+</div>
+
+<div class="port-availability" id="port-availability" style="display:none;">
+  <div class="port-availability__title">Р”РѕСЃС‚СѓРїРЅРѕСЃС‚СЊ Ethernet-Р»РёРЅРёР№</div>
+  <div class="port-availability__grid" id="port-availability-grid"></div>
 </div>
 
 <div class="sensor-grid" id="sensor-grid">
@@ -83,6 +99,9 @@
 <script>
 const miniCharts = {};
 const todayCounts = {};
+let availabilityCharts = {};
+let availabilityState = { sensors: {}, ports: {} };
+let lastAvailabilityLoadAt = 0;
 
 function fmtSensorTs(ts) {
   if (!ts) return '—';
@@ -93,6 +112,20 @@ function fmtSensorTs(ts) {
 
 function statusBase(status) {
   return status.includes('_') ? status.split('_')[0] : status;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function safeDomId(value) {
+  return String(value ?? '').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function isEthernetTransport(transport) {
+  return ['udp', 'udp_rtu', 'udp_c2000pp'].includes(String(transport || '').toLowerCase());
 }
 
 // Create mini sparkline charts
@@ -137,32 +170,94 @@ async function loadMiniCharts() {
   }
 }
 
-function todayIsoRange() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-  return { from: start.toISOString(), to: end.toISOString() };
+function applyTodayCounts(sensors) {
+  for (const s of sensors) {
+    const item = availabilityState.sensors?.[String(s.id)];
+    todayCounts[s.id] = item ? (item.received_today || 0) : (todayCounts[s.id] ?? 0);
+    const el = document.getElementById(`today-count-${s.id}`);
+    if (el) el.textContent = String(todayCounts[s.id]);
+  }
 }
 
-async function loadTodayCounts(sensors) {
-  const { from, to } = todayIsoRange();
-  for (const s of sensors) {
-    try {
-      const resp = await fetch(`/api/archive/sensor/${s.id}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
-      if (!resp.ok) continue;
-      const result = await resp.json();
-      todayCounts[s.id] = Array.isArray(result.data) ? result.data.length : (result.data_count || 0);
-      const el = document.getElementById(`today-count-${s.id}`);
-      if (el) el.textContent = String(todayCounts[s.id]);
-    } catch (e) {}
+function renderPortAvailability(payload) {
+  const section = document.getElementById('port-availability');
+  const grid = document.getElementById('port-availability-grid');
+  const ports = Object.values(payload.ports || {}).filter(p => isEthernetTransport(p.transport));
+  Object.values(availabilityCharts).forEach(chart => chart.destroy());
+  availabilityCharts = {};
+
+  if (!ports.length) {
+    section.style.display = 'none';
+    grid.innerHTML = '';
+    return;
   }
+
+  section.style.display = '';
+  grid.innerHTML = ports.map(port => {
+    const chartId = `availability-chart-${safeDomId(port.id)}`;
+    const percent = port.network_availability_percent == null ? '—' : `${port.network_availability_percent}%`;
+    const last = port.last_network_available == null ? '—' : (port.last_network_available ? 'OK' : 'Нет связи');
+    const ping = port.last_ping_ms == null ? 'ping —' : `ping ${port.last_ping_ms} мс`;
+    const checks = `проверок: ${port.network_checks || 0}`;
+    const endpoint = `${port.remote_host || ''}${port.remote_port ? ':' + port.remote_port : ''}`;
+    return `
+      <div class="port-availability__card">
+        <div class="port-availability__head">
+          <div class="port-availability__name">${escapeHtml(port.name || port.id)}</div>
+          <div>${percent}</div>
+        </div>
+        <div class="port-availability__meta">${escapeHtml(port.transport)} · ${escapeHtml(endpoint)} · ${last} · ${ping} · ${checks}</div>
+        <div class="port-availability__chart"><canvas id="${chartId}"></canvas></div>
+      </div>`;
+  }).join('');
+
+  ports.forEach(port => {
+    const chartId = `availability-chart-${safeDomId(port.id)}`;
+    const canvas = document.getElementById(chartId);
+    if (!canvas) return;
+    const history = port.network_history || [];
+    availabilityCharts[port.id] = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        datasets: [{
+          data: history.map(item => ({ x: item.timestamp, y: item.available ? 1 : 0 })),
+          borderColor: 'var(--color-normal)',
+          backgroundColor: 'rgba(76, 175, 80, .12)',
+          borderWidth: 1.5,
+          pointRadius: 2,
+          pointHoverRadius: 3,
+          stepped: true,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false, type: 'time' },
+          y: { display: false, min: -0.05, max: 1.05 }
+        }
+      }
+    });
+  });
+}
+
+async function loadDailyAvailability(sensors) {
+  try {
+    availabilityState = await apiFetch('/api/availability/daily');
+    applyTodayCounts(sensors);
+    renderPortAvailability(availabilityState);
+    lastAvailabilityLoadAt = Date.now();
+  } catch (e) {}
 }
 
 // Init
 const initialSensors = {{ data.sensors | tojson }};
 initMiniCharts(initialSensors);
 loadMiniCharts();
-loadTodayCounts(initialSensors);
+loadDailyAvailability(initialSensors);
 
 // Auto-refresh current values
 setInterval(async () => {
@@ -215,10 +310,14 @@ setInterval(async () => {
     document.getElementById('sum-alarm').textContent = alarm;
     document.getElementById('sum-offline').textContent = offline;
 
+    applyTodayCounts(data.sensors);
+    if (Date.now() - lastAvailabilityLoadAt > 30000) {
+      loadDailyAvailability(data.sensors);
+    }
+
     // Re-init mini charts after DOM rebuild
     initMiniCharts(data.sensors);
     loadMiniCharts();
-    loadTodayCounts(data.sensors);
   } catch(e) {}
 }, 5000);
 </script>

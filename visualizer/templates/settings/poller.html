@@ -169,13 +169,31 @@
 let pollerConfig = {{ poller | tojson }};
 let pollerStatus = {};
 let selectedPortId = (pollerConfig.poll_ports && pollerConfig.poll_ports[0] && pollerConfig.poll_ports[0].id) || null;
+let portEditorDirty = false;
+
+function isPortEditorBusy() {
+  const active = document.activeElement;
+  return portEditorDirty || !!(active && active.closest && active.closest('#port-editor'));
+}
+
+function markPortEditorDirty() {
+  portEditorDirty = true;
+}
+
+function bindPortEditorDirtyTracking() {
+  document.querySelectorAll('#port-editor input, #port-editor select').forEach(el => {
+    el.addEventListener('input', markPortEditorDirty);
+    el.addEventListener('change', markPortEditorDirty);
+  });
+}
 
 function portEndpoint(port) {
   if (port.transport === 'serial') return port.com_port || '';
   return `${port.local_host || '0.0.0.0'}:${port.local_port || 0} -> ${port.remote_host || ''}:${port.remote_port || ''}`;
 }
 
-function renderPorts() {
+function renderPorts(options = {}) {
+  const fillEditor = options.fillEditor !== false;
   const statuses = new Map(((pollerStatus.poll_ports || [])).map(p => [String(p.id), p]));
   const tbody = document.getElementById('ports-tbody');
   tbody.innerHTML = (pollerConfig.poll_ports || []).map(port => {
@@ -187,11 +205,12 @@ function renderPorts() {
       <td>${portEndpoint(port)}</td>
     </tr>`;
   }).join('');
-  if (selectedPortId) fillPortEditor();
+  if (selectedPortId && fillEditor && !isPortEditorBusy()) fillPortEditor();
 }
 
 function selectPort(id) {
   selectedPortId = id;
+  portEditorDirty = false;
   renderPorts();
   refreshPollerLog();
 }
@@ -230,7 +249,9 @@ function addPort(transport) {
   pollerConfig.poll_ports = pollerConfig.poll_ports || [];
   pollerConfig.poll_ports.push(port);
   selectedPortId = id;
+  portEditorDirty = false;
   renderPorts();
+  portEditorDirty = true;
 }
 
 function fillPortEditor() {
@@ -302,8 +323,10 @@ async function saveAllConfig() {
   pollerConfig.value_register_base = parseInt(document.getElementById('p-val-base').value || '30000');
   pollerConfig.status_register_base = parseInt(document.getElementById('p-stat-base').value || '40000');
   pollerConfig.log_max_entries = parseInt(document.getElementById('p-log-max').value || '1000');
-  await apiFetch('/api/poller/config', { method: 'POST', body: JSON.stringify(pollerConfig) });
-  await refreshPollerAll();
+  pollerConfig = await apiFetch('/api/poller/config', { method: 'POST', body: JSON.stringify(pollerConfig) });
+  await refreshPollerStatus();
+  renderPorts({ fillEditor: false });
+  await refreshPollerLog();
 }
 
 async function saveSelectedPort() {
@@ -314,6 +337,8 @@ async function saveSelectedPort() {
   pollerConfig.poll_ports.push(updated);
   selectedPortId = updated.id;
   await saveAllConfig();
+  portEditorDirty = false;
+  fillPortEditor();
   showToast('Линия опроса сохранена');
 }
 
@@ -370,9 +395,10 @@ async function refreshPollerLog(){
 }
 
 async function refreshPollerAll(){
-  await refreshConfig();
+  const editorBusy = isPortEditorBusy();
+  if (!editorBusy) await refreshConfig();
   await refreshPollerStatus();
-  renderPorts();
+  renderPorts({ fillEditor: !editorBusy });
   await refreshPollerLog();
 }
 
@@ -404,7 +430,8 @@ async function stopPoller(){ await apiFetch('/api/poller/stop',{method:'POST'});
 async function reloadPoller(){ await apiFetch('/api/poller/reload',{method:'POST'}); showToast('Конфигурация датчиков обновлена'); await refreshPollerAll(); }
 
 refreshMockStatus();
+bindPortEditorDirtyTracking();
 refreshPollerAll();
-setInterval(refreshPollerAll, 5000);
+setInterval(() => refreshPollerAll(), 5000);
 </script>
 {% endblock %}
