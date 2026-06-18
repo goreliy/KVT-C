@@ -274,6 +274,7 @@ async function loadDailyAvailability(sensors) {
 let mnemoTree = { branches: [], show_flat_cards: true };
 let latestSensors = [];
 let treeTmpCounter = 0;
+const TREE_COLLAPSED_STORAGE_KEY = 'kvt.mnemoTree.collapsedBranches';
 
 // Показывать/скрывать сетку плашек вне дерева
 function applyFlatVisibility(show) {
@@ -288,6 +289,46 @@ function sensorsById() {
 }
 
 // Рекурсивно собрать id всех датчиков ветки и её подветок
+function loadCollapsedBranches() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TREE_COLLAPSED_STORAGE_KEY) || '[]');
+    return new Set(Array.isArray(saved) ? saved.map(String) : []);
+  } catch (e) {
+    return new Set();
+  }
+}
+
+function saveCollapsedBranches(collapsed) {
+  try {
+    localStorage.setItem(TREE_COLLAPSED_STORAGE_KEY, JSON.stringify(Array.from(collapsed)));
+  } catch (e) {}
+}
+
+function currentCollapsedBranches(root) {
+  if (!root || !root.querySelector('.branch')) return loadCollapsedBranches();
+  return new Set(
+    Array.from(root.querySelectorAll('.branch.collapsed')).map(el => String(el.dataset.branch))
+  );
+}
+
+function applyCollapsedBranches(root, collapsed) {
+  const applied = new Set();
+  collapsed.forEach(id => {
+    const el = root.querySelector(`.branch[data-branch="${CSS.escape(id)}"]`);
+    if (el) {
+      el.classList.add('collapsed');
+      applied.add(id);
+    }
+  });
+  saveCollapsedBranches(applied);
+}
+
+function toggleBranchCollapsed(branchEl) {
+  if (!branchEl) return;
+  branchEl.classList.toggle('collapsed');
+  saveCollapsedBranches(currentCollapsedBranches(document.getElementById('tree-root')));
+}
+
 function collectBranchSensorIds(branch, acc) {
   for (const sid of (branch.sensor_ids || [])) acc.add(Number(sid));
   for (const child of (branch.children || [])) collectBranchSensorIds(child, acc);
@@ -355,7 +396,7 @@ function renderBranch(branch, byId) {
     : `<div class="tree-empty">Нет датчиков в этой ветке</div>`;
   return `
     <div class="branch" data-branch="${escapeHtml(branch.id)}">
-      <div class="branch__head" onclick="this.parentNode.classList.toggle('collapsed')">
+      <div class="branch__head" onclick="toggleBranchCollapsed(this.parentNode)">
         <span class="branch__toggle">▾</span>
         <span class="branch__name">${escapeHtml(branch.name)}</span>
         <span class="branch__count">(${st.count})</span>
@@ -377,14 +418,9 @@ function renderTree() {
     return;
   }
   // Сохранить состояние свёрнутых веток между перерисовками
-  const collapsed = new Set(
-    Array.from(root.querySelectorAll('.branch.collapsed')).map(el => el.dataset.branch)
-  );
+  const collapsed = currentCollapsedBranches(root);
   root.innerHTML = mnemoTree.branches.map(b => renderBranch(b, byId)).join('');
-  collapsed.forEach(id => {
-    const el = root.querySelector(`.branch[data-branch="${CSS.escape(id)}"]`);
-    if (el) el.classList.add('collapsed');
-  });
+  applyCollapsedBranches(root, collapsed);
 }
 
 async function loadTree() {
@@ -398,6 +434,7 @@ async function loadTree() {
 
 // ---------- Редактор дерева ----------
 let editorTree = { branches: [], show_flat_cards: true };
+let treeDirty = false; // есть несохранённые изменения в редакторе
 
 function deepCloneTree(tree) {
   return JSON.parse(JSON.stringify(tree));
@@ -460,12 +497,19 @@ function renderEditor() {
 let editMode = false;
 
 function toggleEditMode() {
+  // Защита от потери данных: выходим из редактирования с несохранёнными правками
+  if (editMode && treeDirty) {
+    const ans = confirm('Есть несохранённые изменения дерева.\nСохранить их перед выходом?\n\nОК — сохранить, Отмена — продолжить редактирование.');
+    if (ans) { saveTreeEditor(true); return; } // saveTreeEditor сам выйдет из режима после сохранения
+    return; // остаёмся в режиме редактирования
+  }
   editMode = !editMode;
   const btn = document.getElementById('edit-mode-btn');
   const editor = document.getElementById('tree-editor');
   const hint = document.getElementById('tree-edit-hint');
   if (editMode) {
     editorTree = deepCloneTree(mnemoTree);
+    treeDirty = false;
     renderEditor();
     const flag = document.getElementById('flag-show-flat');
     if (flag) flag.checked = editorTree.show_flat_cards !== false;
@@ -486,24 +530,27 @@ function toggleEditMode() {
 
 function setShowFlat(checked) {
   editorTree.show_flat_cards = checked;
+  treeDirty = true;
   applyFlatVisibility(checked); // живой предпросмотр
 }
 
 function cancelTreeEditor() {
   // откатить несохранённые изменения (включая флаг) и выйти из режима
   editorTree = deepCloneTree(mnemoTree);
+  treeDirty = false;
   applyFlatVisibility(mnemoTree.show_flat_cards);
   if (editMode) toggleEditMode();
 }
 
 function addRootBranch() {
   editorTree.branches.push(newBranch());
+  treeDirty = true;
   renderEditor();
 }
 
 function addChildBranch(id) {
   const b = findBranch(editorTree.branches, id);
-  if (b) { (b.children = b.children || []).push(newBranch()); renderEditor(); }
+  if (b) { (b.children = b.children || []).push(newBranch()); treeDirty = true; renderEditor(); }
 }
 
 function deleteBranch(id) {
@@ -511,13 +558,14 @@ function deleteBranch(id) {
   if (list) {
     const idx = list.findIndex(b => b.id === id);
     if (idx >= 0) list.splice(idx, 1);
+    treeDirty = true;
     renderEditor();
   }
 }
 
 function renameBranch(id, name) {
   const b = findBranch(editorTree.branches, id);
-  if (b) b.name = name;
+  if (b) { b.name = name; treeDirty = true; }
 }
 
 function toggleSensor(id, sensorId, checked) {
@@ -528,9 +576,10 @@ function toggleSensor(id, sensorId, checked) {
   const idx = b.sensor_ids.indexOf(num);
   if (checked && idx < 0) b.sensor_ids.push(num);
   else if (!checked && idx >= 0) b.sensor_ids.splice(idx, 1);
+  treeDirty = true;
 }
 
-async function saveTreeEditor() {
+async function saveTreeEditor(exitAfter = false) {
   try {
     const saved = await apiFetch('/api/mnemo/tree', {
       method: 'POST',
@@ -538,10 +587,12 @@ async function saveTreeEditor() {
     });
     mnemoTree = { branches: saved.branches || [], show_flat_cards: saved.show_flat_cards !== false };
     editorTree = deepCloneTree(mnemoTree);
+    treeDirty = false;
     renderTree();
     renderEditor();
     applyFlatVisibility(mnemoTree.show_flat_cards);
     showToast('Дерево сохранено');
+    if (exitAfter && editMode) toggleEditMode();
   } catch (e) {}
 }
 

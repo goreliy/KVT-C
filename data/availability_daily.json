@@ -1,702 +1,612 @@
 {
-  "date": "2026-06-17",
-  "updated_at": "2026-06-17T12:40:17.205500",
+  "date": "2026-06-18",
+  "updated_at": "2026-06-18T10:16:18.579389",
   "sensors": {
-    "1": {
-      "id": 1,
-      "samples_today": 30,
-      "received_today": 0,
-      "failed_today": 30,
-      "name": "Первый",
-      "poll_port_id": "default",
-      "poll_port_name": "COM8",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
-      "last_status": "no_connection",
-      "_last_sample_key": "2026-06-17T12:39:19.672290",
-      "availability_percent": 0.0
-    },
-    "2": {
-      "id": 2,
-      "samples_today": 30,
-      "received_today": 0,
-      "failed_today": 30,
-      "name": "ХРАН. № 2",
-      "poll_port_id": "default",
-      "poll_port_name": "COM8",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
-      "last_status": "no_connection",
-      "_last_sample_key": "2026-06-17T12:39:19.672290",
-      "availability_percent": 0.0
-    },
-    "3": {
-      "id": 3,
-      "samples_today": 30,
-      "received_today": 0,
-      "failed_today": 30,
-      "name": "ХРАН. № 3",
-      "poll_port_id": "default",
-      "poll_port_name": "COM8",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
-      "last_status": "no_connection",
-      "_last_sample_key": "2026-06-17T12:39:19.672290",
-      "availability_percent": 0.0
-    },
-    "4": {
-      "id": 4,
-      "samples_today": 30,
-      "received_today": 0,
-      "failed_today": 30,
-      "name": "ХРАН. № 4",
-      "poll_port_id": "default",
-      "poll_port_name": "COM8",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
-      "last_status": "no_connection",
-      "_last_sample_key": "2026-06-17T12:39:19.672290",
-      "availability_percent": 0.0
-    },
-    "5": {
-      "id": 5,
-      "samples_today": 30,
-      "received_today": 0,
-      "failed_today": 30,
-      "name": "ХРАН. № 5",
-      "poll_port_id": "default",
-      "poll_port_name": "COM8",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
-      "last_status": "no_connection",
-      "_last_sample_key": "2026-06-17T12:39:19.672290",
-      "availability_percent": 0.0
-    },
-    "6": {
-      "id": 6,
-      "samples_today": 30,
-      "received_today": 0,
-      "failed_today": 30,
-      "name": "ХРАН. № 6",
-      "poll_port_id": "default",
-      "poll_port_name": "COM8",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
-      "last_status": "no_connection",
-      "_last_sample_key": "2026-06-17T12:39:19.672290",
-      "availability_percent": 0.0
-    },
-    "7": {
-      "id": 7,
-      "samples_today": 30,
-      "received_today": 0,
-      "failed_today": 30,
-      "name": "ХРАН. № 7",
-      "poll_port_id": "default",
-      "poll_port_name": "COM8",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
-      "last_status": "no_connection",
-      "_last_sample_key": "2026-06-17T12:39:19.672290",
-      "availability_percent": 0.0
-    },
-    "8": {
-      "id": 8,
-      "samples_today": 30,
-      "received_today": 0,
-      "failed_today": 30,
-      "name": "ХРАН. № 8",
-      "poll_port_id": "default",
-      "poll_port_name": "COM8",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
-      "last_status": "no_connection",
-      "_last_sample_key": "2026-06-17T12:39:19.672290",
-      "availability_percent": 0.0
-    },
     "13": {
       "id": 13,
-      "samples_today": 521,
-      "received_today": 521,
+      "samples_today": 690,
+      "received_today": 690,
       "failed_today": 0,
       "name": "ываываываыа",
-      "poll_port_id": "udp_mq7w4t4v",
-      "poll_port_name": "UDP-C2000PP-new",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "last_seen_at": "2026-06-18T10:13:08.115872",
       "last_status": "guarded",
-      "_last_sample_key": "2026-06-17T12:40:13.035371",
-      "last_success_at": "2026-06-17T12:40:13.035371",
+      "_last_sample_key": "2026-06-18T10:13:04.534635",
+      "last_success_at": "2026-06-18T10:13:04.534635",
       "availability_percent": 100.0
     },
     "15": {
       "id": 15,
-      "samples_today": 521,
-      "received_today": 500,
-      "failed_today": 21,
+      "samples_today": 690,
+      "received_today": 642,
+      "failed_today": 48,
       "name": "22",
-      "poll_port_id": "udp_mq7w4t4v",
-      "poll_port_name": "UDP-C2000PP-new",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "last_seen_at": "2026-06-18T10:13:08.115872",
       "last_status": "guarded",
-      "_last_sample_key": "2026-06-17T12:40:13.035371",
-      "last_success_at": "2026-06-17T12:40:13.035371",
-      "availability_percent": 96.0
+      "_last_sample_key": "2026-06-18T10:13:04.534635",
+      "availability_percent": 93.0,
+      "last_success_at": "2026-06-18T10:13:04.534635"
     },
     "16": {
       "id": 16,
-      "samples_today": 521,
-      "received_today": 519,
-      "failed_today": 2,
+      "samples_today": 690,
+      "received_today": 687,
+      "failed_today": 3,
       "name": "33",
-      "poll_port_id": "udp_mq7w4t4v",
-      "poll_port_name": "UDP-C2000PP-new",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "last_seen_at": "2026-06-18T10:13:08.115872",
       "last_status": "guarded",
-      "_last_sample_key": "2026-06-17T12:40:13.035371",
-      "last_success_at": "2026-06-17T12:40:13.035371",
+      "_last_sample_key": "2026-06-18T10:13:04.534635",
+      "last_success_at": "2026-06-18T10:13:04.534635",
       "availability_percent": 99.6
     },
     "17": {
       "id": 17,
-      "samples_today": 521,
-      "received_today": 512,
-      "failed_today": 9,
+      "samples_today": 690,
+      "received_today": 685,
+      "failed_today": 5,
       "name": "четвёртый",
-      "poll_port_id": "udp_mq7w4t4v",
-      "poll_port_name": "UDP-C2000PP-new",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "last_seen_at": "2026-06-18T10:13:08.115872",
       "last_status": "guarded",
-      "_last_sample_key": "2026-06-17T12:40:13.035371",
-      "last_success_at": "2026-06-17T12:40:13.035371",
-      "availability_percent": 98.3
+      "_last_sample_key": "2026-06-18T10:13:04.534635",
+      "last_success_at": "2026-06-18T10:13:04.534635",
+      "availability_percent": 99.3
     },
     "18": {
       "id": 18,
-      "samples_today": 521,
-      "received_today": 508,
-      "failed_today": 13,
+      "samples_today": 690,
+      "received_today": 686,
+      "failed_today": 4,
       "name": "пятый",
-      "poll_port_id": "udp_mq7w4t4v",
-      "poll_port_name": "UDP-C2000PP-new",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "last_seen_at": "2026-06-18T10:13:08.115872",
       "last_status": "guarded",
-      "_last_sample_key": "2026-06-17T12:40:13.035371",
-      "last_success_at": "2026-06-17T12:40:13.035371",
-      "availability_percent": 97.5
+      "_last_sample_key": "2026-06-18T10:13:04.534635",
+      "last_success_at": "2026-06-18T10:13:04.534635",
+      "availability_percent": 99.4
     },
     "19": {
       "id": 19,
-      "samples_today": 521,
-      "received_today": 506,
-      "failed_today": 15,
+      "samples_today": 690,
+      "received_today": 673,
+      "failed_today": 17,
       "name": "Шештой",
-      "poll_port_id": "udp_mq7w4t4v",
-      "poll_port_name": "UDP-C2000PP-new",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "last_seen_at": "2026-06-18T10:13:08.115872",
       "last_status": "guarded",
-      "_last_sample_key": "2026-06-17T12:40:13.035371",
-      "last_success_at": "2026-06-17T12:40:13.035371",
-      "availability_percent": 97.1
+      "_last_sample_key": "2026-06-18T10:13:04.534635",
+      "last_success_at": "2026-06-18T10:13:04.534635",
+      "availability_percent": 97.5
     },
     "20": {
       "id": 20,
-      "samples_today": 521,
-      "received_today": 507,
-      "failed_today": 14,
+      "samples_today": 690,
+      "received_today": 655,
+      "failed_today": 35,
       "name": "седьмой",
-      "poll_port_id": "udp_mq7w4t4v",
-      "poll_port_name": "UDP-C2000PP-new",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "last_seen_at": "2026-06-18T10:13:08.115872",
       "last_status": "guarded",
-      "_last_sample_key": "2026-06-17T12:40:13.035371",
-      "last_success_at": "2026-06-17T12:40:13.035371",
-      "availability_percent": 97.3
+      "_last_sample_key": "2026-06-18T10:13:04.534635",
+      "last_success_at": "2026-06-18T10:13:04.534635",
+      "availability_percent": 94.9
     },
     "21": {
       "id": 21,
-      "samples_today": 521,
-      "received_today": 503,
-      "failed_today": 18,
+      "samples_today": 690,
+      "received_today": 680,
+      "failed_today": 10,
       "name": "восьмой",
-      "poll_port_id": "udp_mq7w4t4v",
-      "poll_port_name": "UDP-C2000PP-new",
-      "last_seen_at": "2026-06-17T12:40:17.205500",
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "last_seen_at": "2026-06-18T10:13:08.115872",
       "last_status": "guarded",
-      "_last_sample_key": "2026-06-17T12:40:13.035371",
-      "last_success_at": "2026-06-17T12:40:13.035371",
-      "availability_percent": 96.5
+      "_last_sample_key": "2026-06-18T10:13:04.534635",
+      "last_success_at": "2026-06-18T10:13:04.534635",
+      "availability_percent": 98.6
+    },
+    "1": {
+      "id": 1,
+      "samples_today": 58,
+      "received_today": 0,
+      "failed_today": 58,
+      "name": "Первый",
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "last_seen_at": "2026-06-18T10:15:32.113748",
+      "last_status": "no_connection",
+      "_last_sample_key": "2026-06-18T10:14:41.947463",
+      "availability_percent": 0.0
+    },
+    "2": {
+      "id": 2,
+      "samples_today": 58,
+      "received_today": 0,
+      "failed_today": 58,
+      "name": "ХРАН. № 2",
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "last_seen_at": "2026-06-18T10:15:32.113748",
+      "last_status": "no_connection",
+      "_last_sample_key": "2026-06-18T10:14:41.947463",
+      "availability_percent": 0.0
+    },
+    "3": {
+      "id": 3,
+      "samples_today": 58,
+      "received_today": 0,
+      "failed_today": 58,
+      "name": "ХРАН. № 3",
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "last_seen_at": "2026-06-18T10:15:32.113748",
+      "last_status": "no_connection",
+      "_last_sample_key": "2026-06-18T10:14:41.947463",
+      "availability_percent": 0.0
+    },
+    "4": {
+      "id": 4,
+      "samples_today": 58,
+      "received_today": 0,
+      "failed_today": 58,
+      "name": "ХРАН. № 4",
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "last_seen_at": "2026-06-18T10:15:32.113748",
+      "last_status": "no_connection",
+      "_last_sample_key": "2026-06-18T10:14:41.947463",
+      "availability_percent": 0.0
+    },
+    "5": {
+      "id": 5,
+      "samples_today": 58,
+      "received_today": 0,
+      "failed_today": 58,
+      "name": "ХРАН. № 5",
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "last_seen_at": "2026-06-18T10:15:32.113748",
+      "last_status": "no_connection",
+      "_last_sample_key": "2026-06-18T10:14:41.947463",
+      "availability_percent": 0.0
+    },
+    "6": {
+      "id": 6,
+      "samples_today": 58,
+      "received_today": 0,
+      "failed_today": 58,
+      "name": "ХРАН. № 6",
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "last_seen_at": "2026-06-18T10:15:32.113748",
+      "last_status": "no_connection",
+      "_last_sample_key": "2026-06-18T10:14:41.947463",
+      "availability_percent": 0.0
+    },
+    "7": {
+      "id": 7,
+      "samples_today": 58,
+      "received_today": 0,
+      "failed_today": 58,
+      "name": "ХРАН. № 7",
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "last_seen_at": "2026-06-18T10:15:32.113748",
+      "last_status": "no_connection",
+      "_last_sample_key": "2026-06-18T10:14:41.947463",
+      "availability_percent": 0.0
+    },
+    "8": {
+      "id": 8,
+      "samples_today": 58,
+      "received_today": 0,
+      "failed_today": 58,
+      "name": "ХРАН. № 8",
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "last_seen_at": "2026-06-18T10:15:32.113748",
+      "last_status": "no_connection",
+      "_last_sample_key": "2026-06-18T10:14:41.947463",
+      "availability_percent": 0.0
     }
   },
   "ports": {
+    "UDP_IP_66.100": {
+      "id": "UDP_IP_66.100",
+      "poll_cycles": 990,
+      "poll_ok_cycles": 823,
+      "poll_failed_cycles": 167,
+      "network_checks": 68,
+      "network_ok_checks": 68,
+      "network_history": [
+        {
+          "timestamp": "2026-06-18T09:39:43.363209",
+          "available": true,
+          "ping_ms": 27.1
+        },
+        {
+          "timestamp": "2026-06-18T09:40:14.016937",
+          "available": true,
+          "ping_ms": 25.1
+        },
+        {
+          "timestamp": "2026-06-18T09:40:44.249327",
+          "available": true,
+          "ping_ms": 23.2
+        },
+        {
+          "timestamp": "2026-06-18T09:41:14.175588",
+          "available": true,
+          "ping_ms": 26.3
+        },
+        {
+          "timestamp": "2026-06-18T09:41:45.855964",
+          "available": true,
+          "ping_ms": 27.0
+        },
+        {
+          "timestamp": "2026-06-18T09:42:16.036759",
+          "available": true,
+          "ping_ms": 25.2
+        },
+        {
+          "timestamp": "2026-06-18T09:42:47.606778",
+          "available": true,
+          "ping_ms": 25.0
+        },
+        {
+          "timestamp": "2026-06-18T09:43:17.321268",
+          "available": true,
+          "ping_ms": 52.0
+        },
+        {
+          "timestamp": "2026-06-18T09:43:49.507685",
+          "available": true,
+          "ping_ms": 26.0
+        },
+        {
+          "timestamp": "2026-06-18T09:44:20.654837",
+          "available": true,
+          "ping_ms": 36.0
+        },
+        {
+          "timestamp": "2026-06-18T09:44:52.634215",
+          "available": true,
+          "ping_ms": 26.3
+        },
+        {
+          "timestamp": "2026-06-18T09:45:25.046319",
+          "available": true,
+          "ping_ms": 26.0
+        },
+        {
+          "timestamp": "2026-06-18T09:45:57.216846",
+          "available": true,
+          "ping_ms": 27.0
+        },
+        {
+          "timestamp": "2026-06-18T09:46:28.542139",
+          "available": true,
+          "ping_ms": 25.0
+        },
+        {
+          "timestamp": "2026-06-18T09:46:58.748812",
+          "available": true,
+          "ping_ms": 24.2
+        },
+        {
+          "timestamp": "2026-06-18T09:47:30.416482",
+          "available": true,
+          "ping_ms": 25.1
+        },
+        {
+          "timestamp": "2026-06-18T09:48:01.060527",
+          "available": true,
+          "ping_ms": 26.7
+        },
+        {
+          "timestamp": "2026-06-18T09:48:31.852960",
+          "available": true,
+          "ping_ms": 33.2
+        },
+        {
+          "timestamp": "2026-06-18T09:49:02.938365",
+          "available": true,
+          "ping_ms": 25.4
+        },
+        {
+          "timestamp": "2026-06-18T09:49:35.611523",
+          "available": true,
+          "ping_ms": 26.0
+        },
+        {
+          "timestamp": "2026-06-18T09:50:08.076438",
+          "available": true,
+          "ping_ms": 25.1
+        },
+        {
+          "timestamp": "2026-06-18T09:50:37.200311",
+          "available": true,
+          "ping_ms": 25.2
+        },
+        {
+          "timestamp": "2026-06-18T09:51:09.031285",
+          "available": true,
+          "ping_ms": 23.0
+        },
+        {
+          "timestamp": "2026-06-18T09:51:41.019360",
+          "available": true,
+          "ping_ms": 24.7
+        },
+        {
+          "timestamp": "2026-06-18T09:52:12.616665",
+          "available": true,
+          "ping_ms": 24.0
+        },
+        {
+          "timestamp": "2026-06-18T09:52:45.256027",
+          "available": true,
+          "ping_ms": 23.6
+        },
+        {
+          "timestamp": "2026-06-18T09:53:17.938442",
+          "available": true,
+          "ping_ms": 22.2
+        },
+        {
+          "timestamp": "2026-06-18T09:53:47.462020",
+          "available": true,
+          "ping_ms": 25.4
+        },
+        {
+          "timestamp": "2026-06-18T09:54:18.951918",
+          "available": true,
+          "ping_ms": 25.2
+        },
+        {
+          "timestamp": "2026-06-18T09:54:33.198750",
+          "available": true,
+          "ping_ms": 22.8
+        },
+        {
+          "timestamp": "2026-06-18T09:55:04.774454",
+          "available": true,
+          "ping_ms": 25.5
+        },
+        {
+          "timestamp": "2026-06-18T09:55:34.467538",
+          "available": true,
+          "ping_ms": 25.2
+        },
+        {
+          "timestamp": "2026-06-18T09:59:14.051707",
+          "available": true,
+          "ping_ms": 23.1
+        },
+        {
+          "timestamp": "2026-06-18T09:59:45.290709",
+          "available": true,
+          "ping_ms": 25.0
+        },
+        {
+          "timestamp": "2026-06-18T10:00:15.520644",
+          "available": true,
+          "ping_ms": 38.2
+        },
+        {
+          "timestamp": "2026-06-18T10:00:15.339456",
+          "available": true,
+          "ping_ms": 22.9
+        },
+        {
+          "timestamp": "2026-06-18T10:00:46.847199",
+          "available": true,
+          "ping_ms": 25.2
+        },
+        {
+          "timestamp": "2026-06-18T10:01:18.075850",
+          "available": true,
+          "ping_ms": 25.0
+        },
+        {
+          "timestamp": "2026-06-18T10:01:48.991873",
+          "available": true,
+          "ping_ms": 24.0
+        },
+        {
+          "timestamp": "2026-06-18T10:02:18.161502",
+          "available": true,
+          "ping_ms": 24.0
+        },
+        {
+          "timestamp": "2026-06-18T10:02:50.201191",
+          "available": true,
+          "ping_ms": 25.2
+        },
+        {
+          "timestamp": "2026-06-18T10:03:21.787222",
+          "available": true,
+          "ping_ms": 27.0
+        },
+        {
+          "timestamp": "2026-06-18T10:03:51.716852",
+          "available": true,
+          "ping_ms": 25.0
+        },
+        {
+          "timestamp": "2026-06-18T10:04:22.310520",
+          "available": true,
+          "ping_ms": 26.0
+        },
+        {
+          "timestamp": "2026-06-18T10:04:55.558891",
+          "available": true,
+          "ping_ms": 39.1
+        },
+        {
+          "timestamp": "2026-06-18T10:04:54.131226",
+          "available": true,
+          "ping_ms": 25.0
+        },
+        {
+          "timestamp": "2026-06-18T10:05:25.675661",
+          "available": true,
+          "ping_ms": 27.1
+        },
+        {
+          "timestamp": "2026-06-18T10:05:56.255234",
+          "available": true,
+          "ping_ms": 25.0
+        },
+        {
+          "timestamp": "2026-06-18T10:06:28.988428",
+          "available": true,
+          "ping_ms": 37.0
+        },
+        {
+          "timestamp": "2026-06-18T10:06:57.366284",
+          "available": true,
+          "ping_ms": 20.0
+        },
+        {
+          "timestamp": "2026-06-18T10:07:29.695032",
+          "available": true,
+          "ping_ms": 22.9
+        },
+        {
+          "timestamp": "2026-06-18T10:08:01.462013",
+          "available": true,
+          "ping_ms": 24.7
+        },
+        {
+          "timestamp": "2026-06-18T10:08:34.734040",
+          "available": true,
+          "ping_ms": 44.8
+        },
+        {
+          "timestamp": "2026-06-18T10:09:05.831915",
+          "available": true,
+          "ping_ms": 27.3
+        },
+        {
+          "timestamp": "2026-06-18T10:09:33.147835",
+          "available": true,
+          "ping_ms": 24.7
+        },
+        {
+          "timestamp": "2026-06-18T10:09:58.617457",
+          "available": true,
+          "ping_ms": 24.1
+        },
+        {
+          "timestamp": "2026-06-18T10:10:40.941467",
+          "available": true,
+          "ping_ms": 24.1
+        },
+        {
+          "timestamp": "2026-06-18T10:11:14.201974",
+          "available": true,
+          "ping_ms": 26.8
+        },
+        {
+          "timestamp": "2026-06-18T10:11:41.215021",
+          "available": true,
+          "ping_ms": 25.6
+        },
+        {
+          "timestamp": "2026-06-18T10:12:15.459558",
+          "available": true,
+          "ping_ms": 27.6
+        },
+        {
+          "timestamp": "2026-06-18T10:12:46.676363",
+          "available": true,
+          "ping_ms": 24.1
+        },
+        {
+          "timestamp": "2026-06-18T10:13:07.716017",
+          "available": true,
+          "ping_ms": 29.3
+        },
+        {
+          "timestamp": "2026-06-18T10:13:38.766208",
+          "available": true,
+          "ping_ms": 19.1
+        },
+        {
+          "timestamp": "2026-06-18T10:14:09.504892",
+          "available": true,
+          "ping_ms": 19.8
+        },
+        {
+          "timestamp": "2026-06-18T10:14:41.040472",
+          "available": true,
+          "ping_ms": 20.5
+        },
+        {
+          "timestamp": "2026-06-18T10:15:11.746962",
+          "available": true,
+          "ping_ms": 20.0
+        },
+        {
+          "timestamp": "2026-06-18T10:15:42.463357",
+          "available": true,
+          "ping_ms": 25.7
+        },
+        {
+          "timestamp": "2026-06-18T10:16:13.439990",
+          "available": true,
+          "ping_ms": 19.1
+        }
+      ],
+      "_last_stats": {
+        "total_polls": 0,
+        "successful_polls": 0,
+        "failed_polls": 0
+      },
+      "name": "UDP-C2000PP-IP66.100",
+      "transport": "udp_c2000pp",
+      "remote_host": "192.168.66.100",
+      "remote_port": 40005,
+      "updated_at": "2026-06-18T10:16:18.579389",
+      "state": "error",
+      "poll_availability_percent": 83.1,
+      "network_availability_percent": 100.0,
+      "last_network_check_at": "2026-06-18T10:16:13.439990",
+      "last_network_available": true,
+      "last_ping_ms": 19.1,
+      "last_network_error": null
+    },
     "default": {
       "id": "default",
-      "poll_cycles": 225,
+      "poll_cycles": 162,
       "poll_ok_cycles": 0,
-      "poll_failed_cycles": 223,
+      "poll_failed_cycles": 161,
       "network_checks": 0,
       "network_ok_checks": 0,
       "network_history": [],
       "_last_stats": {
-        "total_polls": 21,
+        "total_polls": 0,
         "successful_polls": 0,
-        "failed_polls": 20
+        "failed_polls": 0
       },
       "name": "COM8",
       "transport": "serial",
       "remote_host": "127.0.0.1",
       "remote_port": 502,
-      "updated_at": "2026-06-17T12:40:17.205500",
-      "state": "degraded",
+      "updated_at": "2026-06-18T10:16:17.873421",
+      "state": "error",
       "poll_availability_percent": 0.0
-    },
-    "udp_mq7w4t4v": {
-      "id": "udp_mq7w4t4v",
-      "poll_cycles": 2560,
-      "poll_ok_cycles": 2117,
-      "poll_failed_cycles": 443,
-      "network_checks": 86,
-      "network_ok_checks": 86,
-      "network_history": [
-        {
-          "timestamp": "2026-06-17T12:13:34.455962",
-          "available": true,
-          "ping_ms": 38.0
-        },
-        {
-          "timestamp": "2026-06-17T12:14:10.070840",
-          "available": true,
-          "ping_ms": 30.0
-        },
-        {
-          "timestamp": "2026-06-17T12:14:48.255393",
-          "available": true,
-          "ping_ms": 27.0
-        },
-        {
-          "timestamp": "2026-06-17T12:15:19.260804",
-          "available": true,
-          "ping_ms": 27.0
-        },
-        {
-          "timestamp": "2026-06-17T12:15:50.552884",
-          "available": true,
-          "ping_ms": 25.0
-        },
-        {
-          "timestamp": "2026-06-17T12:16:20.456767",
-          "available": true,
-          "ping_ms": 26.0
-        },
-        {
-          "timestamp": "2026-06-17T12:16:52.428463",
-          "available": true,
-          "ping_ms": 25.0
-        },
-        {
-          "timestamp": "2026-06-17T12:17:24.465827",
-          "available": true,
-          "ping_ms": 35.0
-        },
-        {
-          "timestamp": "2026-06-17T12:17:55.392702",
-          "available": true,
-          "ping_ms": 29.0
-        },
-        {
-          "timestamp": "2026-06-17T12:18:27.037028",
-          "available": true,
-          "ping_ms": 25.0
-        },
-        {
-          "timestamp": "2026-06-17T12:18:58.568578",
-          "available": true,
-          "ping_ms": 35.0
-        },
-        {
-          "timestamp": "2026-06-17T12:19:28.642036",
-          "available": true,
-          "ping_ms": 32.0
-        },
-        {
-          "timestamp": "2026-06-17T12:19:59.408773",
-          "available": true,
-          "ping_ms": 28.0
-        },
-        {
-          "timestamp": "2026-06-17T12:20:29.934594",
-          "available": true,
-          "ping_ms": 25.0
-        },
-        {
-          "timestamp": "2026-06-17T12:21:00.760746",
-          "available": true,
-          "ping_ms": 25.0
-        },
-        {
-          "timestamp": "2026-06-17T12:21:34.396394",
-          "available": true,
-          "ping_ms": 27.0
-        },
-        {
-          "timestamp": "2026-06-17T12:22:04.702770",
-          "available": true,
-          "ping_ms": 27.0
-        },
-        {
-          "timestamp": "2026-06-17T12:22:38.601960",
-          "available": true,
-          "ping_ms": 27.0
-        },
-        {
-          "timestamp": "2026-06-17T12:23:09.479423",
-          "available": true,
-          "ping_ms": 26.0
-        },
-        {
-          "timestamp": "2026-06-17T12:23:41.110364",
-          "available": true,
-          "ping_ms": 37.0
-        },
-        {
-          "timestamp": "2026-06-17T12:24:14.612651",
-          "available": true,
-          "ping_ms": 29.0
-        },
-        {
-          "timestamp": "2026-06-17T12:24:46.332425",
-          "available": true,
-          "ping_ms": 28.0
-        },
-        {
-          "timestamp": "2026-06-17T12:25:18.483483",
-          "available": true,
-          "ping_ms": 28.0
-        },
-        {
-          "timestamp": "2026-06-17T12:25:52.319072",
-          "available": true,
-          "ping_ms": 26.0
-        },
-        {
-          "timestamp": "2026-06-17T12:26:23.747298",
-          "available": true,
-          "ping_ms": 39.4
-        },
-        {
-          "timestamp": "2026-06-17T12:26:55.709913",
-          "available": true,
-          "ping_ms": 26.0
-        },
-        {
-          "timestamp": "2026-06-17T12:27:26.643296",
-          "available": true,
-          "ping_ms": 32.9
-        },
-        {
-          "timestamp": "2026-06-17T12:27:50.551999",
-          "available": true,
-          "ping_ms": 26.0
-        },
-        {
-          "timestamp": "2026-06-17T12:28:37.089789",
-          "available": true,
-          "ping_ms": 40.2
-        },
-        {
-          "timestamp": "2026-06-17T12:29:45.560563",
-          "available": true,
-          "ping_ms": 28.0
-        },
-        {
-          "timestamp": "2026-06-17T12:30:16.528411",
-          "available": true,
-          "ping_ms": 28.0
-        },
-        {
-          "timestamp": "2026-06-17T12:30:47.298689",
-          "available": true,
-          "ping_ms": 36.0
-        },
-        {
-          "timestamp": "2026-06-17T12:31:18.402070",
-          "available": true,
-          "ping_ms": 26.0
-        },
-        {
-          "timestamp": "2026-06-17T12:31:48.884949",
-          "available": true,
-          "ping_ms": 27.0
-        },
-        {
-          "timestamp": "2026-06-17T12:32:19.830441",
-          "available": true,
-          "ping_ms": 31.0
-        },
-        {
-          "timestamp": "2026-06-17T12:32:49.979433",
-          "available": true,
-          "ping_ms": 31.0
-        },
-        {
-          "timestamp": "2026-06-17T12:33:20.654951",
-          "available": true,
-          "ping_ms": 30.0
-        },
-        {
-          "timestamp": "2026-06-17T12:33:52.267800",
-          "available": true,
-          "ping_ms": 28.0
-        },
-        {
-          "timestamp": "2026-06-17T12:34:23.308155",
-          "available": true,
-          "ping_ms": 31.0
-        },
-        {
-          "timestamp": "2026-06-17T12:34:54.975098",
-          "available": true,
-          "ping_ms": 33.0
-        },
-        {
-          "timestamp": "2026-06-17T12:35:27.062989",
-          "available": true,
-          "ping_ms": 31.7
-        },
-        {
-          "timestamp": "2026-06-17T12:35:58.866706",
-          "available": true,
-          "ping_ms": 27.0
-        },
-        {
-          "timestamp": "2026-06-17T12:36:29.713177",
-          "available": true,
-          "ping_ms": 30.0
-        },
-        {
-          "timestamp": "2026-06-17T12:37:02.069996",
-          "available": true,
-          "ping_ms": 39.0
-        },
-        {
-          "timestamp": "2026-06-17T12:37:34.178490",
-          "available": true,
-          "ping_ms": 27.0
-        },
-        {
-          "timestamp": "2026-06-17T12:38:03.187960",
-          "available": true,
-          "ping_ms": 33.0
-        },
-        {
-          "timestamp": "2026-06-17T12:38:37.587159",
-          "available": true,
-          "ping_ms": 31.0
-        },
-        {
-          "timestamp": "2026-06-17T12:39:10.660670",
-          "available": true,
-          "ping_ms": 33.0
-        },
-        {
-          "timestamp": "2026-06-17T12:39:42.403503",
-          "available": true,
-          "ping_ms": 27.0
-        },
-        {
-          "timestamp": "2026-06-17T12:40:13.035371",
-          "available": true,
-          "ping_ms": 38.7
-        },
-        {
-          "timestamp": "2026-06-17T12:41:24.252777",
-          "available": true,
-          "ping_ms": 45.0
-        },
-        {
-          "timestamp": "2026-06-17T12:42:22.331170",
-          "available": true,
-          "ping_ms": 47.0
-        },
-        {
-          "timestamp": "2026-06-17T12:42:57.356941",
-          "available": true,
-          "ping_ms": 42.8
-        },
-        {
-          "timestamp": "2026-06-17T12:43:32.342158",
-          "available": true,
-          "ping_ms": 51.0
-        },
-        {
-          "timestamp": "2026-06-17T12:44:03.146200",
-          "available": true,
-          "ping_ms": 42.0
-        },
-        {
-          "timestamp": "2026-06-17T12:44:37.315841",
-          "available": true,
-          "ping_ms": 39.9
-        },
-        {
-          "timestamp": "2026-06-17T12:45:09.609198",
-          "available": true,
-          "ping_ms": 42.0
-        },
-        {
-          "timestamp": "2026-06-17T12:45:44.198007",
-          "available": true,
-          "ping_ms": 48.0
-        },
-        {
-          "timestamp": "2026-06-17T12:46:18.174831",
-          "available": true,
-          "ping_ms": 52.0
-        },
-        {
-          "timestamp": "2026-06-17T12:46:53.239131",
-          "available": true,
-          "ping_ms": 42.0
-        },
-        {
-          "timestamp": "2026-06-17T12:47:44.341137",
-          "available": true,
-          "ping_ms": 97.0
-        },
-        {
-          "timestamp": "2026-06-17T12:47:44.561140",
-          "available": true,
-          "ping_ms": 84.0
-        },
-        {
-          "timestamp": "2026-06-17T12:48:15.112435",
-          "available": true,
-          "ping_ms": 44.0
-        },
-        {
-          "timestamp": "2026-06-17T12:48:50.128356",
-          "available": true,
-          "ping_ms": 49.0
-        },
-        {
-          "timestamp": "2026-06-17T12:49:28.236182",
-          "available": true,
-          "ping_ms": 30.0
-        },
-        {
-          "timestamp": "2026-06-17T12:50:03.211394",
-          "available": true,
-          "ping_ms": 38.0
-        },
-        {
-          "timestamp": "2026-06-17T12:50:44.385259",
-          "available": true,
-          "ping_ms": 44.0
-        },
-        {
-          "timestamp": "2026-06-17T12:51:24.080327",
-          "available": true,
-          "ping_ms": 39.0
-        },
-        {
-          "timestamp": "2026-06-17T12:51:59.019241",
-          "available": true,
-          "ping_ms": 42.0
-        },
-        {
-          "timestamp": "2026-06-17T12:52:34.013666",
-          "available": true,
-          "ping_ms": 39.0
-        },
-        {
-          "timestamp": "2026-06-17T12:53:09.138534",
-          "available": true,
-          "ping_ms": 41.0
-        },
-        {
-          "timestamp": "2026-06-17T12:53:44.392424",
-          "available": true,
-          "ping_ms": 66.0
-        },
-        {
-          "timestamp": "2026-06-17T12:54:38.938444",
-          "available": true,
-          "ping_ms": 35.0
-        },
-        {
-          "timestamp": "2026-06-17T12:55:13.877723",
-          "available": true,
-          "ping_ms": 57.0
-        },
-        {
-          "timestamp": "2026-06-17T12:55:44.270007",
-          "available": true,
-          "ping_ms": 48.0
-        },
-        {
-          "timestamp": "2026-06-17T12:56:18.187026",
-          "available": true,
-          "ping_ms": 34.0
-        },
-        {
-          "timestamp": "2026-06-17T12:56:52.316850",
-          "available": true,
-          "ping_ms": 36.0
-        },
-        {
-          "timestamp": "2026-06-17T12:57:24.087611",
-          "available": true,
-          "ping_ms": 52.7
-        },
-        {
-          "timestamp": "2026-06-17T12:58:03.458867",
-          "available": true,
-          "ping_ms": 84.6
-        },
-        {
-          "timestamp": "2026-06-17T12:58:03.680484",
-          "available": true,
-          "ping_ms": 43.0
-        },
-        {
-          "timestamp": "2026-06-17T12:58:38.255398",
-          "available": true,
-          "ping_ms": 36.0
-        },
-        {
-          "timestamp": "2026-06-17T12:59:09.174045",
-          "available": true,
-          "ping_ms": 40.0
-        },
-        {
-          "timestamp": "2026-06-17T12:59:44.841151",
-          "available": true,
-          "ping_ms": 44.0
-        },
-        {
-          "timestamp": "2026-06-17T12:59:44.921143",
-          "available": true,
-          "ping_ms": 99.5
-        },
-        {
-          "timestamp": "2026-06-17T13:00:44.532129",
-          "available": true,
-          "ping_ms": 113.0
-        },
-        {
-          "timestamp": "2026-06-17T13:00:44.821110",
-          "available": true,
-          "ping_ms": 53.0
-        }
-      ],
-      "_last_stats": {
-        "total_polls": 243,
-        "successful_polls": 207,
-        "failed_polls": 36
-      },
-      "name": "UDP-C2000PP-new",
-      "transport": "udp_c2000pp",
-      "remote_host": "192.168.66.100",
-      "remote_port": 40005,
-      "updated_at": "2026-06-17T12:40:17.205500",
-      "state": "running",
-      "poll_availability_percent": 82.7,
-      "network_availability_percent": 100.0,
-      "last_network_check_at": "2026-06-17T13:00:44.821110",
-      "last_network_available": true,
-      "last_ping_ms": 53.0,
-      "last_network_error": null
     }
   }
 }

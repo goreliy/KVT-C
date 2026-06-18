@@ -55,7 +55,9 @@
     }
 
     async function apiFetch(url, options={}) {
-      const defaults = { headers: {'Content-Type': 'application/json'} };
+      // cache:'no-store' — чтобы после сохранения перезагрузка страницы не
+      // подтягивала устаревший ответ из кэша браузера.
+      const defaults = { cache: 'no-store', headers: {'Content-Type': 'application/json'} };
       const resp = await fetch(url, {...defaults, ...options});
       const data = await resp.json();
       if (!resp.ok) {

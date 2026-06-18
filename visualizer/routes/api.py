@@ -21,6 +21,17 @@ from shared.config_manager import (
 
 api_bp = Blueprint('api', __name__)
 
+
+@api_bp.after_request
+def _no_store(response):
+    """API-ответы не должны кэшироваться браузером: иначе после сохранения
+    и перезагрузки страницы fetch() отдаёт устаревшую копию (например, дерево
+    мнемосхемы выглядит «не сохранившимся»)."""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOG_DIR = os.path.join(ROOT_DIR, 'logs')

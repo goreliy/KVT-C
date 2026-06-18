@@ -2,43 +2,173 @@
   "branches": [
     {
       "id": "tmp1",
-      "name": "Блок1",
+      "name": "БОкс1",
+      "sensor_ids": [],
+      "children": [
+        {
+          "id": "tmp2",
+          "name": "Чинарёв",
+          "sensor_ids": [
+            15,
+            21
+          ],
+          "children": [
+            {
+              "id": "br1",
+              "name": "Часть какая то",
+              "sensor_ids": [
+                13,
+                20
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "br2",
+          "name": "Столовая",
+          "sensor_ids": [
+            17,
+            2,
+            18,
+            16
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "tmp7",
+      "name": "БОкс2",
+      "sensor_ids": [],
+      "children": [
+        {
+          "id": "tmp8",
+          "name": "Федулов",
+          "sensor_ids": [
+            13,
+            15,
+            21
+          ],
+          "children": []
+        },
+        {
+          "id": "tmp9",
+          "name": "Столовая Федулова",
+          "sensor_ids": [
+            16,
+            1,
+            17
+          ],
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "tmp10",
+      "name": "БОкс3",
       "sensor_ids": [
-        13,
+        19,
+        17,
+        18
+      ],
+      "children": []
+    },
+    {
+      "id": "tmp11",
+      "name": "БОкс4",
+      "sensor_ids": [
+        17,
+        16
+      ],
+      "children": []
+    },
+    {
+      "id": "tmp12",
+      "name": "БОкс5",
+      "sensor_ids": [
+        17
+      ],
+      "children": []
+    },
+    {
+      "id": "tmp13",
+      "name": "БОкс6",
+      "sensor_ids": [
+        16,
+        21
+      ],
+      "children": []
+    },
+    {
+      "id": "tmp14",
+      "name": "БОкс7",
+      "sensor_ids": [
+        18,
+        16,
+        1
+      ],
+      "children": []
+    },
+    {
+      "id": "tmp15",
+      "name": "БОкс8",
+      "sensor_ids": [
+        15,
+        16,
+        17
+      ],
+      "children": []
+    },
+    {
+      "id": "tmp16",
+      "name": "БОкс1второйэтаж",
+      "sensor_ids": [
         15
       ],
       "children": []
     },
     {
-      "id": "tmp2",
-      "name": "СуперБлок 2",
+      "id": "tmp17",
+      "name": "БОкс2второйэтаж",
       "sensor_ids": [
-        15,
         16
       ],
-      "children": [
-        {
-          "id": "tmp3",
-          "name": "СуперБлок 2 Помещение 1",
-          "sensor_ids": [
-            16,
-            17
-          ],
-          "children": []
-        },
-        {
-          "id": "tmp4",
-          "name": "СуперБлок 2 Помещение 2",
-          "sensor_ids": [
-            1,
-            18,
-            19
-          ],
-          "children": []
-        }
-      ]
+      "children": []
+    },
+    {
+      "id": "tmp18",
+      "name": "БОкс3второйэтаж",
+      "sensor_ids": [
+        17
+      ],
+      "children": []
+    },
+    {
+      "id": "tmp19",
+      "name": "БОкс4второйэтаж",
+      "sensor_ids": [
+        18
+      ],
+      "children": []
+    },
+    {
+      "id": "tmp20",
+      "name": "БОкс5второйэтаж",
+      "sensor_ids": [
+        19
+      ],
+      "children": []
+    },
+    {
+      "id": "tmp21",
+      "name": "БОкс6второйэтаж",
+      "sensor_ids": [
+        20
+      ],
+      "children": []
     }
   ],
   "show_flat_cards": false,
-  "updated_at": "2026-06-17T12:58:31.361017"
+  "updated_at": "2026-06-18T10:05:08.924899"
 }

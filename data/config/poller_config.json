@@ -42,8 +42,8 @@
       "seq_persist": true
     },
     {
-      "id": "udp_mq7w4t4v",
-      "name": "UDP-C2000PP-new",
+      "id": "UDP_IP_66.100",
+      "name": "UDP-C2000PP-IP66.100",
       "enabled": true,
       "transport": "udp_c2000pp",
       "com_port": "COM8",
