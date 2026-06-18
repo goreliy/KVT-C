@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-18T10:16:18.541937",
+  "timestamp": "2026-06-18T10:26:02.640362",
   "poll_period_ms": 1000,
   "poll_ports": [
     {
@@ -55,7 +55,7 @@
       "seq_start": "0x21D1",
       "seq_persist": true,
       "state": "error",
-      "running": true,
+      "running": false,
       "last_error": "Cannot open UDP-C2000PP-IP66.100",
       "last_poll_at": null,
       "last_success_at": null,

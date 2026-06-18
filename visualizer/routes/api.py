@@ -18,6 +18,7 @@ from shared.config_manager import (
     get_sensors, get_sensor_by_id, add_sensor, update_sensor, delete_sensor,
     validate_sensor
 )
+from visualizer.routes.main import _with_configured_sensors
 
 api_bp = Blueprint('api', __name__)
 
@@ -132,8 +133,8 @@ def api_current():
     path = os.path.join(DATA_DIR, 'current.json')
     current = load_runtime_json(path, default={})
     if not current:
-        return jsonify({'error': 'Нет данных'}), 404
-    return jsonify(current)
+        current = {'sensors': [], 'timestamp': None, 'stats': {}}
+    return jsonify(_with_configured_sensors(current))
 
 
 @api_bp.route('/availability/daily')
@@ -592,6 +593,9 @@ def api_save_mnemo_tree():
     data = request.get_json(silent=True)
     if data is None:
         return jsonify({'error': 'Нет данных'}), 400
+    current = load_mnemo_tree()
+    if current.get('branches') and data.get('branches') == [] and data.get('confirm_empty') is not True:
+        return jsonify({'error': 'Пустое дерево не сохранено: текущие ветки защищены от случайной очистки'}), 400
     return jsonify(save_mnemo_tree(data))
 
 
@@ -618,4 +622,3 @@ def api_save_theme():
         return jsonify({'error': 'Название приложения не более 50 символов'}), 400
     config = save_theme_config(data)
     return jsonify(config)
-

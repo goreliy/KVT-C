@@ -1,8 +1,8 @@
 ﻿{
-  "config_version": "1.0.32",
+  "config_version": "1.0.35",
   "config_schema_version": "1.0",
   "created_at": "2026-03-11T00:00:00",
-  "updated_at": "2026-06-17T13:04:24.776764",
+  "updated_at": "2026-06-18T10:20:58.730260",
   "update_history": [
     {
       "version": "1.0.0",
@@ -168,6 +168,21 @@
       "version": "1.0.32",
       "timestamp": "2026-06-17T13:04:24.776764",
       "changes": "Обновлён датчик \"восьмой\""
+    },
+    {
+      "version": "1.0.33",
+      "timestamp": "2026-06-18T10:20:48.329917",
+      "changes": "Обновлён датчик \"ываываываыа\""
+    },
+    {
+      "version": "1.0.34",
+      "timestamp": "2026-06-18T10:20:54.460434",
+      "changes": "Обновлён датчик \"22\""
+    },
+    {
+      "version": "1.0.35",
+      "timestamp": "2026-06-18T10:20:58.730260",
+      "changes": "Обновлён датчик \"33\""
     }
   ],
   "system": {
@@ -411,7 +426,7 @@
     },
     {
       "name": "ываываываыа",
-      "description": "",
+      "description": "ываываываыа",
       "poll_port_id": "UDP_IP_66.100",
       "local_number": 1,
       "modbus_slave_id": 1,
@@ -441,7 +456,7 @@
     },
     {
       "name": "22",
-      "description": "",
+      "description": "22",
       "poll_port_id": "UDP_IP_66.100",
       "local_number": 2,
       "modbus_slave_id": 1,
@@ -471,7 +486,7 @@
     },
     {
       "name": "33",
-      "description": "",
+      "description": "33",
       "poll_port_id": "UDP_IP_66.100",
       "local_number": 3,
       "modbus_slave_id": 1,

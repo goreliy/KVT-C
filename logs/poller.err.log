@@ -10704,3 +10704,39 @@ PermissionError: [WinError 5] Отказано в доступе: 'D:\\123321\\КВТ версия С\\KVT
  * Running on all addresses.
    WARNING: This is a development server. Do not use it in a production deployment.
  * Running on http://192.168.66.97:5001/ (Press CTRL+C to quit)
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5001/ (Press CTRL+C to quit)
+Exception in thread poller-UDP_IP_66.100:
+Traceback (most recent call last):
+  File "D:\Python\Python310\lib\threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "D:\Python\Python310\lib\threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 488, in _run
+    self.manager.update_port_snapshot(
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 687, in update_port_snapshot
+    self._write_current_file_locked()
+  File "D:\123321\КВТ версия С\KVT-C\poller\poller_service.py", line 716, in _write_current_file_locked
+    atomic_save_json(os.path.join(data_dir(), "current.json"), payload)
+  File "D:\123321\КВТ версия С\KVT-C\shared\config_manager.py", line 55, in atomic_save_json
+    os.replace(tmp, path)
+PermissionError: [WinError 5] Отказано в доступе: 'D:\\123321\\КВТ версия С\\KVT-C\\data\\.current.json.21440.15004.tmp' -> 'D:\\123321\\КВТ версия С\\KVT-C\\data\\current.json'
+127.0.0.1 - - [18/Jun/2026 10:17:33] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:17:33] "GET /api/poller/log?limit=40&poll_port_id=default HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:17:35] "GET /api/poller/log?limit=40&poll_port_id=UDP_IP_66.100 HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:17:38] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:17:38] "GET /api/poller/log?limit=40&poll_port_id=UDP_IP_66.100 HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:17:43] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:17:43] "GET /api/poller/log?limit=40&poll_port_id=UDP_IP_66.100 HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:18:04] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:18:05] "GET /api/poller/log?limit=40&poll_port_id=default HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:18:36] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:18:36] "GET /api/poller/log?limit=40&poll_port_id=default HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:18:39] "GET /api/poller/log?limit=40&poll_port_id=UDP_IP_66.100 HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:18:41] "GET /api/poller/status HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:18:41] "GET /api/poller/log?limit=40&poll_port_id=UDP_IP_66.100 HTTP/1.1" 200 -
+127.0.0.1 - - [18/Jun/2026 10:21:05] "GET /api/poller/status HTTP/1.1" 200 -
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5001/ (Press CTRL+C to quit)
