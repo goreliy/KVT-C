@@ -3,11 +3,18 @@ import os
 import sys
 import time
 import subprocess
+from io import BytesIO
 from datetime import datetime, timedelta
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 import requests
 from poller.config import validated_poller_config_patch
 from shared.availability import is_ethernet_port, sync_daily_availability_from_current
+from shared.config_bundle import (
+    ConfigBundleError,
+    config_bundle_summary,
+    export_config_bundle,
+    import_config_bundle,
+)
 from shared.config_manager import (
     load_system_config, save_system_config,
     load_poller_config, save_poller_config,
@@ -174,6 +181,45 @@ def api_save_config():
         return jsonify({'error': 'Нет данных'}), 400
     config = save_system_config(data, data.get('_change_description', 'Обновление через API'))
     return jsonify(config)
+
+
+@api_bp.route('/config/bundle/summary')
+def api_config_bundle_summary():
+    return jsonify(config_bundle_summary(ROOT_DIR))
+
+
+@api_bp.route('/config/bundle/export')
+def api_config_bundle_export():
+    archive_bytes, filename, _manifest = export_config_bundle(ROOT_DIR, include_diagnostics=True)
+    return send_file(
+        BytesIO(archive_bytes),
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+@api_bp.route('/config/bundle/import', methods=['POST'])
+def api_config_bundle_import():
+    uploaded = request.files.get('file')
+    if uploaded is None or uploaded.filename == '':
+        return jsonify({'error': 'Файл архива не выбран'}), 400
+    try:
+        result = import_config_bundle(uploaded.read(), ROOT_DIR, create_backup=True)
+    except ConfigBundleError as exc:
+        return jsonify({'error': str(exc)}), 400
+
+    warnings = []
+    if 'poller_config.json' in result.get('imported_config_files', []):
+        poller_payload, code = _poller_call('POST', '/api/poller/config', load_poller_config())
+        if code >= 400:
+            warnings.append('Poller не применил импортированный poller_config.json автоматически: ' + str(poller_payload.get('error') or poller_payload))
+    if 'system_config.json' in result.get('imported_config_files', []):
+        reload_payload, code = _poller_call('POST', '/api/poller/reload')
+        if code >= 400:
+            warnings.append('Poller не перечитал список датчиков автоматически: ' + str(reload_payload.get('error') or reload_payload))
+    result['warnings'] = warnings
+    return jsonify(result)
 
 
 # --- Sensors CRUD ---

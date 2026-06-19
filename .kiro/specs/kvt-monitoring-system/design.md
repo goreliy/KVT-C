@@ -281,6 +281,7 @@ REST API:
 - `visualizer/routes/floorplan.py` — план помещения (страница + API)
 - `visualizer/routes/export.py` — страница экспорта данных (/export): выбор датчиков, периода, формата (CSV/JSON), проксирование запроса к Archive Manager API
 - `visualizer/routes/api.py` — общий API для фронтенда (текущие данные, тема)
+- `shared/config_bundle.py` — экспорт/импорт полного конфигурационного ZIP-архива (конфиги, планы, диагностические снимки)
 - `visualizer/services/config_service.py` — CRUD датчиков, версионность, бэкапы
 - `visualizer/services/notification_service.py` — отправка email-уведомлений через SMTP (при превышениях + ежедневный отчёт по расписанию, default 08:00)
 - `visualizer/services/report_service.py` — генерация отчётов по запросу
@@ -304,6 +305,7 @@ REST API:
 | /settings/reports | settings/reports.html | Отчёты |
 | /settings/appearance | settings/appearance.html | Оформление и темы |
 | /settings/system | settings/system.html | Системные настройки |
+| /settings/config-transfer | settings/config_transfer.html | Импорт/экспорт полного конфигурационного архива |
 
 Возможности мнемосхемы (index.html):
 - «Ping линии» в карточке датчика — выводится только для датчиков на Ethernet-линии (по `poll_port_id`): последний ping (`<мс> мс`/`нет связи`/`—`); у COM-датчиков строка скрыта. Отдельной плашки доступности по линии на мнемосхеме нет. Источник — `availability_daily.json` через `/api/availability/daily`.
@@ -317,6 +319,9 @@ REST API:
 | GET | /api/availability/daily | Суточная доступность линий и датчиков; для Ethernet-линий выполняется ping |
 | GET | /api/mnemo/tree | Получить конфигурацию дерева датчиков |
 | POST | /api/mnemo/tree | Сохранить дерево датчиков (с санацией структуры) |
+| GET | /api/config/bundle/summary | Сводка переносимого набора конфигурации |
+| GET | /api/config/bundle/export | Скачать полный ZIP-архив конфигурации |
+| POST | /api/config/bundle/import | Восстановить конфигурацию из ZIP-архива |
 
 ### Подсистема 4: Telegram Bot
 
@@ -602,6 +607,28 @@ CREATE TABLE archive_stats (
 | mnemo_tree.json | Web Visualizer | Дерево датчиков на мнемосхеме (ветки, подветки, состав) |
 
 Помимо `data/config/`, в `data/` ведётся рабочий файл `availability_daily.json` (суточный учёт доступности линий и датчиков: ping, % доступности, число снимков).
+
+### Конфигурационный ZIP-архив
+
+Полный переносимый архив формируется модулем `shared/config_bundle.py` и используется страницей `/settings/config-transfer`.
+
+Структура ZIP:
+
+```text
+manifest.json
+config/*.json
+assets/floorplans/*.{png,jpg,jpeg,gif,bmp,webp,svg}
+diagnostics/current.json
+diagnostics/availability_daily.json
+diagnostics/modbus_log.json
+diagnostics/events.json
+```
+
+- `config/*.json` — все верхнеуровневые JSON-конфиги из `data/config/`; подкаталоги `backups/`, `import_backups/` и служебные файлы не включаются.
+- `assets/floorplans/` — картинки и SVG, загруженные для планов помещений.
+- `diagnostics/` — export-only снимки текущей работы (`current.json`, `availability_daily.json`, `modbus_log.json`, `events.json`); они нужны для заводской диагностики и не восстанавливаются при импорте.
+- Перед импортом создаётся резервный ZIP текущего состояния в `data/config/import_backups/`.
+- Импорт проверяет `manifest.json`, обязательные конфиги, допустимые пути ZIP, расширения файлов планов и ограничения размера; после записи конфигов Visualizer запрашивает перечитывание настроек Poller.
 
 ## Error Handling
 

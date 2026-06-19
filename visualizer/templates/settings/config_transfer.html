@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Импорт/экспорт конфигурации{% endblock %}
+
+{% block head %}
+<style>
+  .bundle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .bundle-card {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 14px;
+    min-height: 78px;
+  }
+  .bundle-card__label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .bundle-card__value {
+    color: var(--text-primary);
+    font-size: 22px;
+    font-weight: 700;
+    word-break: break-word;
+  }
+  .bundle-card__value--small {
+    font-size: 16px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Импорт/экспорт конфигурации</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Текущий набор</div>
+  <div class="bundle-grid" id="bundle-summary">
+    <div class="bundle-card">
+      <div class="bundle-card__label">Датчиков</div>
+      <div class="bundle-card__value" id="summary-sensors">—</div>
+    </div>
+    <div class="bundle-card">
+      <div class="bundle-card__label">Конфигов</div>
+      <div class="bundle-card__value" id="summary-configs">—</div>
+    </div>
+    <div class="bundle-card">
+      <div class="bundle-card__label">Картинок</div>
+      <div class="bundle-card__value" id="summary-assets">—</div>
+    </div>
+    <div class="bundle-card">
+      <div class="bundle-card__label">Версия</div>
+      <div class="bundle-card__value bundle-card__value--small" id="summary-version">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Выгрузка</div>
+  <button class="btn btn-primary" onclick="downloadBundle()">Скачать ZIP</button>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Загрузка</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Архив ZIP</label>
+      <input type="file" id="bundle-file" accept=".zip,application/zip">
+    </div>
+  </div>
+  <button class="btn btn-danger" onclick="importBundle()">Восстановить из ZIP</button>
+  <pre id="import-result" class="mt-4" style="white-space:pre-wrap; display:none;"></pre>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function refreshBundleSummary() {
+  try {
+    const data = await apiFetch('/api/config/bundle/summary');
+    document.getElementById('summary-sensors').textContent = data.sensor_count ?? '—';
+    document.getElementById('summary-configs').textContent = (data.config_files || []).length;
+    document.getElementById('summary-assets').textContent = (data.floorplan_assets || []).length;
+    document.getElementById('summary-version').textContent = data.config_version || '—';
+  } catch (e) {}
+}
+
+function downloadBundle() {
+  window.location.href = '/api/config/bundle/export';
+}
+
+async function importBundle() {
+  const input = document.getElementById('bundle-file');
+  const resultBox = document.getElementById('import-result');
+  if (!input.files || !input.files.length) {
+    showToast('Выберите ZIP-архив', 'error');
+    return;
+  }
+  if (!confirm('Восстановить конфигурацию из выбранного архива? Текущие настройки будут сохранены в резервный ZIP перед импортом.')) {
+    return;
+  }
+  const form = new FormData();
+  form.append('file', input.files[0]);
+  try {
+    const resp = await fetch('/api/config/bundle/import', { method: 'POST', body: form, cache: 'no-store' });
+    const data = await resp.json();
+    if (!resp.ok) {
+      throw new Error(data.error || 'Ошибка импорта');
+    }
+    const lines = [
+      'Импорт выполнен.',
+      'Конфиги: ' + (data.imported_config_files || []).join(', '),
+      'Картинки планов: ' + ((data.imported_floorplan_assets || []).join(', ') || 'нет'),
+      'Бэкап до импорта: ' + (data.backup_path || '—')
+    ];
+    if (data.warnings && data.warnings.length) {
+      lines.push('Предупреждения:');
+      data.warnings.forEach(item => lines.push('- ' + item));
+    }
+    resultBox.textContent = lines.join('\n');
+    resultBox.style.display = '';
+    showToast('Конфигурация восстановлена');
+    await refreshBundleSummary();
+  } catch (e) {
+    resultBox.textContent = e.message;
+    resultBox.style.display = '';
+    showToast(e.message, 'error');
+  }
+}
+
+refreshBundleSummary();
+</script>
+{% endblock %}

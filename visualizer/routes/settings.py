@@ -57,3 +57,8 @@ def settings_appearance():
 def settings_system():
     config = load_system_config()
     return render_template('settings/system.html', config=config)
+
+
+@settings_bp.route('/config-transfer')
+def settings_config_transfer():
+    return render_template('settings/config_transfer.html')

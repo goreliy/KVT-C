@@ -1,16 +1,48 @@
-{
+﻿{
   "data_collection": {
     "mode": "combined",
     "source_file": "./data/current.json",
-    "periodic": { "interval_ms": 1000 },
-    "watch": { "debounce_ms": 100 },
-    "combined": { "min_interval_ms": 500, "max_interval_ms": 5000 }
+    "periodic": {
+      "interval_ms": 1000
+    },
+    "watch": {
+      "debounce_ms": 100
+    },
+    "combined": {
+      "min_interval_ms": 500,
+      "max_interval_ms": 5000
+    }
   },
   "storage": {
-    "sqlite": { "enabled": true, "path": "./data/archive.db", "max_size_mb": 500, "reserve_space_mb": 100 },
-    "postgresql": { "enabled": false, "host": "localhost", "port": 5432, "database": "kvt", "user": "kvt_user", "password": "" },
-    "json_file": { "enabled": true, "path": "./data/archive.json", "max_size_mb": 100, "reserve_space_mb": 50 }
+    "sqlite": {
+      "enabled": true,
+      "path": "./data/archive.db",
+      "max_size_mb": 500,
+      "reserve_space_mb": 100
+    },
+    "postgresql": {
+      "enabled": false,
+      "host": "localhost",
+      "port": 5432,
+      "database": "kvt",
+      "user": "kvt_user",
+      "password": ""
+    },
+    "json_file": {
+      "enabled": true,
+      "path": "./data/archive.json",
+      "max_size_mb": 100,
+      "reserve_space_mb": 50
+    }
   },
-  "compression": { "enabled": true, "tolerance_temp": 0.1, "tolerance_hum": 0.5 },
-  "retention": { "max_days": 365, "cleanup_on_low_space": true, "min_free_space_mb": 200 }
+  "compression": {
+    "enabled": true,
+    "tolerance_temp": 0.1,
+    "tolerance_hum": 0.5
+  },
+  "retention": {
+    "max_days": 365,
+    "cleanup_on_low_space": true,
+    "min_free_space_mb": 200
+  }
 }

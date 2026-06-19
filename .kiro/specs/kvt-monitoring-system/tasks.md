@@ -129,7 +129,8 @@
     - GET /api/config, /api/config/version, /api/config/history
     - POST /api/config/restore/{version}
     - GET/POST /api/sensors, PUT/DELETE /api/sensors/{id}
-    - _Requirements: 13.1, 13.2, 13.3_
+    - GET /api/config/bundle/summary, GET /api/config/bundle/export, POST /api/config/bundle/import — полный ZIP-архив конфигурации, планы и диагностические снимки
+    - _Requirements: 13.1, 13.2, 13.3, 13.6, 13.7, 13.8, 13.9, 13.10_
   - [x] 4.4 Реализовать API темы и оформления (visualizer/routes/api.py)
 
     - GET /api/theme — текущие настройки оформления
@@ -204,6 +205,7 @@
     - /settings/reports — расписание отчётов, форматы, директория
     - /settings/appearance — темы, цвета, название приложения, сброс к умолчаниям
     - /settings/system — версия конфигурации, история изменений, восстановление
+    - /settings/config-transfer — импорт/экспорт полного конфигурационного ZIP-архива
     --_Requirements: 2.1, 2.2, 8.1, 8.2, 8.3, 8.
 4, 9.1, 9.2, 13.2, 13.3, 14.1, 14.6, 5a.1, 5a.2, 5a.3, 5a.4, 5a.5_
   - [-] 5.6 Реализовать страницу экспорта данных

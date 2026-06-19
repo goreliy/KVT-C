@@ -1,4 +1,4 @@
-{
+﻿{
   "email": {
     "enabled": false,
     "smtp_server": "",
@@ -24,10 +24,28 @@
     "reports": {
       "enabled": false,
       "schedule": [
-        { "type": "hourly", "enabled": false, "minute": 0 },
-        { "type": "daily", "enabled": false, "time": "08:00" },
-        { "type": "weekly", "enabled": false, "day_of_week": "monday", "time": "09:00" },
-        { "type": "monthly", "enabled": false, "day_of_month": 1, "time": "09:00" }
+        {
+          "type": "hourly",
+          "enabled": false,
+          "minute": 0
+        },
+        {
+          "type": "daily",
+          "enabled": false,
+          "time": "08:00"
+        },
+        {
+          "type": "weekly",
+          "enabled": false,
+          "day_of_week": "monday",
+          "time": "09:00"
+        },
+        {
+          "type": "monthly",
+          "enabled": false,
+          "day_of_month": 1,
+          "time": "09:00"
+        }
       ],
       "include_charts": true,
       "include_violations_summary": true,

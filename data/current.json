@@ -1,39 +1,7 @@
 {
-  "timestamp": "2026-06-19T16:57:47.206282",
+  "timestamp": "2026-06-19T17:44:14.396655",
   "poll_period_ms": 1000,
   "poll_ports": [
-    {
-      "id": "default",
-      "name": "COM8",
-      "enabled": true,
-      "transport": "serial",
-      "com_port": "COM8",
-      "device_slave_id": 16,
-      "baudrate": 9600,
-      "bytesize": 8,
-      "parity": "N",
-      "stopbits": 1,
-      "remote_host": "127.0.0.1",
-      "remote_port": 502,
-      "local_host": "",
-      "local_port": 0,
-      "timeout_ms": 500,
-      "prefix": "0x10",
-      "channel": "0x10",
-      "seq_start": "0x21D1",
-      "seq_persist": true,
-      "state": "degraded",
-      "running": true,
-      "last_error": "No response",
-      "last_poll_at": "2026-06-19T16:57:30.472727",
-      "last_success_at": null,
-      "last_cycle_duration_ms": 23936.46,
-      "seq_current": null,
-      "total_polls": 4,
-      "successful_polls": 0,
-      "failed_polls": 3,
-      "skipped_status_reads": 117
-    },
     {
       "id": "UDP_IP_66.100",
       "name": "UDP-C2000PP-IP66.100",
@@ -57,14 +25,46 @@
       "state": "running",
       "running": true,
       "last_error": null,
-      "last_poll_at": "2026-06-19T16:57:46.350826",
-      "last_success_at": "2026-06-19T16:57:46.350826",
-      "last_cycle_duration_ms": 867.8,
-      "seq_current": "24C5",
-      "total_polls": 46,
-      "successful_polls": 37,
-      "failed_polls": 9,
-      "skipped_status_reads": 38
+      "last_poll_at": "2026-06-19T17:44:12.814567",
+      "last_success_at": "2026-06-19T17:44:12.814567",
+      "last_cycle_duration_ms": 1582.92,
+      "seq_current": "2729",
+      "total_polls": 83,
+      "successful_polls": 66,
+      "failed_polls": 17,
+      "skipped_status_reads": 76
+    },
+    {
+      "id": "default",
+      "name": "COM8",
+      "enabled": true,
+      "transport": "serial",
+      "com_port": "COM8",
+      "device_slave_id": 16,
+      "baudrate": 9600,
+      "bytesize": 8,
+      "parity": "N",
+      "stopbits": 1,
+      "remote_host": "127.0.0.1",
+      "remote_port": 502,
+      "local_host": "",
+      "local_port": 0,
+      "timeout_ms": 50,
+      "prefix": "0x10",
+      "channel": "0x10",
+      "seq_start": "0x21D1",
+      "seq_persist": true,
+      "state": "degraded",
+      "running": true,
+      "last_error": "No response",
+      "last_poll_at": "2026-06-19T17:44:09.719498",
+      "last_success_at": null,
+      "last_cycle_duration_ms": 10876.85,
+      "seq_current": null,
+      "total_polls": 25,
+      "successful_polls": 0,
+      "failed_polls": 24,
+      "skipped_status_reads": 781
     }
   ],
   "sensors": [
@@ -80,18 +80,18 @@
       "modbus_addr_temp": 1,
       "modbus_addr_hum": 2,
       "temperature": {
-        "value": 25.1875,
-        "raw": 6448,
+        "value": 25.3125,
+        "raw": 6480,
         "status": "normal",
         "modbus_status": 20015,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "humidity": {
         "value": 55.0,
         "raw": 14080,
         "status": "normal",
         "modbus_status": 18991,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "combined_status": "guarded"
     },
@@ -107,18 +107,18 @@
       "modbus_addr_temp": 3,
       "modbus_addr_hum": 4,
       "temperature": {
-        "value": 25.4375,
-        "raw": 6512,
+        "value": 25.5625,
+        "raw": 6544,
         "status": "normal",
         "modbus_status": 19503,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "humidity": {
-        "value": 53.0,
-        "raw": 13568,
+        "value": 54.0,
+        "raw": 13824,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "combined_status": "guarded"
     },
@@ -134,18 +134,18 @@
       "modbus_addr_temp": 5,
       "modbus_addr_hum": 6,
       "temperature": {
-        "value": 25.375,
-        "raw": 6496,
+        "value": 25.4375,
+        "raw": 6512,
         "status": "normal",
         "modbus_status": 19503,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "humidity": {
         "value": 53.0,
         "raw": 13568,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "combined_status": "guarded"
     },
@@ -161,18 +161,18 @@
       "modbus_addr_temp": 7,
       "modbus_addr_hum": 8,
       "temperature": {
-        "value": 25.3125,
-        "raw": 6480,
+        "value": 25.375,
+        "raw": 6496,
         "status": "normal",
         "modbus_status": 19503,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "humidity": {
         "value": 52.0,
         "raw": 13312,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "combined_status": "guarded"
     },
@@ -188,18 +188,18 @@
       "modbus_addr_temp": 9,
       "modbus_addr_hum": 10,
       "temperature": {
-        "value": 25.375,
-        "raw": 6496,
+        "value": 25.4375,
+        "raw": 6512,
         "status": "normal",
         "modbus_status": 19503,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "humidity": {
         "value": 52.0,
         "raw": 13312,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "combined_status": "guarded"
     },
@@ -219,14 +219,14 @@
         "raw": 6400,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "humidity": {
         "value": 52.0,
         "raw": 13312,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "combined_status": "guarded"
     },
@@ -246,14 +246,14 @@
         "raw": 6400,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "humidity": {
-        "value": 53.0,
-        "raw": 13568,
+        "value": 54.0,
+        "raw": 13824,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "combined_status": "guarded"
     },
@@ -273,14 +273,14 @@
         "raw": 6400,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "humidity": {
-        "value": 52.0,
-        "raw": 13312,
+        "value": 53.0,
+        "raw": 13568,
         "status": "normal",
         "modbus_status": 42287,
-        "timestamp": "2026-06-19T16:57:46.350826"
+        "timestamp": "2026-06-19T17:44:12.814567"
       },
       "combined_status": "guarded"
     },
@@ -300,14 +300,14 @@
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "humidity": {
         "value": null,
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "combined_status": "no_connection"
     },
@@ -327,14 +327,14 @@
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "humidity": {
         "value": null,
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "combined_status": "no_connection"
     },
@@ -354,14 +354,14 @@
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "humidity": {
         "value": null,
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "combined_status": "no_connection"
     },
@@ -381,14 +381,14 @@
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "humidity": {
         "value": null,
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "combined_status": "no_connection"
     },
@@ -408,14 +408,14 @@
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "humidity": {
         "value": null,
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "combined_status": "no_connection"
     },
@@ -435,14 +435,14 @@
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "humidity": {
         "value": null,
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "combined_status": "no_connection"
     },
@@ -462,14 +462,14 @@
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "humidity": {
         "value": null,
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "combined_status": "no_connection"
     },
@@ -489,23 +489,23 @@
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "humidity": {
         "value": null,
         "raw": null,
         "status": "offline",
         "modbus_status": 4,
-        "timestamp": "2026-06-19T16:57:05.362035"
+        "timestamp": "2026-06-19T17:43:57.682312"
       },
       "combined_status": "no_connection"
     }
   ],
   "stats": {
-    "total_polls": 49,
-    "successful_polls": 37,
-    "failed_polls": 12,
-    "skipped_status_reads": 134,
+    "total_polls": 107,
+    "successful_polls": 66,
+    "failed_polls": 41,
+    "skipped_status_reads": 844,
     "ports": {
       "UDP_IP_66.100": {
         "id": "UDP_IP_66.100",
@@ -530,14 +530,14 @@
         "state": "running",
         "running": true,
         "last_error": null,
-        "last_poll_at": "2026-06-19T16:57:46.350826",
-        "last_success_at": "2026-06-19T16:57:46.350826",
-        "last_cycle_duration_ms": 867.8,
-        "seq_current": "24C5",
-        "total_polls": 46,
-        "successful_polls": 37,
-        "failed_polls": 9,
-        "skipped_status_reads": 38
+        "last_poll_at": "2026-06-19T17:44:12.814567",
+        "last_success_at": "2026-06-19T17:44:12.814567",
+        "last_cycle_duration_ms": 1582.92,
+        "seq_current": "2729",
+        "total_polls": 83,
+        "successful_polls": 66,
+        "failed_polls": 17,
+        "skipped_status_reads": 76
       },
       "default": {
         "id": "default",
@@ -554,7 +554,7 @@
         "remote_port": 502,
         "local_host": "",
         "local_port": 0,
-        "timeout_ms": 500,
+        "timeout_ms": 50,
         "prefix": "0x10",
         "channel": "0x10",
         "seq_start": "0x21D1",
@@ -562,14 +562,14 @@
         "state": "degraded",
         "running": true,
         "last_error": "No response",
-        "last_poll_at": "2026-06-19T16:57:05.362035",
+        "last_poll_at": "2026-06-19T17:43:57.682312",
         "last_success_at": null,
-        "last_cycle_duration_ms": 23936.46,
+        "last_cycle_duration_ms": 10876.85,
         "seq_current": null,
-        "total_polls": 3,
+        "total_polls": 24,
         "successful_polls": 0,
-        "failed_polls": 3,
-        "skipped_status_reads": 96
+        "failed_polls": 24,
+        "skipped_status_reads": 768
       }
     }
   }
