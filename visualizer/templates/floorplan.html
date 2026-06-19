@@ -73,6 +73,8 @@
   .fp-marker__name { font-weight: 600; font-size: 12px; white-space: nowrap; }
   .fp-marker__vals { display: flex; gap: 8px; justify-content: center; margin-top: 2px; }
   .fp-marker__val { font-size: 13px; font-weight: 700; }
+  .fp-marker--offline { border-color: var(--color-offline); opacity: .78; }
+  .fp-marker--offline .fp-marker__vals { color: var(--color-offline); }
   .fp-marker__remove {
     position: absolute; top: -8px; right: -8px; width: 18px; height: 18px;
     background: var(--color-alarm); color: #fff; border: none; border-radius: 50%;
@@ -151,6 +153,17 @@ let plans = {{ plans | tojson }};
 let activePlanId = null;
 let currentData = {};  // live sensor data
 let editMode = false;  // view mode by default
+
+function isOfflineStatus(status) {
+  return ['no_connection', 'offline'].includes(String(status || '').toLowerCase());
+}
+
+function statusBase(status) {
+  const value = String(status || 'offline').toLowerCase();
+  if (isOfflineStatus(value)) return 'offline';
+  if (value.startsWith('warning')) return 'warning';
+  return value.includes('_') ? value.split('_')[0] : value;
+}
 
 // --- Edit mode toggle ---
 function toggleEditMode() {
@@ -435,14 +448,19 @@ async function updateLiveData() {
     (data.sensors || []).forEach(s => {
       const tempEl = document.querySelector(`[data-temp="${s.id}"]`);
       const humEl = document.querySelector(`[data-hum="${s.id}"]`);
-      if (tempEl) tempEl.textContent = (s.temperature.value == null ? '—' : s.temperature.value.toFixed(1) + '°C');
-      if (humEl) humEl.textContent = (s.humidity.value == null ? '—' : s.humidity.value.toFixed(1) + '%');
+      const base = statusBase(s.combined_status);
+      const offline = base === 'offline';
+      if (tempEl) tempEl.textContent = offline ? 'Нет связи' : (s.temperature.value == null ? '—' : s.temperature.value.toFixed(1) + '°C');
+      if (humEl) {
+        humEl.textContent = offline ? '' : (s.humidity.value == null ? '—' : s.humidity.value.toFixed(1) + '%');
+        humEl.style.display = offline ? 'none' : '';
+      }
       // Update marker border color based on status
       const marker = document.querySelector(`.fp-marker[data-sensor-id="${s.id}"]`);
       if (marker) {
         const colors = { normal: 'var(--color-normal)', guarded: 'var(--color-guarded)',
-          alarm: 'var(--color-alarm)', no_connection: 'var(--color-offline)' };
-        const base = s.combined_status.includes('warning') ? 'warning' : s.combined_status.split('_')[0];
+          alarm: 'var(--color-alarm)', offline: 'var(--color-offline)' };
+        marker.classList.toggle('fp-marker--offline', offline);
         marker.style.borderColor = colors[base] || (base === 'warning' ? 'var(--color-warning)' : 'var(--color-normal)');
       }
     });

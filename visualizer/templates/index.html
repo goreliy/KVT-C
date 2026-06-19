@@ -6,6 +6,13 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
   .sensor-card__mini-chart { height: 50px; margin-top: 8px; }
+  .sensor-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .sensor-card__head .sensor-card__name { margin-bottom: 0; }
+  .sensor-card__state {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    padding: 2px 8px; border-radius: 999px; background: var(--color-offline); color: #fff;
+    font-size: 11px; font-weight: 700; line-height: 1.4;
+  }
   .summary-bar {
     display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;
   }
@@ -47,9 +54,11 @@
   .branch-leaf--warning { border-left-color: var(--color-warning); }
   .branch-leaf--alarm { border-left-color: var(--color-alarm); }
   .branch-leaf--guarded { border-left-color: var(--color-guarded); }
+  .branch-leaf--offline { border-left-color: var(--color-offline); opacity: .75; }
   .branch-leaf__top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 2px; }
   .branch-leaf__name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .branch-leaf__val { font-size: 13px; white-space: nowrap; }
+  .branch-leaf__val--offline { color: var(--color-offline); font-weight: 700; }
   .branch-leaf__meta { font-size: 11px; color: var(--text-secondary); }
   .tree-empty { color: var(--text-secondary); font-size: 13px; padding: 10px 0; }
 
@@ -68,6 +77,19 @@
 {% endblock %}
 
 {% block content %}
+{% set summary = namespace(ok=0, warn=0, alarm=0, offline=0) %}
+{% for s in data.sensors %}
+  {% set status = s.combined_status or 'offline' %}
+  {% if status in ['no_connection', 'offline'] %}
+    {% set summary.offline = summary.offline + 1 %}
+  {% elif status[:7] == 'warning' %}
+    {% set summary.warn = summary.warn + 1 %}
+  {% elif status == 'alarm' %}
+    {% set summary.alarm = summary.alarm + 1 %}
+  {% else %}
+    {% set summary.ok = summary.ok + 1 %}
+  {% endif %}
+{% endfor %}
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; flex-wrap:wrap;">
   <h1 class="page-title" style="margin-bottom:0;">Текущие показания</h1>
   <div style="display:flex; gap:12px; align-items:center;">
@@ -83,19 +105,19 @@
     <div class="lbl">Датчиков</div>
   </div>
   <div class="summary-bar__item">
-    <div class="val" style="color:var(--color-normal)" id="sum-ok">{{ data.sensors|selectattr('combined_status','equalto','normal')|list|length }}</div>
+    <div class="val" style="color:var(--color-normal)" id="sum-ok">{{ summary.ok }}</div>
     <div class="lbl">В норме</div>
   </div>
   <div class="summary-bar__item">
-    <div class="val" style="color:var(--color-warning)" id="sum-warn">0</div>
+    <div class="val" style="color:var(--color-warning)" id="sum-warn">{{ summary.warn }}</div>
     <div class="lbl">Предупреждения</div>
   </div>
   <div class="summary-bar__item">
-    <div class="val" style="color:var(--color-alarm)" id="sum-alarm">0</div>
+    <div class="val" style="color:var(--color-alarm)" id="sum-alarm">{{ summary.alarm }}</div>
     <div class="lbl">Тревоги</div>
   </div>
   <div class="summary-bar__item">
-    <div class="val" style="color:var(--color-offline)" id="sum-offline">0</div>
+    <div class="val" style="color:var(--color-offline)" id="sum-offline">{{ summary.offline }}</div>
     <div class="lbl">Нет связи</div>
   </div>
 </div>
@@ -125,9 +147,15 @@
 
 <div class="sensor-grid" id="sensor-grid">
   {% for s in data.sensors %}
-  <a href="/sensor/{{ s.id }}" class="sensor-card sensor-card--{{ s.combined_status.split('_')[0] if '_' in s.combined_status else s.combined_status }}" style="text-decoration:none;color:inherit;" id="card-{{ s.id }}">
+  {% set card_status = s.combined_status or 'offline' %}
+  {% set card_base = 'offline' if card_status in ['no_connection', 'offline'] else ('warning' if card_status[:7] == 'warning' else card_status) %}
+  {% set is_offline = card_base == 'offline' %}
+  <a href="/sensor/{{ s.id }}" class="sensor-card sensor-card--{{ card_base }}" style="text-decoration:none;color:inherit;" id="card-{{ s.id }}">
     <div class="sensor-card__status status-{{ s.combined_status }}"></div>
-    <div class="sensor-card__name">{{ s.name }}</div>
+    <div class="sensor-card__head">
+      <div class="sensor-card__name">{{ s.name }}</div>
+      {% if is_offline %}<span class="sensor-card__state">Нет связи</span>{% endif %}
+    </div>
     <div class="sensor-card__values">
       <div class="sensor-card__value">
         {{ ("%.1f"|format(s.temperature.value) ~ "°C") if s.temperature.value is not none else "—" }}
@@ -142,7 +170,7 @@
       {{ s.display_number or ('#' ~ s.id) }} · {{ s.poll_port_name or s.poll_port_id or 'default' }} · Modbus: slave={{ s.modbus_slave_id }}, addr={{ s.modbus_addr_temp }}/{{ s.modbus_addr_hum }}
     </div>
     <div class="sensor-card__freshness">
-      Последние данные: {{ ((s.temperature.timestamp or data.timestamp or '—').replace('T', ' ')[:19]) if (s.temperature.timestamp or data.timestamp) else '—' }}
+      {{ 'Последняя попытка' if is_offline else 'Последние данные' }}: {{ ((s.temperature.timestamp or s.humidity.timestamp or data.timestamp or '—').replace('T', ' ')[:19]) if (s.temperature.timestamp or s.humidity.timestamp or data.timestamp) else '—' }}
       <br>
       Получено данных сегодня: <span id="today-count-{{ s.id }}">—</span>
       <span id="ping-line-{{ s.id }}" style="display:none;"><br>Ping линии: <span id="ping-{{ s.id }}">—</span></span>
@@ -169,8 +197,32 @@ function fmtSensorTs(ts) {
   return d.toLocaleString('ru-RU');
 }
 
+function isOfflineStatus(status) {
+  return ['no_connection', 'offline'].includes(String(status || '').toLowerCase());
+}
+
 function statusBase(status) {
-  return status.includes('_') ? status.split('_')[0] : status;
+  const value = String(status || 'offline').toLowerCase();
+  if (isOfflineStatus(value)) return 'offline';
+  if (value.startsWith('warning')) return 'warning';
+  return value.includes('_') ? value.split('_')[0] : value;
+}
+
+function statusBadgeHtml(status) {
+  return statusBase(status) === 'offline'
+    ? '<span class="sensor-card__state">Нет связи</span>'
+    : '';
+}
+
+function sensorReadingTimestamp(sensor, fallback) {
+  return (sensor.temperature && sensor.temperature.timestamp)
+    || (sensor.humidity && sensor.humidity.timestamp)
+    || fallback
+    || null;
+}
+
+function sensorFreshnessLabel(sensor) {
+  return statusBase(sensor.combined_status) === 'offline' ? 'Последняя попытка' : 'Последние данные';
 }
 
 function escapeHtml(value) {
@@ -367,10 +419,13 @@ function renderBranch(branch, byId) {
     const s = byId[String(sid)];
     if (!s) return '';
     const base = statusBase(s.combined_status || 'offline');
+    const offline = base === 'offline';
     const t = s.temperature?.value == null ? '—' : s.temperature.value.toFixed(1) + '°C';
     const h = s.humidity?.value == null ? '—' : s.humidity.value.toFixed(1) + '%';
+    const valueText = offline ? 'Нет связи' : `${t} · ${h}`;
+    const valueClass = offline ? ' branch-leaf__val--offline' : '';
     const line = escapeHtml(s.poll_port_name || s.poll_port_id || 'default');
-    const last = fmtSensorTs((s.temperature && s.temperature.timestamp) || null);
+    const last = fmtSensorTs(sensorReadingTimestamp(s, null));
     const item = availabilityState.sensors?.[String(s.id)];
     const received = item ? (item.received_today || 0) : (todayCounts[s.id] ?? '—');
     const port = sensorEthernetPort(s);
@@ -380,10 +435,10 @@ function renderBranch(branch, byId) {
     return `<a href="/sensor/${s.id}" class="branch-leaf branch-leaf--${base}">
       <div class="branch-leaf__top">
         <span class="branch-leaf__name">${escapeHtml(s.name)}</span>
-        <span class="branch-leaf__val">${t} · ${h}</span>
+        <span class="branch-leaf__val${valueClass}">${valueText}</span>
       </div>
       <div class="branch-leaf__meta">Линия: ${line}</div>
-      <div class="branch-leaf__meta">Последние данные: ${last}</div>
+      <div class="branch-leaf__meta">${sensorFreshnessLabel(s)}: ${last}</div>
       <div class="branch-leaf__meta">Получено данных сегодня: ${received}</div>
       ${pingHtml}
     </a>`;
@@ -619,13 +674,16 @@ setInterval(async () => {
       if (sb === 'normal') ok++;
       else if (sb === 'warning') warn++;
       else if (sb === 'alarm') alarm++;
-      else if (sb === 'no' || sb === 'offline') offline++;
+      else if (sb === 'offline') offline++;
       else ok++;
 
       return `
         <a href="/sensor/${s.id}" class="sensor-card sensor-card--${sb}" style="text-decoration:none;color:inherit;" id="card-${s.id}">
           <div class="sensor-card__status status-${s.combined_status}"></div>
-          <div class="sensor-card__name">${s.name}</div>
+          <div class="sensor-card__head">
+            <div class="sensor-card__name">${escapeHtml(s.name)}</div>
+            ${statusBadgeHtml(s.combined_status)}
+          </div>
           <div class="sensor-card__values">
             <div class="sensor-card__value">
               ${(s.temperature.value == null ? '—' : s.temperature.value.toFixed(1) + '°C')}
@@ -640,7 +698,7 @@ setInterval(async () => {
             ${(s.display_number || ('#' + s.id))} · ${(s.poll_port_name || s.poll_port_id || 'default')} · Modbus: slave=${s.modbus_slave_id}, addr=${s.modbus_addr_temp}/${s.modbus_addr_hum}
           </div>
           <div class="sensor-card__freshness">
-            Последние данные: ${fmtSensorTs((s.temperature && s.temperature.timestamp) || data.timestamp)}
+            ${sensorFreshnessLabel(s)}: ${fmtSensorTs(sensorReadingTimestamp(s, data.timestamp))}
             <br>
             Получено данных сегодня: <span id="today-count-${s.id}">${todayCounts[s.id] ?? '—'}</span>
             <span id="ping-line-${s.id}" style="display:none;"><br>Ping линии: <span id="ping-${s.id}">—</span></span>

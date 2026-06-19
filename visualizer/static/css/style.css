@@ -116,7 +116,7 @@ a:hover { text-decoration: underline; }
 .sensor-card--normal { border-left: 4px solid var(--color-normal); }
 .sensor-card--warning { border-left: 4px solid var(--color-warning); }
 .sensor-card--alarm { border-left: 4px solid var(--color-alarm); animation: pulse-alarm 1.5s infinite; }
-.sensor-card--offline { border-left: 4px solid var(--color-offline); opacity: .7; }
+.sensor-card--offline, .sensor-card--no { border-left: 4px solid var(--color-offline); opacity: .7; }
 .sensor-card--guarded { border-left: 4px solid var(--color-guarded); }
 
 @keyframes pulse-alarm {
@@ -293,7 +293,7 @@ tr:hover { background: rgba(255,255,255,.03); }
 .badge-normal { background: var(--color-normal); color: #fff; }
 .badge-warning { background: var(--color-warning); color: #000; }
 .badge-alarm { background: var(--color-alarm); color: #fff; }
-.badge-offline { background: var(--color-offline); color: #fff; }
+.badge-offline, .badge-no_connection, .badge-no { background: var(--color-offline); color: #fff; }
 
 .text-muted { color: var(--text-secondary); }
 .mt-2 { margin-top: 8px; }

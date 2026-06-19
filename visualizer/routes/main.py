@@ -53,19 +53,62 @@ def _latest_sensor_snapshots():
     return snapshots
 
 
-def _sensor_snapshot_from_config(sensor, port_names, latest=None):
+def _empty_metric(metric=None, status='no_connection'):
+    payload = dict(metric or {}) if isinstance(metric, dict) else {}
+    payload['value'] = None
+    payload.setdefault('raw', None)
+    payload.setdefault('timestamp', None)
+    payload['status'] = payload.get('status') or status
+    return payload
+
+
+def _metric_snapshot(metric, keep_empty=False):
+    if _has_value(metric):
+        return metric
+    if keep_empty:
+        return _empty_metric(metric)
+    return _empty_metric()
+
+
+def _sensor_snapshot_from_config(sensor, port_names, latest=None, live_snapshot=False):
     latest = latest or {}
-    temperature = latest.get('temperature') if _has_value(latest.get('temperature')) else {'value': None, 'timestamp': None, 'status': 'no_connection'}
-    humidity = latest.get('humidity') if _has_value(latest.get('humidity')) else {'value': None, 'timestamp': None, 'status': 'no_connection'}
-    return {
+    temperature = _metric_snapshot(latest.get('temperature'), keep_empty=live_snapshot)
+    humidity = _metric_snapshot(latest.get('humidity'), keep_empty=live_snapshot)
+    poll_port_id = latest.get('poll_port_id') or sensor.get('poll_port_id') or 'default'
+    payload = {
         **sensor,
-        'display_number': sensor.get('local_number') or sensor.get('id'),
-        'poll_port_id': sensor.get('poll_port_id') or 'default',
-        'poll_port_name': port_names.get(str(sensor.get('poll_port_id') or 'default'), sensor.get('poll_port_id') or 'default'),
+        'display_number': latest.get('display_number') or sensor.get('local_number') or sensor.get('id'),
+        'poll_port_id': poll_port_id,
+        'poll_port_name': latest.get('poll_port_name') or port_names.get(str(poll_port_id), poll_port_id),
         'combined_status': latest.get('combined_status') or 'no_connection',
         'temperature': temperature,
         'humidity': humidity,
     }
+    if live_snapshot:
+        for key in ('transport', 'local_number', 'modbus_slave_id', 'modbus_addr_temp', 'modbus_addr_hum'):
+            if latest.get(key) is not None:
+                payload[key] = latest.get(key)
+    return payload
+
+
+def _offline_sensor_snapshot(sensor, port_names, port_status=None, timestamp=None):
+    port_status = port_status or {}
+    timestamp = timestamp or port_status.get('last_poll_at')
+    return _sensor_snapshot_from_config(sensor, port_names, {
+        'poll_port_id': sensor.get('poll_port_id') or 'default',
+        'poll_port_name': port_status.get('name'),
+        'transport': port_status.get('transport'),
+        'combined_status': 'no_connection',
+        'temperature': {'value': None, 'raw': None, 'timestamp': timestamp, 'status': 'offline'},
+        'humidity': {'value': None, 'raw': None, 'timestamp': timestamp, 'status': 'offline'},
+    }, live_snapshot=True)
+
+
+def _port_has_authoritative_live_status(port_status):
+    if not port_status:
+        return False
+    state = str(port_status.get('state') or '').lower()
+    return bool(port_status.get('running')) or state in {'starting', 'running', 'degraded', 'error'}
 
 
 def _with_configured_sensors(current):
@@ -73,6 +116,11 @@ def _with_configured_sensors(current):
     cfg = load_system_config()
     ports = load_poller_config().get('poll_ports', [])
     port_names = {str(p.get('id') or 'default'): p.get('name') or str(p.get('id') or 'default') for p in ports}
+    port_statuses = {
+        str(p.get('id') or 'default'): p
+        for p in (current.get('poll_ports') or [])
+        if p.get('id') is not None
+    }
     runtime_sensors = current.get('sensors') or []
     by_id = {int(s.get('id')): s for s in runtime_sensors if s.get('id') is not None}
     latest_by_id = _latest_sensor_snapshots()
@@ -82,8 +130,12 @@ def _with_configured_sensors(current):
             continue
         sid = int(sensor.get('id'))
         runtime = by_id.get(sid)
-        if runtime and (_has_value(runtime.get('temperature')) or _has_value(runtime.get('humidity'))):
-            sensors.append(runtime)
+        port_id = str(sensor.get('poll_port_id') or 'default')
+        port_status = port_statuses.get(port_id)
+        if runtime is not None:
+            sensors.append(_sensor_snapshot_from_config(sensor, port_names, runtime, live_snapshot=True))
+        elif _port_has_authoritative_live_status(port_status):
+            sensors.append(_offline_sensor_snapshot(sensor, port_names, port_status, current.get('timestamp')))
         else:
             sensors.append(_sensor_snapshot_from_config(sensor, port_names, latest_by_id.get(sid)))
     current['sensors'] = sensors

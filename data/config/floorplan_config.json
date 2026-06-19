@@ -108,7 +108,28 @@
       "bg_type": "image",
       "canvas_width": 1200,
       "canvas_height": 800,
-      "sensors": []
+      "sensors": [
+        {
+          "sensor_id": 16,
+          "x": 16.73,
+          "y": 52.49
+        },
+        {
+          "sensor_id": 17,
+          "x": 14.08,
+          "y": 58.61
+        },
+        {
+          "sensor_id": 19,
+          "x": 17.2,
+          "y": 64.97
+        },
+        {
+          "sensor_id": 20,
+          "x": 21.56,
+          "y": 69.65
+        }
+      ]
     },
     {
       "id": "65631ac6",

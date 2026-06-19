@@ -36,6 +36,13 @@ PAGE_TEMPLATE = """
     pre { white-space: pre-wrap; overflow: auto; max-height: 300px; margin: 8px 0 0; font-size: 13px; line-height: 1.35; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 10px; }
     .muted { color: #94a3b8; font-size: 12px; }
+    .line-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin-top: 10px; }
+    .line-filter button { text-align: left; min-width: 190px; border-color: #334155; }
+    .line-filter button.active { background: #1d4ed8; border-color: #60a5fa; }
+    .line-filter__name { display: block; font-weight: 700; }
+    .line-filter__meta { display: block; margin-top: 2px; color: #cbd5e1; font-size: 11px; }
+    .line-filter__counts { display: block; margin-top: 3px; color: #94a3b8; font-size: 11px; }
+    .log-scope { margin-left: 8px; color: #93c5fd; font-size: 12px; font-weight: 700; }
     table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
     th, td { border-bottom: 1px solid #334155; padding: 7px 8px; vertical-align: top; text-align: left; }
     th { color: #cbd5e1; background: #162033; position: sticky; top: 0; }
@@ -74,6 +81,16 @@ PAGE_TEMPLATE = """
     </div>
   </div>
   <div class="box">
+    <b>Линия опроса для просмотра лога</b>
+    <span id="logScope" class="log-scope">все линии</span>
+    <div id="lineFilters" class="line-filter">
+      <button class="active" onclick="selectPollPort('')">
+        <span class="line-filter__name">Все линии</span>
+        <span class="line-filter__meta">общий журнал обменов</span>
+      </button>
+    </div>
+  </div>
+  <div class="box">
     <b>Парный журнал Modbus: строка конфигурации -> TX -> RX</b>
     <div class="exchange-wrap">
       <table>
@@ -97,8 +114,9 @@ PAGE_TEMPLATE = """
     <div class="box"><b>TX байты, реальные кадры</b><pre id="txbytes">{{ tx_text }}</pre></div>
     <div class="box"><b>RX байты, реальные кадры или NO RESPONSE</b><pre id="rxbytes">{{ rx_text }}</pre></div>
   </div>
-  <div class="box"><b>Полный лог</b><pre id="log">{{ log_json }}</pre></div>
+  <div class="box"><b>Полный лог <span id="fullLogScope" class="log-scope">все линии</span></b><pre id="log">{{ log_json }}</pre></div>
   <script>
+    var selectedPollPortId = new URLSearchParams(window.location.search).get('poll_port_id') || '';
     function setText(id, value) {
       var el = document.getElementById(id);
       if (el) el.textContent = value;
@@ -115,7 +133,8 @@ PAGE_TEMPLATE = """
       if (!items || !items.length) return noData;
       return items.map(function(item) {
         var parsed = item.parsed || {};
-        return '[' + (item.timestamp || '') + '] ' + (item.raw_hex || 'NO RESPONSE') + ' :: ' + (parsed.description || '');
+        var port = item.poll_port_name || item.poll_port_id || 'line?';
+        return '[' + (item.timestamp || '') + '] [' + port + '] ' + (item.raw_hex || 'NO RESPONSE') + ' :: ' + (parsed.description || '');
       }).join('\\n');
     }
     function esc(value) {
@@ -125,9 +144,12 @@ PAGE_TEMPLATE = """
     }
     function lineColor(value) {
       var colors = ['#60a5fa', '#22c55e', '#f59e0b', '#f472b6', '#a78bfa', '#14b8a6', '#f97316', '#eab308'];
-      var number = parseInt(value || '0', 10);
-      if (!number || number < 1) return '#38bdf8';
-      return colors[(number - 1) % colors.length];
+      var text = String(value == null ? '' : value);
+      var number = parseInt(text || '0', 10);
+      if (!Number.isNaN(number) && number >= 1) return colors[(number - 1) % colors.length];
+      var hash = 0;
+      for (var i = 0; i < text.length; i++) hash = ((hash << 5) - hash) + text.charCodeAt(i);
+      return colors[Math.abs(hash) % colors.length] || '#38bdf8';
     }
     function groupClass(value) {
       return ['scan', 'values', 'status'].indexOf(value) >= 0 ? value : '';
@@ -136,16 +158,20 @@ PAGE_TEMPLATE = """
       if (!items || !items.length) return '<tr><td colspan="6" class="muted">нет обменов</td></tr>';
       return items.slice().reverse().map(function(item) {
         var source = item.source || {};
+        var pollPortId = item.poll_port_id || source.poll_port_id || '';
+        var pollPortName = item.poll_port_name || source.poll_port_name || pollPortId;
         var lineNo = source.config_line || '';
         var line = lineNo ? ('строка ' + lineNo + ', ') : '';
         var group = source.register_group || '';
         var cfg = line + (source.sensor_name || source.kind || '') + (source.sensor_id ? (' / id=' + source.sensor_id) : '');
         var cls = (item.status === 'ok' ? 'ok' : 'error') + ' line-mark';
+        var markerKey = pollPortId || lineNo;
+        var portLine = pollPortName ? '<br><span class="muted">линия: ' + esc(pollPortName) + '</span>' : '';
         var path = source.config_path ? '<br><span class="muted">' + esc(source.config_path) + '</span>' : '';
         var badge = group ? '<br><span class="badge ' + groupClass(group) + '">' + esc(group) + '</span>' : '';
-        return '<tr class="' + cls + '" style="--line-color:' + lineColor(lineNo) + '">' +
+        return '<tr class="' + cls + '" style="--line-color:' + lineColor(markerKey) + '">' +
           '<td>' + esc(item.timestamp || '') + '</td>' +
-          '<td>' + esc(cfg) + path + badge + '</td>' +
+          '<td>' + esc(cfg) + portLine + path + badge + '</td>' +
           '<td>' + esc(item.request || '') + '<br><span class="muted">slave=' + esc(item.slave_id) + ', f=' + esc(item.function) + ', addr=' + esc(item.start_addr) + ', qty=' + esc(item.quantity) + '</span></td>' +
           '<td class="hex">' + esc(item.tx_hex || '') + '</td>' +
           '<td class="hex">' + esc(item.rx_hex || 'NO RESPONSE') + '</td>' +
@@ -153,11 +179,67 @@ PAGE_TEMPLATE = """
         '</tr>';
       }).join('');
     }
+    function selectedPortLabel(status, config) {
+      if (!selectedPollPortId) return 'все линии';
+      var ports = ((status && status.poll_ports) || (config && config.poll_ports) || []);
+      for (var i = 0; i < ports.length; i++) {
+        if (String(ports[i].id || 'default') === String(selectedPollPortId)) {
+          return (ports[i].name || ports[i].id || selectedPollPortId) + ' (' + selectedPollPortId + ')';
+        }
+      }
+      return selectedPollPortId;
+    }
+    function updateScopeLabels(status, config) {
+      var label = selectedPortLabel(status, config);
+      setText('logScope', label);
+      setText('fullLogScope', label);
+    }
+    function logUrl() {
+      var url = '/api/poller/log?limit=80';
+      if (selectedPollPortId) url += '&poll_port_id=' + encodeURIComponent(selectedPollPortId);
+      return url;
+    }
+    function renderLineFilters(status, config) {
+      var container = document.getElementById('lineFilters');
+      if (!container) return;
+      var ports = ((status && status.poll_ports) || (config && config.poll_ports) || []);
+      var known = ports.some(function(port) { return String(port.id || 'default') === String(selectedPollPortId); });
+      if (selectedPollPortId && !known) selectedPollPortId = '';
+      var html = '<button class="' + (!selectedPollPortId ? 'active' : '') + '" data-port-id="" onclick="selectPollPort(this.dataset.portId)">' +
+        '<span class="line-filter__name">Все линии</span>' +
+        '<span class="line-filter__meta">общий журнал обменов</span>' +
+        '<span class="line-filter__counts">exchange: ' + esc(status.exchange_entries || 0) + ', TX: ' + esc(status.tx_entries || 0) + ', RX: ' + esc(status.rx_entries || 0) + '</span>' +
+        '</button>';
+      html += ports.map(function(port) {
+        var id = String(port.id || 'default');
+        var active = String(selectedPollPortId) === id ? 'active' : '';
+        var state = (port.running ? 'running' : (port.state || 'stopped'));
+        var name = esc(port.name || id);
+        var meta = esc(id + ' · ' + (port.transport || 'serial') + ' · ' + state);
+        var counts = 'polls: ' + esc(port.total_polls || 0) + ', ok: ' + esc(port.successful_polls || 0) + ', fail: ' + esc(port.failed_polls || 0);
+        return '<button class="' + active + '" data-port-id="' + esc(id) + '" onclick="selectPollPort(this.dataset.portId)">' +
+          '<span class="line-filter__name">' + name + '</span>' +
+          '<span class="line-filter__meta">' + meta + '</span>' +
+          '<span class="line-filter__counts">' + counts + '</span>' +
+          '</button>';
+      }).join('');
+      container.innerHTML = html;
+      updateScopeLabels(status, config);
+    }
+    async function selectPollPort(portId) {
+      selectedPollPortId = String(portId || '');
+      var url = new URL(window.location.href);
+      if (selectedPollPortId) url.searchParams.set('poll_port_id', selectedPollPortId);
+      else url.searchParams.delete('poll_port_id');
+      window.history.replaceState({}, '', url);
+      await refreshAll();
+    }
     async function refreshAll() {
       try {
         var status = await readJson('/api/poller/status');
         var config = await readJson('/api/poller/config');
-        var log = await readJson('/api/poller/log?limit=80');
+        renderLineFilters(status, config);
+        var log = await readJson(logUrl());
         setText('status', JSON.stringify(status, null, 2));
         setText('config', JSON.stringify(config, null, 2));
         setText('log', JSON.stringify(log, null, 2));
@@ -184,10 +266,12 @@ PAGE_TEMPLATE = """
       var end = parseInt(document.getElementById('scanEnd').value || '32');
       var timeout = parseInt(document.getElementById('scanTimeout').value || '500');
       setText('status', 'Сканирование...');
-      var result = await readJson('/api/poller/scan?start_id=' + start + '&end_id=' + end + '&timeout_ms=' + timeout);
+      var portArg = selectedPollPortId ? ('poll_port_id=' + encodeURIComponent(selectedPollPortId) + '&') : '';
+      var result = await readJson('/api/poller/scan?' + portArg + 'start_id=' + start + '&end_id=' + end + '&timeout_ms=' + timeout);
       setText('status', JSON.stringify(result, null, 2));
       await refreshAll();
     }
+    refreshAll();
     setInterval(refreshAll, 3000);
   </script>
 </body>
@@ -205,19 +289,23 @@ def _queue_text(items, no_data):
     lines = []
     for item in items:
         parsed = item.get("parsed", {})
-        lines.append(f"[{item.get('timestamp', '')}] {item.get('raw_hex') or 'NO RESPONSE'} :: {parsed.get('description', '')}")
+        port = item.get("poll_port_name") or item.get("poll_port_id") or "line?"
+        lines.append(f"[{item.get('timestamp', '')}] [{port}] {item.get('raw_hex') or 'NO RESPONSE'} :: {parsed.get('description', '')}")
     return "\n".join(lines)
 
 
 def _line_color(value):
     colors = ["#60a5fa", "#22c55e", "#f59e0b", "#f472b6", "#a78bfa", "#14b8a6", "#f97316", "#eab308"]
+    text = str(value or "")
     try:
-        number = int(value or 0)
+        number = int(text or 0)
     except (TypeError, ValueError):
         number = 0
-    if number < 1:
+    if number >= 1:
+        return colors[(number - 1) % len(colors)]
+    if not text:
         return "#38bdf8"
-    return colors[(number - 1) % len(colors)]
+    return colors[sum(ord(ch) for ch in text) % len(colors)]
 
 
 def _group_class(value):
@@ -230,12 +318,16 @@ def _exchange_rows(items):
     rows = []
     for item in reversed(items):
         source = item.get("source", {})
+        poll_port_id = item.get("poll_port_id") or source.get("poll_port_id") or ""
+        poll_port_name = item.get("poll_port_name") or source.get("poll_port_name") or poll_port_id
         line_no = source.get("config_line")
         line = f"строка {line_no}, " if line_no else ""
         config_text = f"{line}{source.get('sensor_name') or source.get('kind') or ''}"
         if source.get("sensor_id"):
             config_text += f" / id={source.get('sensor_id')}"
         row_class = f"{item.get('status', 'error')} line-mark"
+        marker_key = poll_port_id or line_no
+        port_line = f'<br><span class="muted">линия: {html.escape(str(poll_port_name))}</span>' if poll_port_name else ""
         path_text = source.get("config_path")
         path_line = f'<br><span class="muted">{html.escape(str(path_text))}</span>' if path_text else ""
         group = source.get("register_group", "")
@@ -249,16 +341,17 @@ def _exchange_rows(items):
         rows.append(
             "<tr class=\"{row_class}\" style=\"--line-color:{line_color}\">"
             "<td>{timestamp}</td>"
-            "<td>{config}{path_line}{group_badge}</td>"
+            "<td>{config}{port_line}{path_line}{group_badge}</td>"
             "<td>{request}<br><span class=\"muted\">{meta}</span></td>"
             "<td class=\"hex\">{tx}</td>"
             "<td class=\"hex\">{rx}</td>"
             "<td>{result}{timing}</td>"
             "</tr>".format(
                 row_class=html.escape(row_class),
-                line_color=_line_color(line_no),
+                line_color=_line_color(marker_key),
                 timestamp=html.escape(str(item.get("timestamp", ""))),
                 config=html.escape(config_text),
+                port_line=port_line,
                 path_line=path_line,
                 group_badge=group_badge,
                 request=html.escape(str(item.get("request", ""))),

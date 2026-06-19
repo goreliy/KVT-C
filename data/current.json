@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-06-18T10:26:02.640362",
+  "timestamp": "2026-06-19T16:57:47.206282",
   "poll_period_ms": 1000,
   "poll_ports": [
     {
@@ -22,17 +22,17 @@
       "channel": "0x10",
       "seq_start": "0x21D1",
       "seq_persist": true,
-      "state": "error",
+      "state": "degraded",
       "running": true,
-      "last_error": "Cannot open COM8",
-      "last_poll_at": null,
+      "last_error": "No response",
+      "last_poll_at": "2026-06-19T16:57:30.472727",
       "last_success_at": null,
-      "last_cycle_duration_ms": 0,
+      "last_cycle_duration_ms": 23936.46,
       "seq_current": null,
-      "total_polls": 0,
+      "total_polls": 4,
       "successful_polls": 0,
-      "failed_polls": 0,
-      "skipped_status_reads": 0
+      "failed_polls": 3,
+      "skipped_status_reads": 117
     },
     {
       "id": "UDP_IP_66.100",
@@ -54,58 +54,459 @@
       "channel": "0x10",
       "seq_start": "0x21D1",
       "seq_persist": true,
-      "state": "error",
-      "running": false,
-      "last_error": "Cannot open UDP-C2000PP-IP66.100",
-      "last_poll_at": null,
-      "last_success_at": null,
-      "last_cycle_duration_ms": 0,
-      "seq_current": "21D1",
-      "total_polls": 0,
-      "successful_polls": 0,
-      "failed_polls": 0,
-      "skipped_status_reads": 0
+      "state": "running",
+      "running": true,
+      "last_error": null,
+      "last_poll_at": "2026-06-19T16:57:46.350826",
+      "last_success_at": "2026-06-19T16:57:46.350826",
+      "last_cycle_duration_ms": 867.8,
+      "seq_current": "24C5",
+      "total_polls": 46,
+      "successful_polls": 37,
+      "failed_polls": 9,
+      "skipped_status_reads": 38
     }
   ],
-  "sensors": [],
-  "stats": {
-    "total_polls": 0,
-    "successful_polls": 0,
-    "failed_polls": 0,
-    "skipped_status_reads": 0,
-    "ports": {
-      "default": {
-        "id": "default",
-        "name": "COM8",
-        "enabled": true,
-        "transport": "serial",
-        "com_port": "COM8",
-        "device_slave_id": 16,
-        "baudrate": 9600,
-        "bytesize": 8,
-        "parity": "N",
-        "stopbits": 1,
-        "remote_host": "127.0.0.1",
-        "remote_port": 502,
-        "local_host": "",
-        "local_port": 0,
-        "timeout_ms": 500,
-        "prefix": "0x10",
-        "channel": "0x10",
-        "seq_start": "0x21D1",
-        "seq_persist": true,
-        "state": "error",
-        "running": true,
-        "last_error": "Cannot open COM8",
-        "last_poll_at": null,
-        "last_success_at": null,
-        "last_cycle_duration_ms": 0,
-        "seq_current": null,
-        "total_polls": 0,
-        "successful_polls": 0,
-        "failed_polls": 0,
-        "skipped_status_reads": 0
+  "sensors": [
+    {
+      "id": 13,
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "transport": "udp_c2000pp",
+      "local_number": 1,
+      "display_number": "UDP-C2000PP-IP66.100-001",
+      "name": "ываываываыа",
+      "modbus_slave_id": 1,
+      "modbus_addr_temp": 1,
+      "modbus_addr_hum": 2,
+      "temperature": {
+        "value": 25.1875,
+        "raw": 6448,
+        "status": "normal",
+        "modbus_status": 20015,
+        "timestamp": "2026-06-19T16:57:46.350826"
       },
+      "humidity": {
+        "value": 55.0,
+        "raw": 14080,
+        "status": "normal",
+        "modbus_status": 18991,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "combined_status": "guarded"
+    },
+    {
+      "id": 15,
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "transport": "udp_c2000pp",
+      "local_number": 2,
+      "display_number": "UDP-C2000PP-IP66.100-002",
+      "name": "22",
+      "modbus_slave_id": 1,
+      "modbus_addr_temp": 3,
+      "modbus_addr_hum": 4,
+      "temperature": {
+        "value": 25.4375,
+        "raw": 6512,
+        "status": "normal",
+        "modbus_status": 19503,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "humidity": {
+        "value": 53.0,
+        "raw": 13568,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "combined_status": "guarded"
+    },
+    {
+      "id": 16,
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "transport": "udp_c2000pp",
+      "local_number": 3,
+      "display_number": "UDP-C2000PP-IP66.100-003",
+      "name": "33",
+      "modbus_slave_id": 1,
+      "modbus_addr_temp": 5,
+      "modbus_addr_hum": 6,
+      "temperature": {
+        "value": 25.375,
+        "raw": 6496,
+        "status": "normal",
+        "modbus_status": 19503,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "humidity": {
+        "value": 53.0,
+        "raw": 13568,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "combined_status": "guarded"
+    },
+    {
+      "id": 17,
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "transport": "udp_c2000pp",
+      "local_number": 4,
+      "display_number": "UDP-C2000PP-IP66.100-004",
+      "name": "четвёртый",
+      "modbus_slave_id": 1,
+      "modbus_addr_temp": 7,
+      "modbus_addr_hum": 8,
+      "temperature": {
+        "value": 25.3125,
+        "raw": 6480,
+        "status": "normal",
+        "modbus_status": 19503,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "humidity": {
+        "value": 52.0,
+        "raw": 13312,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "combined_status": "guarded"
+    },
+    {
+      "id": 18,
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "transport": "udp_c2000pp",
+      "local_number": 5,
+      "display_number": "UDP-C2000PP-IP66.100-005",
+      "name": "пятый",
+      "modbus_slave_id": 1,
+      "modbus_addr_temp": 9,
+      "modbus_addr_hum": 10,
+      "temperature": {
+        "value": 25.375,
+        "raw": 6496,
+        "status": "normal",
+        "modbus_status": 19503,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "humidity": {
+        "value": 52.0,
+        "raw": 13312,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "combined_status": "guarded"
+    },
+    {
+      "id": 19,
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "transport": "udp_c2000pp",
+      "local_number": 6,
+      "display_number": "UDP-C2000PP-IP66.100-006",
+      "name": "Шештой",
+      "modbus_slave_id": 1,
+      "modbus_addr_temp": 11,
+      "modbus_addr_hum": 12,
+      "temperature": {
+        "value": 25.0,
+        "raw": 6400,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "humidity": {
+        "value": 52.0,
+        "raw": 13312,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "combined_status": "guarded"
+    },
+    {
+      "id": 20,
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "transport": "udp_c2000pp",
+      "local_number": 7,
+      "display_number": "UDP-C2000PP-IP66.100-007",
+      "name": "седьмой",
+      "modbus_slave_id": 1,
+      "modbus_addr_temp": 13,
+      "modbus_addr_hum": 14,
+      "temperature": {
+        "value": 25.0,
+        "raw": 6400,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "humidity": {
+        "value": 53.0,
+        "raw": 13568,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "combined_status": "guarded"
+    },
+    {
+      "id": 21,
+      "poll_port_id": "UDP_IP_66.100",
+      "poll_port_name": "UDP-C2000PP-IP66.100",
+      "transport": "udp_c2000pp",
+      "local_number": 8,
+      "display_number": "UDP-C2000PP-IP66.100-008",
+      "name": "восьмой",
+      "modbus_slave_id": 1,
+      "modbus_addr_temp": 15,
+      "modbus_addr_hum": 16,
+      "temperature": {
+        "value": 25.0,
+        "raw": 6400,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "humidity": {
+        "value": 52.0,
+        "raw": 13312,
+        "status": "normal",
+        "modbus_status": 42287,
+        "timestamp": "2026-06-19T16:57:46.350826"
+      },
+      "combined_status": "guarded"
+    },
+    {
+      "id": 1,
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "transport": "serial",
+      "local_number": 1,
+      "display_number": "COM8-001",
+      "name": "Первый",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 1,
+      "modbus_addr_hum": 2,
+      "temperature": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "humidity": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "combined_status": "no_connection"
+    },
+    {
+      "id": 2,
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "transport": "serial",
+      "local_number": 2,
+      "display_number": "COM8-002",
+      "name": "ХРАН. № 2",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 3,
+      "modbus_addr_hum": 4,
+      "temperature": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "humidity": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "combined_status": "no_connection"
+    },
+    {
+      "id": 3,
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "transport": "serial",
+      "local_number": 3,
+      "display_number": "COM8-003",
+      "name": "ХРАН. № 3",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 5,
+      "modbus_addr_hum": 6,
+      "temperature": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "humidity": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "combined_status": "no_connection"
+    },
+    {
+      "id": 4,
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "transport": "serial",
+      "local_number": 4,
+      "display_number": "COM8-004",
+      "name": "ХРАН. № 4",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 7,
+      "modbus_addr_hum": 8,
+      "temperature": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "humidity": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "combined_status": "no_connection"
+    },
+    {
+      "id": 5,
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "transport": "serial",
+      "local_number": 5,
+      "display_number": "COM8-005",
+      "name": "ХРАН. № 5",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 9,
+      "modbus_addr_hum": 10,
+      "temperature": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "humidity": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "combined_status": "no_connection"
+    },
+    {
+      "id": 6,
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "transport": "serial",
+      "local_number": 6,
+      "display_number": "COM8-006",
+      "name": "ХРАН. № 6",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 11,
+      "modbus_addr_hum": 12,
+      "temperature": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "humidity": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "combined_status": "no_connection"
+    },
+    {
+      "id": 7,
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "transport": "serial",
+      "local_number": 7,
+      "display_number": "COM8-007",
+      "name": "ХРАН. № 7",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 13,
+      "modbus_addr_hum": 14,
+      "temperature": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "humidity": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "combined_status": "no_connection"
+    },
+    {
+      "id": 8,
+      "poll_port_id": "default",
+      "poll_port_name": "COM8",
+      "transport": "serial",
+      "local_number": 8,
+      "display_number": "COM8-008",
+      "name": "ХРАН. № 8",
+      "modbus_slave_id": 16,
+      "modbus_addr_temp": 15,
+      "modbus_addr_hum": 16,
+      "temperature": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "humidity": {
+        "value": null,
+        "raw": null,
+        "status": "offline",
+        "modbus_status": 4,
+        "timestamp": "2026-06-19T16:57:05.362035"
+      },
+      "combined_status": "no_connection"
+    }
+  ],
+  "stats": {
+    "total_polls": 49,
+    "successful_polls": 37,
+    "failed_polls": 12,
+    "skipped_status_reads": 134,
+    "ports": {
       "UDP_IP_66.100": {
         "id": "UDP_IP_66.100",
         "name": "UDP-C2000PP-IP66.100",
@@ -126,17 +527,49 @@
         "channel": "0x10",
         "seq_start": "0x21D1",
         "seq_persist": true,
-        "state": "error",
+        "state": "running",
         "running": true,
-        "last_error": "Cannot open UDP-C2000PP-IP66.100",
-        "last_poll_at": null,
+        "last_error": null,
+        "last_poll_at": "2026-06-19T16:57:46.350826",
+        "last_success_at": "2026-06-19T16:57:46.350826",
+        "last_cycle_duration_ms": 867.8,
+        "seq_current": "24C5",
+        "total_polls": 46,
+        "successful_polls": 37,
+        "failed_polls": 9,
+        "skipped_status_reads": 38
+      },
+      "default": {
+        "id": "default",
+        "name": "COM8",
+        "enabled": true,
+        "transport": "serial",
+        "com_port": "COM8",
+        "device_slave_id": 16,
+        "baudrate": 9600,
+        "bytesize": 8,
+        "parity": "N",
+        "stopbits": 1,
+        "remote_host": "127.0.0.1",
+        "remote_port": 502,
+        "local_host": "",
+        "local_port": 0,
+        "timeout_ms": 500,
+        "prefix": "0x10",
+        "channel": "0x10",
+        "seq_start": "0x21D1",
+        "seq_persist": true,
+        "state": "degraded",
+        "running": true,
+        "last_error": "No response",
+        "last_poll_at": "2026-06-19T16:57:05.362035",
         "last_success_at": null,
-        "last_cycle_duration_ms": 0,
-        "seq_current": "21D1",
-        "total_polls": 0,
+        "last_cycle_duration_ms": 23936.46,
+        "seq_current": null,
+        "total_polls": 3,
         "successful_polls": 0,
-        "failed_polls": 0,
-        "skipped_status_reads": 0
+        "failed_polls": 3,
+        "skipped_status_reads": 96
       }
     }
   }
