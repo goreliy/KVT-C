@@ -225,6 +225,7 @@ a:hover { text-decoration: underline; }
 .btn-secondary { background: var(--border-color); color: var(--text-primary); }
 
 .btn-sm { padding: 4px 12px; font-size: 12px; }
+.compact-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
 /* --- TABLE --- */
 .table-wrap { overflow-x: auto; }

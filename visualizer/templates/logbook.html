@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Журнал учёта{% endblock %}
+
+{% block head %}
+<style>
+  .logbook-toolbar { display: grid; grid-template-columns: 1.3fr 160px 160px 1fr; gap: 12px; align-items: end; }
+  .logbook-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .summary-strip { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; color: var(--text-secondary); font-size: 13px; }
+  .summary-strip b { color: var(--text-primary); }
+  .compact-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .status-pill { display: inline-block; border-radius: 999px; padding: 3px 8px; font-size: 11px; font-weight: 700; }
+  .status-signed { background: rgba(76, 175, 80, .18); color: var(--color-normal); }
+  .status-overdue { background: rgba(244, 67, 54, .18); color: var(--color-alarm); }
+  .status-open { background: rgba(255, 152, 0, .18); color: var(--color-warning); }
+  .status-weekend { background: rgba(158, 158, 158, .18); color: var(--text-secondary); }
+  .sensor-lines { display: grid; gap: 6px; min-width: 520px; }
+  .sensor-line { display: grid; grid-template-columns: minmax(160px, 1.2fr) repeat(7, minmax(58px, .45fr)); gap: 6px; align-items: center; }
+  .sensor-line span { font-size: 12px; color: var(--text-secondary); }
+  .sensor-line b { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+  .signed-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
+  .empty-data { color: var(--text-secondary); font-size: 12px; }
+  tr.overdue-row { background: rgba(244, 67, 54, .08); }
+  tr.nonwork-row { background: rgba(158, 158, 158, .06); }
+  @media (max-width: 980px) {
+    .logbook-toolbar { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Журнал учёта</h1>
+{% include "journal/_nav.html" %}
+
+<div class="form-section">
+  <div class="logbook-toolbar">
+    <div class="form-group">
+      <label>Журнал</label>
+      <select id="report-select"></select>
+    </div>
+    <div class="form-group">
+      <label>С даты</label>
+      <input type="date" id="date-from">
+    </div>
+    <div class="form-group">
+      <label>По дату</label>
+      <input type="date" id="date-to">
+    </div>
+    <div class="form-group">
+      <label>Оператор</label>
+      <select id="operator-select"></select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Комментарий к подтверждению</label>
+    <input id="signoff-comment" maxlength="500" placeholder="Необязательно">
+  </div>
+  <div class="logbook-actions">
+    <button class="btn btn-primary" onclick="loadRows()">Обновить</button>
+    <button class="btn btn-secondary" onclick="openPrint()">Печатный лист</button>
+    <button class="btn btn-secondary" onclick="captureNow()">Снять текущий архивный срез</button>
+  </div>
+  <div id="summary" class="summary-strip"></div>
+</div>
+
+<div class="form-section">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Статус</th>
+          <th>Суточные значения</th>
+          <th>Подтверждение</th>
+          <th>Действие</th>
+        </tr>
+      </thead>
+      <tbody id="logbook-body">
+        <tr><td colspan="5" class="text-muted">Загрузка...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var reports = [];
+var operators = [];
+var currentRows = [];
+
+function isoDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function setDefaultDates() {
+  var to = new Date();
+  var from = new Date();
+  from.setDate(to.getDate() - 13);
+  document.getElementById('date-from').value = isoDate(from);
+  document.getElementById('date-to').value = isoDate(to);
+}
+
+function esc(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
+
+function fmt(value) {
+  return value == null ? '—' : Number(value).toFixed(1);
+}
+
+function operatorLabel(op) {
+  var name = [op.last_name, op.first_name, op.middle_name].filter(Boolean).join(' ');
+  return name || op.id;
+}
+
+async function loadMeta() {
+  var data = await Promise.all([
+    apiFetch('/api/reports/config'),
+    apiFetch('/api/operators')
+  ]);
+  reports = (data[0].reports || []).filter(function(report) { return report.active; });
+  operators = (data[1].operators || []).filter(function(op) { return op.active; });
+  document.getElementById('report-select').innerHTML = reports.map(function(report) {
+    return '<option value="' + esc(report.id) + '">' + esc(report.name) + '</option>';
+  }).join('');
+  document.getElementById('operator-select').innerHTML = operators.map(function(op) {
+    return '<option value="' + esc(op.id) + '">' + esc(operatorLabel(op)) + '</option>';
+  }).join('');
+}
+
+function reportId() {
+  return document.getElementById('report-select').value;
+}
+
+async function loadRows() {
+  if (!reportId()) {
+    document.getElementById('logbook-body').innerHTML = '<tr><td colspan="5" class="text-muted">Нет активных журналов.</td></tr>';
+    return;
+  }
+  var from = document.getElementById('date-from').value;
+  var to = document.getElementById('date-to').value;
+  var url = '/api/logbook/daily?report_id=' + encodeURIComponent(reportId()) + '&from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to);
+  try {
+    var payload = await apiFetch(url);
+    currentRows = payload.rows || [];
+    renderSummary(payload.summary || {});
+    renderRows();
+  } catch(e) {}
+}
+
+function renderSummary(summary) {
+  document.getElementById('summary').innerHTML =
+    '<span>Дней: <b>' + (summary.total_days || 0) + '</b></span>' +
+    '<span>Рабочих: <b>' + (summary.working_days || 0) + '</b></span>' +
+    '<span>Подтверждено: <b>' + (summary.signed_days || 0) + '</b></span>' +
+    '<span>Просрочено: <b>' + (summary.overdue_days || 0) + '</b></span>';
+}
+
+function statusHtml(row) {
+  if (row.signoff) return '<span class="status-pill status-signed">подтверждено</span>';
+  if (row.overdue) return '<span class="status-pill status-overdue">просрочено</span>';
+  if (row.non_working) return '<span class="status-pill status-weekend">нерабочий</span>';
+  return '<span class="status-pill status-open">ожидает</span>';
+}
+
+function valuesHtml(row) {
+  if (!row.sensors || !row.sensors.length) return '<span class="empty-data">Нет датчиков в журнале</span>';
+  return '<div class="sensor-lines">' + row.sensors.map(function(sensor) {
+    return '<div class="sensor-line">' +
+      '<b>' + esc(sensor.sensor_name) + '</b>' +
+      '<span>Tмин ' + fmt(sensor.t_min) + '</span>' +
+      '<span>Tмакс ' + fmt(sensor.t_max) + '</span>' +
+      '<span>Tср ' + fmt(sensor.t_avg) + '</span>' +
+      '<span>Вл мин ' + fmt(sensor.h_min) + '</span>' +
+      '<span>Вл макс ' + fmt(sensor.h_max) + '</span>' +
+      '<span>Вл ср ' + fmt(sensor.h_avg) + '</span>' +
+      '<span>Прев. ' + (sensor.violations || 0) + '</span>' +
+      '</div>';
+  }).join('') + '</div>';
+}
+
+function signoffHtml(row) {
+  if (!row.signoff) return '<span class="text-muted">Нет подписи</span>';
+  var covered = row.signoff.batch_covered && row.signoff.batch_covered.length
+    ? '<br>Пакет: ' + row.signoff.batch_covered.map(esc).join(', ')
+    : '';
+  return '<div class="signed-meta"><b>' + esc(row.signoff.operator_name) + '</b><br>' +
+    esc(row.signoff.signed_at || '') + covered +
+    (row.signoff.comment ? '<br>' + esc(row.signoff.comment) : '') + '</div>';
+}
+
+function actionHtml(row) {
+  if (row.signoff) return '<span class="text-muted">Зафиксировано</span>';
+  var disabled = operators.length ? '' : 'disabled';
+  var sign = '<button class="btn btn-success btn-sm" ' + disabled + ' onclick="signDay(\'' + row.date + '\', false)">Подписать</button>';
+  var batch = row.working_day
+    ? '<button class="btn btn-secondary btn-sm" ' + disabled + ' onclick="signDay(\'' + row.date + '\', true)">Подписать с выходными</button>'
+    : '';
+  return '<div class="compact-actions">' + sign + batch + '</div>';
+}
+
+function renderRows() {
+  var tbody = document.getElementById('logbook-body');
+  if (!currentRows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Нет строк за выбранный период</td></tr>';
+    return;
+  }
+  tbody.innerHTML = currentRows.map(function(row) {
+    var rowClass = row.overdue ? 'overdue-row' : (row.non_working ? 'nonwork-row' : '');
+    return '<tr class="' + rowClass + '">' +
+      '<td><b>' + esc(row.date) + '</b><br><span class="text-muted">' + esc(row.weekday) + '</span></td>' +
+      '<td>' + statusHtml(row) + '</td>' +
+      '<td>' + valuesHtml(row) + '</td>' +
+      '<td>' + signoffHtml(row) + '</td>' +
+      '<td>' + actionHtml(row) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function signDay(day, batch) {
+  var operatorId = document.getElementById('operator-select').value;
+  if (!operatorId) {
+    showToast('Добавьте активного оператора', 'error');
+    return;
+  }
+  var endpoint = batch ? '/api/logbook/batch-signoff' : '/api/logbook/signoff';
+  try {
+    await apiFetch(endpoint, {
+      method: 'POST',
+      body: JSON.stringify({
+        report_id: reportId(),
+        date: day,
+        operator_id: operatorId,
+        comment: document.getElementById('signoff-comment').value
+      })
+    });
+    showToast('День подтверждён');
+    loadRows();
+  } catch(e) {}
+}
+
+async function captureNow() {
+  try {
+    await apiFetch('/api/archive/capture', {method: 'POST', body: '{}'});
+    showToast('Архивный срез сохранён');
+    loadRows();
+  } catch(e) {}
+}
+
+function openPrint() {
+  if (!reportId()) return;
+  var from = document.getElementById('date-from').value || isoDate(new Date());
+  var d = new Date(from + 'T00:00:00');
+  var url = '/logbook/' + encodeURIComponent(reportId()) + '/print?year=' + d.getFullYear() + '&month=' + (d.getMonth() + 1);
+  window.open(url, '_blank');
+}
+
+document.getElementById('report-select').addEventListener('change', loadRows);
+document.getElementById('date-from').addEventListener('change', loadRows);
+document.getElementById('date-to').addEventListener('change', loadRows);
+
+setDefaultDates();
+loadMeta().then(loadRows).catch(function() {
+  showToast('Не удалось загрузить журнал', 'error');
+});
+</script>
+{% endblock %}

@@ -31,7 +31,7 @@
       <a href="/" class="{{ 'active' if request.path == '/' }}">Мнемосхема</a>
       <a href="/floorplan" class="{{ 'active' if request.path.startswith('/floorplan') }}">План помещения</a>
       <a href="/settings" class="{{ 'active' if request.path.startswith('/settings') }}">Настройки</a>
-      <a href="/events" class="{{ 'active' if request.path.startswith('/events') or request.path.startswith('/journal') or request.path.startswith('/export') }}">Журнал</a>
+      <a href="/events" class="{{ 'active' if request.path.startswith('/events') or request.path.startswith('/journal') or request.path.startswith('/logbook') or request.path.startswith('/export') }}">Журнал</a>
     </div>
     <div class="navbar__right">
       <button class="theme-toggle" onclick="toggleTheme()" title="Переключить тему" aria-label="Переключить тему">

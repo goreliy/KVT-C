@@ -1,0 +1,23 @@
+{
+  "reports": [
+    {
+      "id": "rep1",
+      "name": "Складской журнал",
+      "type": "warehouse",
+      "sensor_ids": [],
+      "branch_ids": [],
+      "columns": [
+        "t_min",
+        "t_max",
+        "t_avg",
+        "h_min",
+        "h_max",
+        "h_avg",
+        "violations"
+      ],
+      "require_daily_signoff": true,
+      "active": true
+    }
+  ],
+  "updated_at": "2026-06-24T00:00:00"
+}

@@ -182,6 +182,17 @@
           "y": 50.294
         }
       ]
+    },
+    {
+      "id": "0d8dc144",
+      "name": "hgj",
+      "description": "",
+      "parent_id": "65631ac6",
+      "background": null,
+      "bg_type": null,
+      "canvas_width": 1200,
+      "canvas_height": 800,
+      "sensors": []
     }
   ]
 }

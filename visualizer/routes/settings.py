@@ -41,6 +41,11 @@ def settings_archive():
     return render_template('settings/archive.html', archive=archive)
 
 
+@settings_bp.route('/reports')
+def settings_reports():
+    return render_template('settings/reports.html')
+
+
 @settings_bp.route('/notifications')
 def settings_notifications():
     notif = load_notifications_config()

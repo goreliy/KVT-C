@@ -5,6 +5,7 @@
 ## Что есть в проекте
 - `visualizer` (Flask, порт `5000`) — веб UI, настройки, API.
 - `poller` (Flask, порт `5001`) — опрос Modbus, лог обменов, текущее состояние.
+- `archiver` (Flask, порт `5002`) — Archive Manager: архивирование `current.json`, `archive.json`, `archive_daily.json`, SQLite-зеркало и REST API.
 - `MocTestServer` — тестовый сервер/генератор данных (опционально).
 - `data/config/*.json` — рабочие конфиги системы.
 
@@ -22,15 +23,18 @@ python run_kvt.py stop
 ```bash
 python run_kvt.py restart
 python run_kvt.py start --service poller
+python run_kvt.py start --service archiver
 python run_kvt.py stop --service visualizer
 ```
 
 Логи:
 - `logs/poller.out.log`, `logs/poller.err.log`
+- `logs/archiver.out.log`, `logs/archiver.err.log`
 - `logs/visualizer.out.log`, `logs/visualizer.err.log`
 
 PID-файлы:
 - `.run/poller.pid`
+- `.run/archiver.pid`
 - `.run/visualizer.pid`
 
 ## Установка
@@ -43,12 +47,23 @@ pip install -r requirements.txt
 ## Адреса сервисов
 - Visualizer UI: `http://127.0.0.1:5000/`
 - Poller API/UI: `http://127.0.0.1:5001/`
+- Archive Manager API/UI: `http://127.0.0.1:5002/`
 - Poller status API: `http://127.0.0.1:5001/api/poller/status`
+- Archive status API: `http://127.0.0.1:5002/api/archive/status`
 
 При запуске через `python run_kvt.py start` сервисы слушают адреса из `data/config/system_config.json`.
 По умолчанию `web_host` и `poller_host` равны `0.0.0.0`, поэтому интерфейс доступен и по IP машины:
 - Visualizer UI: `http://<IP-компьютера>:5000/`
 - Poller API/UI: `http://<IP-компьютера>:5001/`
+- Archive Manager API/UI: `http://<IP-компьютера>:5002/`
+
+## Archive Manager и журнал учёта
+- Archive Manager читает `data/current.json`, пишет сжатые измерения в `data/archive.json`, поддерживает SQLite-файл `data/archive.db` при включённом хранилище и формирует файловую суточную вьюху `data/archive_daily.json`.
+- Основные API доступны и через visualizer (`/api/archive/status`, `/api/archive/query`, `/api/archive/temperature-log`, `/api/archive/violations`, `/api/archive/export`) и через отдельный сервис archiver на порту `5002`.
+- Настройки архива доступны на `/settings/archive`; там же можно вручную снять текущий срез и запустить очистку по retention.
+- Складская отчётность доступна на `/logbook`: суточные min/max/avg температуры и влажности, число превышений, ежедневная подпись оператора, пакетная подпись выходных/праздников и печатный лист `/logbook/<report_id>/print`.
+- Конфиги журналов, операторов и календаря: `data/config/reports_config.json`, `data/config/operators.json`, `data/config/holidays.json`; подписи со снимками значений хранятся в `data/logbook_signoffs.json`.
+- Админка журналов находится на `/settings/reports`.
 
 ## Импорт/экспорт конфигурации
 - Страница переноса настроек: `http://127.0.0.1:5000/settings/config-transfer`.
@@ -99,14 +114,15 @@ pip install -r requirements.txt
 1. `python run_kvt.py start`
 2. Открыть `http://127.0.0.1:5000/`
 3. Проверить `http://127.0.0.1:5001/api/poller/status`
-4. `python run_kvt.py stop`
+4. Проверить `http://127.0.0.1:5002/api/archive/status`
+5. `python run_kvt.py stop`
 
 ## Замечания по проекту (актуальные)
-- В репозитории нет подсистемы `archiver` (старые упоминания удалены из документации).
 - Docker/compose артефактов в текущем дереве нет.
 - Основной поддерживаемый сценарий запуска: `run_kvt.py`.
 
 ## Журнал документации
+- 2026-06-24: реализован `archiver` как Archive Manager (`archive.json`, `archive_daily.json`, SQLite-зеркало, REST API, запуск через `run_kvt.py`) и складской журнал учёта (`/settings/reports`, `/logbook`, подписи со снимками значений, пакетная подпись нерабочих дней, печатный лист).
 - 2026-06-19: добавлен полный импорт/экспорт конфигурационного ZIP-архива (`/settings/config-transfer`, `/api/config/bundle/*`) для передачи настроек, планов, мнемосхемы и диагностических снимков на завод и восстановления на другой установке.
 - 2026-06-17: с мнемосхемы убрана плашка «Доступность Ethernet-линий»; ping показывается строкой в карточке каждого Ethernet-датчика (у COM-датчиков скрыт); добавлены дерево датчиков (`mnemo_tree.json`, API `/api/mnemo/tree`) с min-max в корне ветки и встроенный «Режим редактирования». В `visualizer/app.py` включён авто-перечитыватель шаблонов/статики. Обновлены `README.md`, `Общее ТЗ на систему КВТ С.md` (раздел 5) и `.kiro` specs.
 - 2026-06-03: исправлена кодировка русских строк в `Общее ТЗ на систему КВТ С.md`, `visualizer/routes/api.py` и `shared/config_manager.py`; общий ТЗ снова корректно отображается в GitHub.

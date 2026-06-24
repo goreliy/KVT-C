@@ -7,6 +7,16 @@
 {% include "settings/_nav.html" %}
 
 <div class="form-section">
+  <div class="form-section__title">Состояние Archive Manager</div>
+  <div id="archive-status" class="text-muted">Загрузка...</div>
+  <div class="compact-actions mt-2">
+    <button class="btn btn-secondary btn-sm" onclick="loadArchiveStatus()">Обновить статус</button>
+    <button class="btn btn-secondary btn-sm" onclick="captureArchive()">Снять текущий срез</button>
+    <button class="btn btn-danger btn-sm" onclick="cleanupArchive()">Очистить по политике хранения</button>
+  </div>
+</div>
+
+<div class="form-section">
   <div class="form-section__title">Режим забора данных</div>
   <div class="form-group">
     <label>Режим</label>
@@ -63,5 +73,71 @@
 </div>
 
 <button class="btn btn-primary" onclick="saveArchive()">Сохранить</button>
-<p class="text-muted mt-2">Заглушка — полное сохранение будет реализовано с Archive Manager.</p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function archiveConfigFromForm() {
+  return {
+    data_collection: {
+      mode: document.getElementById('a-mode').value
+    },
+    storage: {
+      sqlite: {
+        enabled: document.getElementById('a-sqlite-on').checked,
+        max_size_mb: parseInt(document.getElementById('a-sqlite-max').value || '500')
+      }
+    },
+    compression: {
+      enabled: document.getElementById('a-comp-on').checked,
+      tolerance_temp: parseFloat(document.getElementById('a-comp-t').value || '0.1'),
+      tolerance_hum: parseFloat(document.getElementById('a-comp-h').value || '0.5')
+    },
+    retention: {
+      max_days: parseInt(document.getElementById('a-ret-days').value || '365'),
+      min_free_space_mb: parseInt(document.getElementById('a-ret-space').value || '200')
+    }
+  };
+}
+
+async function saveArchive() {
+  try {
+    await apiFetch('/api/archive/config', {method: 'POST', body: JSON.stringify(archiveConfigFromForm())});
+    showToast('Настройки архива сохранены');
+    loadArchiveStatus();
+  } catch(e) {}
+}
+
+async function loadArchiveStatus() {
+  try {
+    var status = await apiFetch('/api/archive/status');
+    document.getElementById('archive-status').innerHTML =
+      'Статус: <b>' + status.status + '</b>' +
+      ' · датчиков: <b>' + status.sensor_count + '</b>' +
+      ' · записей: <b>' + status.measurement_count + '</b>' +
+      ' · archive.json: <b>' + Math.round((status.json_size_bytes || 0) / 1024) + ' КБ</b>' +
+      ' · archive_daily дней: <b>' + status.daily_days + '</b>' +
+      ' · свободно: <b>' + status.disk_free_mb + ' МБ</b>';
+  } catch(e) {}
+}
+
+async function captureArchive() {
+  try {
+    await apiFetch('/api/archive/capture', {method: 'POST', body: '{}'});
+    showToast('Срез сохранён');
+    loadArchiveStatus();
+  } catch(e) {}
+}
+
+async function cleanupArchive() {
+  if (!confirm('Очистить архив по текущей политике хранения?')) return;
+  try {
+    await apiFetch('/api/archive/cleanup', {method: 'POST', body: '{}'});
+    showToast('Очистка выполнена');
+    loadArchiveStatus();
+  } catch(e) {}
+}
+
+loadArchiveStatus();
+</script>
 {% endblock %}

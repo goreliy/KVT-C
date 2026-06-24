@@ -1,0 +1,13 @@
+{
+  "operators": [
+    {
+      "id": "op1",
+      "last_name": "Ответственный",
+      "first_name": "Сотрудник",
+      "middle_name": "",
+      "position": "оператор",
+      "active": true
+    }
+  ],
+  "updated_at": "2026-06-24T00:00:00"
+}

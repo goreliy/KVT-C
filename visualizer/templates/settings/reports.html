@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+{% block title %}Настройки журналов учёта{% endblock %}
+
+{% block head %}
+<style>
+  .editor-row { border-top: 1px solid var(--border-color); padding: 14px 0; }
+  .editor-row:first-child { border-top: 0; padding-top: 0; }
+  .editor-head { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .editor-title { font-weight: 600; }
+  .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px 12px; margin-top: 8px; }
+  .check-grid label, .inline-check { color: var(--text-primary); font-size: 13px; display: flex; align-items: center; gap: 7px; }
+  .check-grid input, .inline-check input { width: auto; }
+  .compact-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .operator-row, .holiday-row { display: grid; gap: 10px; align-items: end; margin-bottom: 10px; }
+  .operator-row { grid-template-columns: repeat(4, minmax(120px, 1fr)) 90px 72px; }
+  .holiday-row { grid-template-columns: 180px minmax(180px, 1fr) 72px; }
+  .section-note { color: var(--text-secondary); font-size: 12px; margin-top: 6px; line-height: 1.4; }
+  @media (max-width: 900px) {
+    .operator-row, .holiday-row { grid-template-columns: 1fr; }
+    .editor-head { align-items: flex-start; flex-direction: column; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Настройки журналов учёта</h1>
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="editor-head">
+    <div>
+      <div class="form-section__title">Журналы-отчёты</div>
+      <div class="section-note">Складской журнал требует ежедневного подтверждения; справочный журнал можно использовать без подписи.</div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="addReport()">Добавить журнал</button>
+  </div>
+  <div id="reports-list"></div>
+  <div class="compact-actions">
+    <button class="btn btn-primary" onclick="saveReports()">Сохранить журналы</button>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="editor-head">
+    <div class="form-section__title">Операторы</div>
+    <button class="btn btn-secondary btn-sm" onclick="addOperator()">Добавить оператора</button>
+  </div>
+  <div id="operators-list"></div>
+  <div class="compact-actions">
+    <button class="btn btn-primary" onclick="saveOperators()">Сохранить операторов</button>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="editor-head">
+    <div>
+      <div class="form-section__title">Календарь рабочих дней</div>
+      <div class="section-note">Нерабочие дни можно подтверждать пакетно вместе с ближайшим рабочим днём.</div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="loadRfCalendar()">Предзагрузить РФ</button>
+  </div>
+
+  <div class="form-group">
+    <label>Выходные дни</label>
+    <div class="check-grid" id="weekend-boxes"></div>
+  </div>
+
+  <div id="holidays-list"></div>
+  <div class="compact-actions">
+    <button class="btn btn-secondary" onclick="addHoliday()">Добавить праздник</button>
+    <button class="btn btn-primary" onclick="saveHolidays()">Сохранить календарь</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var state = {
+  reports: [],
+  sensors: [],
+  branches: [],
+  operators: [],
+  holidays: {weekends: [5, 6], holidays: [], rf_calendar_years: []}
+};
+var columnLabels = {
+  t_min: 'T мин', t_max: 'T макс', t_avg: 'T сред',
+  h_min: 'Вл мин', h_max: 'Вл макс', h_avg: 'Вл сред',
+  violations: 'Превышения'
+};
+var weekdays = [
+  {id: 0, name: 'Понедельник'}, {id: 1, name: 'Вторник'}, {id: 2, name: 'Среда'},
+  {id: 3, name: 'Четверг'}, {id: 4, name: 'Пятница'}, {id: 5, name: 'Суббота'},
+  {id: 6, name: 'Воскресенье'}
+];
+
+function esc(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
+
+function flattenBranches(branches, prefix) {
+  var result = [];
+  (branches || []).forEach(function(branch) {
+    var label = prefix ? prefix + ' / ' + branch.name : branch.name;
+    result.push({id: branch.id, name: label || branch.id});
+    result = result.concat(flattenBranches(branch.children || [], label));
+  });
+  return result;
+}
+
+async function loadAll() {
+  try {
+    var responses = await Promise.all([
+      apiFetch('/api/reports/config'),
+      apiFetch('/api/sensors'),
+      apiFetch('/api/mnemo/tree'),
+      apiFetch('/api/operators'),
+      apiFetch('/api/holidays')
+    ]);
+    state.reports = responses[0].reports || [];
+    state.sensors = responses[1] || [];
+    state.branches = flattenBranches((responses[2] || {}).branches || [], '');
+    state.operators = responses[3].operators || [];
+    state.holidays = responses[4] || state.holidays;
+    renderReports();
+    renderOperators();
+    renderHolidays();
+  } catch(e) {}
+}
+
+function addReport() {
+  state.reports.push({
+    id: '',
+    name: 'Новый журнал',
+    type: 'warehouse',
+    sensor_ids: state.sensors.map(function(s) { return s.id; }),
+    branch_ids: [],
+    columns: Object.keys(columnLabels),
+    require_daily_signoff: true,
+    active: true
+  });
+  renderReports();
+}
+
+function removeReport(index) {
+  state.reports.splice(index, 1);
+  renderReports();
+}
+
+function renderReports() {
+  var root = document.getElementById('reports-list');
+  if (!state.reports.length) {
+    root.innerHTML = '<p class="text-muted">Журналы не настроены.</p>';
+    return;
+  }
+  root.innerHTML = state.reports.map(function(report, index) {
+    var sensorChecks = state.sensors.map(function(sensor) {
+      var checked = (report.sensor_ids || []).indexOf(sensor.id) >= 0 ? 'checked' : '';
+      return '<label><input type="checkbox" class="r-sensor" value="' + sensor.id + '" ' + checked + '> ' + esc(sensor.name || ('Датчик ' + sensor.id)) + '</label>';
+    }).join('');
+    var branchChecks = state.branches.length ? state.branches.map(function(branch) {
+      var checked = (report.branch_ids || []).indexOf(branch.id) >= 0 ? 'checked' : '';
+      return '<label><input type="checkbox" class="r-branch" value="' + esc(branch.id) + '" ' + checked + '> ' + esc(branch.name) + '</label>';
+    }).join('') : '<span class="text-muted">Ветки мнемосхемы не настроены.</span>';
+    var columnChecks = Object.keys(columnLabels).map(function(column) {
+      var checked = (report.columns || []).indexOf(column) >= 0 ? 'checked' : '';
+      return '<label><input type="checkbox" class="r-column" value="' + column + '" ' + checked + '> ' + columnLabels[column] + '</label>';
+    }).join('');
+    return '<div class="editor-row report-row" data-index="' + index + '">' +
+      '<div class="editor-head"><div class="editor-title">' + esc(report.name || 'Журнал') + '</div>' +
+      '<button class="btn btn-danger btn-sm" onclick="removeReport(' + index + ')">Удалить</button></div>' +
+      '<div class="form-row">' +
+      '<div class="form-group"><label>Название</label><input class="r-name" value="' + esc(report.name) + '" maxlength="120"></div>' +
+      '<div class="form-group"><label>Тип</label><select class="r-type"><option value="warehouse" ' + (report.type === 'warehouse' ? 'selected' : '') + '>Складской</option><option value="general" ' + (report.type === 'general' ? 'selected' : '') + '>Справочный</option></select></div>' +
+      '</div>' +
+      '<div class="form-row">' +
+      '<label class="inline-check"><input type="checkbox" class="r-active" ' + (report.active ? 'checked' : '') + '> Активен</label>' +
+      '<label class="inline-check"><input type="checkbox" class="r-signoff" ' + (report.require_daily_signoff ? 'checked' : '') + '> Требует подтверждения</label>' +
+      '</div>' +
+      '<div class="form-group"><label>Датчики</label><div class="check-grid">' + sensorChecks + '</div></div>' +
+      '<div class="form-group"><label>Ветки мнемосхемы</label><div class="check-grid">' + branchChecks + '</div></div>' +
+      '<div class="form-group"><label>Колонки</label><div class="check-grid">' + columnChecks + '</div></div>' +
+      '</div>';
+  }).join('');
+}
+
+function collectReports() {
+  return Array.from(document.querySelectorAll('.report-row')).map(function(row, index) {
+    return {
+      id: state.reports[index].id,
+      name: row.querySelector('.r-name').value.trim(),
+      type: row.querySelector('.r-type').value,
+      active: row.querySelector('.r-active').checked,
+      require_daily_signoff: row.querySelector('.r-signoff').checked,
+      sensor_ids: Array.from(row.querySelectorAll('.r-sensor:checked')).map(function(input) { return parseInt(input.value); }),
+      branch_ids: Array.from(row.querySelectorAll('.r-branch:checked')).map(function(input) { return input.value; }),
+      columns: Array.from(row.querySelectorAll('.r-column:checked')).map(function(input) { return input.value; })
+    };
+  });
+}
+
+async function saveReports() {
+  try {
+    var payload = await apiFetch('/api/reports/config', {method: 'POST', body: JSON.stringify({reports: collectReports()})});
+    state.reports = payload.reports || [];
+    renderReports();
+    showToast('Журналы сохранены');
+  } catch(e) {}
+}
+
+function addOperator() {
+  state.operators.push({id: '', last_name: '', first_name: '', middle_name: '', position: '', active: true});
+  renderOperators();
+}
+
+function removeOperator(index) {
+  state.operators.splice(index, 1);
+  renderOperators();
+}
+
+function renderOperators() {
+  var root = document.getElementById('operators-list');
+  root.innerHTML = state.operators.map(function(op, index) {
+    return '<div class="operator-row" data-index="' + index + '">' +
+      '<div class="form-group"><label>Фамилия</label><input class="op-last" value="' + esc(op.last_name) + '"></div>' +
+      '<div class="form-group"><label>Имя</label><input class="op-first" value="' + esc(op.first_name) + '"></div>' +
+      '<div class="form-group"><label>Отчество</label><input class="op-middle" value="' + esc(op.middle_name) + '"></div>' +
+      '<div class="form-group"><label>Должность</label><input class="op-position" value="' + esc(op.position) + '"></div>' +
+      '<label class="inline-check"><input type="checkbox" class="op-active" ' + (op.active ? 'checked' : '') + '> Активен</label>' +
+      '<button class="btn btn-danger btn-sm" onclick="removeOperator(' + index + ')">Удалить</button>' +
+      '</div>';
+  }).join('');
+}
+
+function collectOperators() {
+  return Array.from(document.querySelectorAll('.operator-row')).map(function(row, index) {
+    return {
+      id: state.operators[index].id,
+      last_name: row.querySelector('.op-last').value.trim(),
+      first_name: row.querySelector('.op-first').value.trim(),
+      middle_name: row.querySelector('.op-middle').value.trim(),
+      position: row.querySelector('.op-position').value.trim(),
+      active: row.querySelector('.op-active').checked
+    };
+  });
+}
+
+async function saveOperators() {
+  try {
+    var payload = await apiFetch('/api/operators', {method: 'POST', body: JSON.stringify({operators: collectOperators()})});
+    state.operators = payload.operators || [];
+    renderOperators();
+    showToast('Операторы сохранены');
+  } catch(e) {}
+}
+
+function renderHolidays() {
+  document.getElementById('weekend-boxes').innerHTML = weekdays.map(function(day) {
+    var checked = (state.holidays.weekends || []).indexOf(day.id) >= 0 ? 'checked' : '';
+    return '<label><input type="checkbox" class="weekend-day" value="' + day.id + '" ' + checked + '> ' + day.name + '</label>';
+  }).join('');
+  var holidays = state.holidays.holidays || [];
+  document.getElementById('holidays-list').innerHTML = holidays.map(function(item, index) {
+    return '<div class="holiday-row" data-index="' + index + '">' +
+      '<div class="form-group"><label>Дата</label><input type="date" class="h-date" value="' + esc(item.date) + '"></div>' +
+      '<div class="form-group"><label>Название</label><input class="h-name" value="' + esc(item.name) + '"></div>' +
+      '<button class="btn btn-danger btn-sm" onclick="removeHoliday(' + index + ')">Удалить</button>' +
+      '</div>';
+  }).join('');
+}
+
+function addHoliday() {
+  var today = new Date().toISOString().slice(0, 10);
+  state.holidays.holidays = state.holidays.holidays || [];
+  state.holidays.holidays.push({date: today, name: 'Праздничный день'});
+  renderHolidays();
+}
+
+function removeHoliday(index) {
+  state.holidays.holidays.splice(index, 1);
+  renderHolidays();
+}
+
+function collectHolidays() {
+  return {
+    weekends: Array.from(document.querySelectorAll('.weekend-day:checked')).map(function(input) { return parseInt(input.value); }),
+    holidays: Array.from(document.querySelectorAll('.holiday-row')).map(function(row) {
+      return {date: row.querySelector('.h-date').value, name: row.querySelector('.h-name').value.trim()};
+    }),
+    rf_calendar_years: state.holidays.rf_calendar_years || []
+  };
+}
+
+async function saveHolidays() {
+  try {
+    state.holidays = await apiFetch('/api/holidays', {method: 'POST', body: JSON.stringify(collectHolidays())});
+    renderHolidays();
+    showToast('Календарь сохранён');
+  } catch(e) {}
+}
+
+async function loadRfCalendar() {
+  var year = prompt('Год производственного календаря', String(new Date().getFullYear()));
+  if (!year) return;
+  try {
+    state.holidays = await apiFetch('/api/holidays/load-rf?year=' + encodeURIComponent(year), {method: 'POST', body: '{}'});
+    renderHolidays();
+    showToast('Праздники добавлены');
+  } catch(e) {}
+}
+
+loadAll();
+</script>
+{% endblock %}

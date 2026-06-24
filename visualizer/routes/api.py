@@ -5,8 +5,9 @@ import time
 import subprocess
 from io import BytesIO
 from datetime import datetime, timedelta
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, Response, jsonify, request, send_file
 import requests
+from archiver.archive_service import ArchiveService
 from poller.config import validated_poller_config_patch
 from shared.availability import is_ethernet_port, sync_daily_availability_from_current
 from shared.config_bundle import (
@@ -24,6 +25,18 @@ from shared.config_manager import (
     load_runtime_json,
     get_sensors, get_sensor_by_id, add_sensor, update_sensor, delete_sensor,
     validate_sensor
+)
+from shared.logbook import (
+    LogbookError,
+    daily_rows as logbook_daily_rows,
+    load_holidays,
+    load_operators,
+    load_reports_config,
+    load_rf_calendar,
+    save_holidays,
+    save_operators,
+    save_reports_config,
+    signoff_day,
 )
 from visualizer.routes.main import _with_configured_sensors
 
@@ -45,6 +58,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 LOG_DIR = os.path.join(ROOT_DIR, 'logs')
 MOCKSERVER_OUT_LOG = os.path.join(LOG_DIR, 'mockserver.out.log')
 MOCKSERVER_ERR_LOG = os.path.join(LOG_DIR, 'mockserver.err.log')
+ARCHIVE_SERVICE = ArchiveService(ROOT_DIR)
 _MOCK_SERVER_PROCESS = None
 _LOCAL_HTTP = requests.Session()
 _LOCAL_HTTP.trust_env = False
@@ -476,6 +490,208 @@ def api_save_network_config():
     return jsonify(data)
 
 
+# --- Archive Manager API ---
+
+@api_bp.route('/archive/status')
+def api_archive_status():
+    return jsonify(ARCHIVE_SERVICE.status())
+
+
+@api_bp.route('/archive/capture', methods=['POST'])
+def api_archive_capture():
+    return jsonify(ARCHIVE_SERVICE.capture_current())
+
+
+@api_bp.route('/archive/query')
+def api_archive_query():
+    return jsonify(ARCHIVE_SERVICE.query(
+        sensor_id=request.args.get('sensor_id', type=int),
+        date_from=request.args.get('from'),
+        date_to=request.args.get('to'),
+        resolution=request.args.get('resolution', 'raw'),
+    ))
+
+
+@api_bp.route('/archive/events')
+def api_archive_events():
+    return jsonify(ARCHIVE_SERVICE.events(
+        sensor_id=request.args.get('sensor_id', type=int),
+        event_type=request.args.get('type'),
+        date_from=request.args.get('from'),
+        date_to=request.args.get('to'),
+        limit=request.args.get('limit', 200, type=int),
+    ))
+
+
+@api_bp.route('/archive/events/<int:event_id>/ack', methods=['POST'])
+def api_archive_ack_event(event_id):
+    body = request.get_json(silent=True) or {}
+    event = ARCHIVE_SERVICE.acknowledge_event(
+        event_id,
+        operator=body.get('operator') or body.get('acknowledged_by') or 'operator',
+        comment=body.get('comment') or '',
+    )
+    if not event:
+        return jsonify({'error': 'Событие не найдено'}), 404
+    return jsonify(event)
+
+
+@api_bp.route('/archive/temperature-log')
+def api_archive_temperature_log():
+    return jsonify(ARCHIVE_SERVICE.temperature_log(
+        sensor_id=request.args.get('sensor_id', type=int),
+        period_type=request.args.get('period_type', 'day'),
+        date_from=request.args.get('from'),
+        date_to=request.args.get('to'),
+    ))
+
+
+@api_bp.route('/archive/violations')
+def api_archive_violations():
+    return jsonify(ARCHIVE_SERVICE.violations(
+        sensor_id=request.args.get('sensor_id', type=int),
+        date_from=request.args.get('from'),
+        date_to=request.args.get('to'),
+        status=request.args.get('status', 'all'),
+        limit=request.args.get('limit', 200, type=int),
+    ))
+
+
+@api_bp.route('/archive/violations/<int:violation_id>/ack', methods=['POST'])
+def api_archive_ack_violation(violation_id):
+    return api_archive_ack_event(violation_id)
+
+
+@api_bp.route('/archive/cleanup', methods=['POST'])
+def api_archive_cleanup():
+    return jsonify(ARCHIVE_SERVICE.cleanup())
+
+
+@api_bp.route('/archive/export')
+def api_archive_export():
+    fmt = request.args.get('format', 'json').lower()
+    payload = ARCHIVE_SERVICE.export(
+        sensor_id=request.args.get('sensor_id', type=int),
+        date_from=request.args.get('from'),
+        date_to=request.args.get('to'),
+        fmt=fmt,
+        resolution=request.args.get('resolution', 'raw'),
+    )
+    if fmt == 'csv':
+        return Response(
+            payload,
+            mimetype='text/csv; charset=utf-8',
+            headers={'Content-Disposition': 'attachment; filename=archive-export.csv'},
+        )
+    return jsonify(payload)
+
+
+@api_bp.route('/archive/daily')
+def api_archive_daily():
+    return jsonify(ARCHIVE_SERVICE.load_daily_view())
+
+
+@api_bp.route('/archive/config')
+def api_archive_config():
+    return jsonify(ARCHIVE_SERVICE.config())
+
+
+@api_bp.route('/archive/config', methods=['POST'])
+def api_save_archive_config():
+    data = request.get_json(silent=True) or {}
+    try:
+        config = ARCHIVE_SERVICE.save_config(data)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    return jsonify(config)
+
+
+# --- Warehouse logbook API ---
+
+@api_bp.route('/reports/config')
+def api_reports_config():
+    return jsonify(load_reports_config())
+
+
+@api_bp.route('/reports/config', methods=['POST'])
+def api_save_reports_config():
+    data = request.get_json(silent=True) or {}
+    return jsonify(save_reports_config(data))
+
+
+@api_bp.route('/operators')
+def api_operators():
+    return jsonify(load_operators())
+
+
+@api_bp.route('/operators', methods=['POST'])
+def api_save_operators():
+    data = request.get_json(silent=True) or {}
+    return jsonify(save_operators(data))
+
+
+@api_bp.route('/holidays')
+def api_holidays():
+    return jsonify(load_holidays())
+
+
+@api_bp.route('/holidays', methods=['POST'])
+def api_save_holidays():
+    data = request.get_json(silent=True) or {}
+    return jsonify(save_holidays(data))
+
+
+@api_bp.route('/holidays/load-rf', methods=['POST'])
+def api_load_rf_holidays():
+    try:
+        return jsonify(load_rf_calendar(request.args.get('year')))
+    except LogbookError as exc:
+        return jsonify({'error': str(exc)}), 400
+
+
+@api_bp.route('/logbook/daily')
+def api_logbook_daily():
+    try:
+        report_id = request.args.get('report_id') or (load_reports_config().get('reports') or [{}])[0].get('id')
+        return jsonify(logbook_daily_rows(
+            report_id,
+            date_from=request.args.get('from'),
+            date_to=request.args.get('to'),
+        ))
+    except LogbookError as exc:
+        return jsonify({'error': str(exc)}), 400
+
+
+@api_bp.route('/logbook/signoff', methods=['POST'])
+def api_logbook_signoff():
+    body = request.get_json(silent=True) or {}
+    try:
+        return jsonify(signoff_day(
+            body.get('report_id'),
+            body.get('date'),
+            body.get('operator_id'),
+            comment=body.get('comment') or '',
+            include_previous_non_working=False,
+        ))
+    except LogbookError as exc:
+        return jsonify({'error': str(exc)}), 400
+
+
+@api_bp.route('/logbook/batch-signoff', methods=['POST'])
+def api_logbook_batch_signoff():
+    body = request.get_json(silent=True) or {}
+    try:
+        return jsonify(signoff_day(
+            body.get('report_id'),
+            body.get('date'),
+            body.get('operator_id'),
+            comment=body.get('comment') or '',
+            include_previous_non_working=True,
+        ))
+    except LogbookError as exc:
+        return jsonify({'error': str(exc)}), 400
+
+
 # --- Archive / History data ---
 
 @api_bp.route('/archive/sensor/<int:sensor_id>')
@@ -487,17 +703,9 @@ def api_archive_sensor(sensor_id):
       from: ISO datetime
       to: ISO datetime
     """
-    archive = _load_archive()
-    sensor_key = str(sensor_id)
-    sensor_data = archive.get('sensors', {}).get(sensor_key)
-    if not sensor_data:
-        return jsonify({'error': 'Нет архивных данных для датчика'}), 404
-
-    # Parse period or from/to
     period = request.args.get('period', '24h')
     from_str = request.args.get('from')
     to_str = request.args.get('to')
-
     now = datetime.now()
 
     if from_str and to_str:
@@ -521,15 +729,24 @@ def api_archive_sensor(sensor_id):
         dt_from = now - delta
         dt_to = now
 
-    # Filter data by time range
+    raw = ARCHIVE_SERVICE.query(
+        sensor_id=sensor_id,
+        date_from=dt_from.isoformat(),
+        date_to=dt_to.isoformat(),
+        resolution='raw',
+    )
+    if not raw.get('data'):
+        return jsonify({'error': 'Нет архивных данных для датчика'}), 404
+
     filtered = []
-    for point in sensor_data.get('data', []):
-        try:
-            ts = datetime.fromisoformat(point['timestamp'])
-        except (ValueError, KeyError):
-            continue
-        if dt_from <= ts <= dt_to:
-            filtered.append(point)
+    for point in raw.get('data') or []:
+        filtered.append({
+            'timestamp': point.get('timestamp_start'),
+            'temperature': point.get('temperature') or {},
+            'humidity': point.get('humidity') or {},
+            'status': point.get('status'),
+            'sample_count': point.get('sample_count', 1),
+        })
 
     # Get sensor config for limits
     sensor_config = get_sensor_by_id(sensor_id)
@@ -542,7 +759,7 @@ def api_archive_sensor(sensor_id):
 
     return jsonify({
         'sensor_id': sensor_id,
-        'sensor_name': sensor_data.get('name', f'Датчик {sensor_id}'),
+        'sensor_name': (sensor_config or {}).get('name') or (raw.get('data') or [{}])[0].get('sensor_name') or f'Датчик {sensor_id}',
         'period': period,
         'from': dt_from.isoformat(),
         'to': dt_to.isoformat(),
@@ -582,7 +799,6 @@ def api_events():
 @api_bp.route('/archive/summary')
 def api_archive_summary():
     """Сводка по всем датчикам за период (для главной)."""
-    archive = _load_archive()
     period = request.args.get('period', '24h')
     now = datetime.now()
     period_map = {
@@ -595,31 +811,34 @@ def api_archive_summary():
     delta = period_map.get(period, timedelta(hours=24))
     dt_from = now - delta
 
-    summary = {}
-    for sid, sdata in archive.get('sensors', {}).items():
-        temps = []
-        hums = []
-        for point in sdata.get('data', []):
-            try:
-                ts = datetime.fromisoformat(point['timestamp'])
-            except (ValueError, KeyError):
-                continue
-            if ts >= dt_from:
-                t = point.get('temperature', {})
-                h = point.get('humidity', {})
-                if t.get('avg') is not None:
-                    temps.append(t)
-                if h.get('avg') is not None:
-                    hums.append(h)
+    raw = ARCHIVE_SERVICE.query(
+        date_from=dt_from.isoformat(),
+        date_to=now.isoformat(),
+        resolution='raw',
+    )
+    buckets = {}
+    for point in raw.get('data') or []:
+        sid = str(point.get('sensor_id'))
+        bucket = buckets.setdefault(sid, {'name': point.get('sensor_name'), 'temps': [], 'hums': []})
+        t = point.get('temperature', {})
+        h = point.get('humidity', {})
+        if t.get('avg') is not None:
+            bucket['temps'].append(t)
+        if h.get('avg') is not None:
+            bucket['hums'].append(h)
 
+    summary = {}
+    for sid, bucket in buckets.items():
+        temps = bucket['temps']
+        hums = bucket['hums']
         if temps:
             summary[sid] = {
-                'name': sdata.get('name'),
-                'temp_min': min(t['min'] for t in temps),
-                'temp_max': max(t['max'] for t in temps),
+                'name': bucket.get('name'),
+                'temp_min': min(t['min'] for t in temps if t.get('min') is not None),
+                'temp_max': max(t['max'] for t in temps if t.get('max') is not None),
                 'temp_avg': round(sum(t['avg'] for t in temps) / len(temps), 1),
-                'hum_min': min(h['min'] for h in hums) if hums else None,
-                'hum_max': max(h['max'] for h in hums) if hums else None,
+                'hum_min': min(h['min'] for h in hums if h.get('min') is not None) if hums else None,
+                'hum_max': max(h['max'] for h in hums if h.get('max') is not None) if hums else None,
                 'hum_avg': round(sum(h['avg'] for h in hums) / len(hums), 1) if hums else None,
                 'data_points': len(temps)
             }

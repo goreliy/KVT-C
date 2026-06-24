@@ -23,6 +23,16 @@ SERVICES = {
         "stdout": LOG_DIR / "poller.out.log",
         "stderr": LOG_DIR / "poller.err.log",
     },
+    "archiver": {
+        "module": "archiver.app",
+        "port": 5002,
+        "host": "0.0.0.0",
+        "network_host_key": "archiver_host",
+        "network_port_key": "archiver_port",
+        "pid_file": PID_DIR / "archiver.pid",
+        "stdout": LOG_DIR / "archiver.out.log",
+        "stderr": LOG_DIR / "archiver.err.log",
+    },
     "visualizer": {
         "module": "visualizer.app",
         "port": 5000,
@@ -169,12 +179,12 @@ def status_services() -> None:
 def parse_args():
     parser = argparse.ArgumentParser(description="KVT single entrypoint launcher")
     parser.add_argument("command", choices=["start", "stop", "restart", "status"])
-    parser.add_argument("--service", choices=["all", "poller", "visualizer"], default="all")
+    parser.add_argument("--service", choices=["all", "poller", "archiver", "visualizer"], default="all")
     return parser.parse_args()
 
 
 def selected_services(service: str):
-    return ["poller", "visualizer"] if service == "all" else [service]
+    return ["poller", "archiver", "visualizer"] if service == "all" else [service]
 
 
 def main() -> int:
