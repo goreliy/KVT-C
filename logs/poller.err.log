@@ -14652,3 +14652,6 @@ PermissionError: [WinError 5] Отказано в доступе: 'D:\\123321\\КВТ версия С\\KVT
 127.0.0.1 - - [22/Jun/2026 15:35:27] "GET /api/poller/log?limit=40&poll_port_id=UDP_IP_66.100 HTTP/1.1" 200 -
 127.0.0.1 - - [22/Jun/2026 15:36:24] "GET /api/poller/status HTTP/1.1" 200 -
 127.0.0.1 - - [22/Jun/2026 15:36:27] "GET /api/poller/log?limit=40&poll_port_id=UDP_IP_66.100 HTTP/1.1" 200 -
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.66.97:5001/ (Press CTRL+C to quit)
