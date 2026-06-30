@@ -16,6 +16,7 @@ ALLOWED_FLOORPLAN_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"
 REQUIRED_CONFIG_FILES = {
     "system_config.json",
     "poller_config.json",
+    "opcua_config.json",
     "archive_config.json",
     "notifications.json",
     "theme_config.json",
@@ -28,6 +29,7 @@ DIAGNOSTIC_DATA_FILES = (
     "availability_daily.json",
     "modbus_log.json",
     "events.json",
+    "opcua_status.json",
 )
 ALLOWED_DIRECTORY_ENTRIES = {"config/", "assets/", "assets/floorplans/", "diagnostics/"}
 

@@ -1,6 +1,6 @@
 ﻿{
   "data_collection": {
-    "mode": "combined",
+    "mode": "periodic",
     "source_file": "./data/current.json",
     "periodic": {
       "interval_ms": 1000

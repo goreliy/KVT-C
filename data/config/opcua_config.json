@@ -1,0 +1,36 @@
+{
+  "enabled": false,
+  "server": {
+    "host": "0.0.0.0",
+    "port": 4840,
+    "endpoint_path": "/kvt/",
+    "server_name": "KVT-C OPC UA Server",
+    "namespace_uri": "urn:kvt:c:monitoring",
+    "namespace_name": "KVT-C"
+  },
+  "publishing": {
+    "update_interval_ms": 1000,
+    "stale_after_ms": 30000,
+    "publish_only_enabled_sensors": true
+  },
+  "selection": {
+    "sensor_ids": []
+  },
+  "fields": {
+    "temperature": true,
+    "humidity": true,
+    "combined_status": true,
+    "timestamp": true,
+    "poll_port_metadata": true,
+    "limits": true
+  },
+  "security": {
+    "mode": "anonymous_readonly",
+    "security_policies": [
+      "None"
+    ],
+    "certificate_path": "",
+    "private_key_path": "",
+    "users": []
+  }
+}

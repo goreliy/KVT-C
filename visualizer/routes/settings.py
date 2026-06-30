@@ -2,6 +2,7 @@
 from flask import Blueprint, render_template
 from shared.config_manager import (
     load_system_config, load_poller_config,
+    load_opcua_config,
     load_archive_config, load_notifications_config,
     load_theme_config
 )
@@ -27,6 +28,13 @@ def settings_sensors():
 def settings_poller():
     poller = normalized_poller_config()
     return render_template('settings/poller.html', poller=poller)
+
+
+@settings_bp.route('/opcua')
+def settings_opcua():
+    config = load_system_config()
+    opcua = load_opcua_config()
+    return render_template('settings/opcua.html', config=config, opcua=opcua)
 
 
 @settings_bp.route('/network')

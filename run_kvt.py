@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parent
 LOG_DIR = ROOT / "logs"
 PID_DIR = ROOT / ".run"
 SYSTEM_CONFIG = ROOT / "data" / "config" / "system_config.json"
+OPCUA_CONFIG = ROOT / "data" / "config" / "opcua_config.json"
 
 SERVICES = {
     "poller": {
@@ -43,6 +44,16 @@ SERVICES = {
         "stdout": LOG_DIR / "visualizer.out.log",
         "stderr": LOG_DIR / "visualizer.err.log",
     },
+    "opcua": {
+        "module": "opcua_server.app",
+        "port": 4840,
+        "host": "0.0.0.0",
+        "config_file": "opcua",
+        "pass_bind_args": False,
+        "pid_file": PID_DIR / "opcua.pid",
+        "stdout": LOG_DIR / "opcua.out.log",
+        "stderr": LOG_DIR / "opcua.err.log",
+    },
 }
 
 
@@ -63,8 +74,21 @@ def _network_config() -> dict:
         return {}
 
 
+def _opcua_server_config() -> dict:
+    try:
+        with open(OPCUA_CONFIG, "r", encoding="utf-8-sig") as handle:
+            return (json.load(handle).get("server") or {})
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
 def _service_bind(name: str) -> tuple[str, int]:
     cfg = SERVICES[name]
+    if cfg.get("config_file") == "opcua":
+        server = _opcua_server_config()
+        host = str(server.get("host", cfg["host"]) or cfg["host"]).strip()
+        port = int(server.get("port", cfg["port"]) or cfg["port"])
+        return host, port
     network = _network_config()
     host = str(network.get(cfg["network_host_key"], cfg["host"]) or cfg["host"]).strip()
     port = int(network.get(cfg["network_port_key"], cfg["port"]) or cfg["port"])
@@ -124,7 +148,9 @@ def start_service(name: str) -> None:
     if pid and not _pid_alive(pid):
         _remove_pid(cfg["pid_file"])
 
-    cmd = [sys.executable, "-m", cfg["module"], "--host", host, "--port", str(port)]
+    cmd = [sys.executable, "-m", cfg["module"]]
+    if cfg.get("pass_bind_args", True):
+        cmd.extend(["--host", host, "--port", str(port)])
 
     creationflags = 0
     if _is_windows():
@@ -179,12 +205,12 @@ def status_services() -> None:
 def parse_args():
     parser = argparse.ArgumentParser(description="KVT single entrypoint launcher")
     parser.add_argument("command", choices=["start", "stop", "restart", "status"])
-    parser.add_argument("--service", choices=["all", "poller", "archiver", "visualizer"], default="all")
+    parser.add_argument("--service", choices=["all", "poller", "archiver", "visualizer", "opcua"], default="all")
     return parser.parse_args()
 
 
 def selected_services(service: str):
-    return ["poller", "archiver", "visualizer"] if service == "all" else [service]
+    return ["poller", "archiver", "visualizer", "opcua"] if service == "all" else [service]
 
 
 def main() -> int:

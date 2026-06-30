@@ -19,6 +19,7 @@ from shared.config_bundle import (
 from shared.config_manager import (
     load_system_config, save_system_config,
     load_poller_config, save_poller_config,
+    load_opcua_config, save_opcua_config, validated_opcua_config_patch,
     load_notifications_config, save_notifications_config,
     load_theme_config, save_theme_config,
     load_mnemo_tree, save_mnemo_tree,
@@ -38,7 +39,7 @@ from shared.logbook import (
     save_reports_config,
     signoff_day,
 )
-from visualizer.routes.main import _with_configured_sensors
+from shared.current_data import with_configured_sensors
 
 api_bp = Blueprint('api', __name__)
 
@@ -149,13 +150,39 @@ def _load_events():
     return load_runtime_json(path, default={'events': []})
 
 
+def _load_opcua_status():
+    path = os.path.join(DATA_DIR, 'opcua_status.json')
+    cfg = load_opcua_config()
+    endpoint = _opcua_endpoint(cfg)
+    return load_runtime_json(path, default={
+        'service': 'opcua',
+        'state': 'unknown',
+        'enabled': bool(cfg.get('enabled')),
+        'endpoint': endpoint,
+        'exported_sensor_count': 0,
+        'message': 'OPC UA service status is not available yet',
+    })
+
+
+def _opcua_endpoint(cfg):
+    server = cfg.get('server') or {}
+    host = str(server.get('host') or '0.0.0.0')
+    port = int(server.get('port') or 4840)
+    path = str(server.get('endpoint_path') or '/kvt/')
+    if not path.startswith('/'):
+        path = '/' + path
+    if not path.endswith('/'):
+        path += '/'
+    return f'opc.tcp://{host}:{port}{path}'
+
+
 @api_bp.route('/current')
 def api_current():
     path = os.path.join(DATA_DIR, 'current.json')
     current = load_runtime_json(path, default={})
     if not current:
         current = {'sensors': [], 'timestamp': None, 'stats': {}}
-    return jsonify(_with_configured_sensors(current))
+    return jsonify(with_configured_sensors(current))
 
 
 @api_bp.route('/availability/daily')
@@ -488,6 +515,36 @@ def api_save_network_config():
     config['network'] = data
     save_system_config(config, 'Обновлены сетевые настройки')
     return jsonify(data)
+
+
+# --- OPC UA config ---
+
+@api_bp.route('/opcua/config')
+def api_opcua_config():
+    return jsonify(load_opcua_config())
+
+
+@api_bp.route('/opcua/config', methods=['POST'])
+def api_save_opcua_config():
+    data = request.get_json(silent=True) or {}
+    config, errors = validated_opcua_config_patch(data, load_opcua_config())
+    if errors:
+        return jsonify({'errors': errors}), 400
+    return jsonify(save_opcua_config(config))
+
+
+@api_bp.route('/opcua/status')
+def api_opcua_status():
+    status = _load_opcua_status()
+    status.setdefault('endpoint', _opcua_endpoint(load_opcua_config()))
+    return jsonify(status)
+
+
+@api_bp.route('/opcua/reload', methods=['POST'])
+def api_opcua_reload():
+    status = _load_opcua_status()
+    status['message'] = 'OPC UA service rereads opcua_config.json automatically; host/port/security changes may require restart'
+    return jsonify(status)
 
 
 # --- Archive Manager API ---

@@ -4,7 +4,11 @@
       "id": "rep1",
       "name": "Складской журнал",
       "type": "warehouse",
-      "sensor_ids": [],
+      "sensor_ids": [
+        1,
+        6,
+        16
+      ],
       "branch_ids": [],
       "columns": [
         "t_min",
@@ -19,5 +23,5 @@
       "active": true
     }
   ],
-  "updated_at": "2026-06-24T00:00:00"
+  "updated_at": "2026-06-24T13:05:24"
 }

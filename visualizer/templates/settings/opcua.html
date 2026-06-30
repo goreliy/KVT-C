@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Настройки OPC UA{% endblock %}
+
+{% block head %}
+<style>
+  .opcua-status { display: grid; gap: 6px; font-size: 13px; }
+  .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px 12px; margin-top: 8px; }
+  .check-grid label, .inline-check { color: var(--text-primary); font-size: 13px; display: flex; align-items: center; gap: 7px; }
+  .check-grid input, .inline-check input { width: auto; }
+  .section-note { color: var(--text-secondary); font-size: 12px; margin-top: 6px; line-height: 1.4; }
+  .mono-value { font-family: Consolas, monospace; overflow-wrap: anywhere; }
+  .opcua-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Настройки OPC UA</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Состояние сервера</div>
+  <div id="opcua-status" class="opcua-status text-muted">Загрузка...</div>
+  <div class="opcua-actions mt-2">
+    <button class="btn btn-secondary btn-sm" onclick="loadOpcUaStatus()">Обновить статус</button>
+    <button class="btn btn-secondary btn-sm" onclick="reloadOpcUa()">Перечитать настройки</button>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Сервер</div>
+  <div class="form-group">
+    <label><input type="checkbox" id="o-enabled" {{ 'checked' if opcua.enabled }}> Включить OPC UA публикацию</label>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>IP-адрес / Хост</label>
+      <input type="text" id="o-host" value="{{ opcua.server.host }}">
+    </div>
+    <div class="form-group">
+      <label>Порт</label>
+      <input type="number" id="o-port" min="1" max="65535" value="{{ opcua.server.port }}">
+    </div>
+    <div class="form-group">
+      <label>Путь endpoint</label>
+      <input type="text" id="o-endpoint-path" value="{{ opcua.server.endpoint_path }}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Имя сервера</label>
+      <input type="text" id="o-server-name" value="{{ opcua.server.server_name }}">
+    </div>
+    <div class="form-group">
+      <label>Namespace URI</label>
+      <input type="text" id="o-namespace-uri" value="{{ opcua.server.namespace_uri }}">
+    </div>
+    <div class="form-group">
+      <label>Namespace name</label>
+      <input type="text" id="o-namespace-name" value="{{ opcua.server.namespace_name }}">
+    </div>
+  </div>
+  <div class="section-note">Endpoint формируется как <span class="mono-value" id="endpoint-preview"></span>.</div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Публикация данных</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Интервал обновления (мс)</label>
+      <input type="number" id="o-update-interval" min="250" max="60000" value="{{ opcua.publishing.update_interval_ms }}">
+    </div>
+    <div class="form-group">
+      <label>Считать данные устаревшими через (мс)</label>
+      <input type="number" id="o-stale-after" min="1000" max="3600000" value="{{ opcua.publishing.stale_after_ms }}">
+    </div>
+  </div>
+  <label class="inline-check"><input type="checkbox" id="o-only-enabled" {{ 'checked' if opcua.publishing.publish_only_enabled_sensors }}> Публиковать только включённые датчики</label>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Датчики в OPC UA</div>
+  <label class="inline-check"><input type="checkbox" id="o-all-sensors" onchange="syncSelectionMode()" {{ 'checked' if not opcua.selection.sensor_ids }}> Передавать все включённые датчики</label>
+  <div class="opcua-actions mt-2">
+    <button class="btn btn-secondary btn-sm" type="button" onclick="checkAllSensors(true)">Выбрать все</button>
+    <button class="btn btn-secondary btn-sm" type="button" onclick="checkAllSensors(false)">Снять выбор</button>
+  </div>
+  <div class="check-grid" id="sensor-checks">
+    {% for sensor in config.sensors %}
+    <label>
+      <input type="checkbox" class="o-sensor" value="{{ sensor.id }}" {{ 'checked' if not opcua.selection.sensor_ids or sensor.id in opcua.selection.sensor_ids }}>
+      {{ sensor.name }} / id={{ sensor.id }} / {{ sensor.poll_port_id or 'default' }}
+    </label>
+    {% endfor %}
+  </div>
+  <div class="section-note">Пустой список в конфиге означает «все включённые датчики».</div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Экспортируемые поля</div>
+  <div class="check-grid">
+    <label><input type="checkbox" id="f-temperature" {{ 'checked' if opcua.fields.temperature }}> Температура</label>
+    <label><input type="checkbox" id="f-humidity" {{ 'checked' if opcua.fields.humidity }}> Влажность</label>
+    <label><input type="checkbox" id="f-combined-status" {{ 'checked' if opcua.fields.combined_status }}> Combined status</label>
+    <label><input type="checkbox" id="f-timestamp" {{ 'checked' if opcua.fields.timestamp }}> Timestamp</label>
+    <label><input type="checkbox" id="f-poll-port" {{ 'checked' if opcua.fields.poll_port_metadata }}> Линия/порт опроса</label>
+    <label><input type="checkbox" id="f-limits" {{ 'checked' if opcua.fields.limits }}> Границы датчиков</label>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Безопасность</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Режим</label>
+      <select id="o-security-mode">
+        <option value="anonymous_readonly" {{ 'selected' if opcua.security.mode == 'anonymous_readonly' }}>Anonymous read-only</option>
+        <option value="certificate" {{ 'selected' if opcua.security.mode == 'certificate' }}>Certificate</option>
+        <option value="user_password" {{ 'selected' if opcua.security.mode == 'user_password' }}>User/password</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Security policies (через запятую)</label>
+      <input type="text" id="o-policies" value="{{ opcua.security.security_policies|join(', ') }}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Certificate path</label>
+      <input type="text" id="o-cert" value="{{ opcua.security.certificate_path }}">
+    </div>
+    <div class="form-group">
+      <label>Private key path</label>
+      <input type="text" id="o-key" value="{{ opcua.security.private_key_path }}">
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Users JSON</label>
+    <textarea id="o-users" rows="4">{{ opcua.security.users|tojson }}</textarea>
+  </div>
+  <div class="section-note">Текущий runtime реализует только anonymous read-only; certificate/user-password сохранены в конфиге для следующего ужесточения безопасности.</div>
+</div>
+
+<button class="btn btn-primary" onclick="saveOpcUa()">Сохранить OPC UA</button>
+<p class="text-muted mt-2">Изменения выбора датчиков и полей перечитываются сервисом автоматически; смена host/port/security может потребовать перезапуска `python run_kvt.py restart --service opcua`.</p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function endpointPreview() {
+  var host = document.getElementById('o-host').value || '0.0.0.0';
+  var port = parseInt(document.getElementById('o-port').value || '4840');
+  var path = document.getElementById('o-endpoint-path').value || '/kvt/';
+  if (!path.startsWith('/')) path = '/' + path;
+  if (!path.endsWith('/')) path += '/';
+  document.getElementById('endpoint-preview').textContent = 'opc.tcp://' + host + ':' + port + path;
+}
+
+function syncSelectionMode() {
+  var all = document.getElementById('o-all-sensors').checked;
+  document.querySelectorAll('.o-sensor').forEach(function(input) {
+    input.disabled = all;
+    if (all) input.checked = true;
+  });
+}
+
+function checkAllSensors(checked) {
+  document.getElementById('o-all-sensors').checked = false;
+  document.querySelectorAll('.o-sensor').forEach(function(input) {
+    input.disabled = false;
+    input.checked = checked;
+  });
+}
+
+function usersFromForm() {
+  var text = document.getElementById('o-users').value.trim();
+  if (!text) return [];
+  var parsed = JSON.parse(text);
+  return Array.isArray(parsed) ? parsed : [];
+}
+
+function opcUaConfigFromForm() {
+  var sensorIds = [];
+  if (!document.getElementById('o-all-sensors').checked) {
+    sensorIds = Array.from(document.querySelectorAll('.o-sensor:checked')).map(function(input) {
+      return parseInt(input.value);
+    });
+  }
+  return {
+    enabled: document.getElementById('o-enabled').checked,
+    server: {
+      host: document.getElementById('o-host').value.trim(),
+      port: parseInt(document.getElementById('o-port').value || '4840'),
+      endpoint_path: document.getElementById('o-endpoint-path').value.trim(),
+      server_name: document.getElementById('o-server-name').value.trim(),
+      namespace_uri: document.getElementById('o-namespace-uri').value.trim(),
+      namespace_name: document.getElementById('o-namespace-name').value.trim()
+    },
+    publishing: {
+      update_interval_ms: parseInt(document.getElementById('o-update-interval').value || '1000'),
+      stale_after_ms: parseInt(document.getElementById('o-stale-after').value || '30000'),
+      publish_only_enabled_sensors: document.getElementById('o-only-enabled').checked
+    },
+    selection: {sensor_ids: sensorIds},
+    fields: {
+      temperature: document.getElementById('f-temperature').checked,
+      humidity: document.getElementById('f-humidity').checked,
+      combined_status: document.getElementById('f-combined-status').checked,
+      timestamp: document.getElementById('f-timestamp').checked,
+      poll_port_metadata: document.getElementById('f-poll-port').checked,
+      limits: document.getElementById('f-limits').checked
+    },
+    security: {
+      mode: document.getElementById('o-security-mode').value,
+      security_policies: document.getElementById('o-policies').value.split(',').map(function(item) { return item.trim(); }).filter(Boolean),
+      certificate_path: document.getElementById('o-cert').value.trim(),
+      private_key_path: document.getElementById('o-key').value.trim(),
+      users: usersFromForm()
+    }
+  };
+}
+
+async function saveOpcUa() {
+  try {
+    var config = opcUaConfigFromForm();
+    await apiFetch('/api/opcua/config', {method: 'POST', body: JSON.stringify(config)});
+    showToast('Настройки OPC UA сохранены');
+    loadOpcUaStatus();
+  } catch(e) {
+    if (e instanceof SyntaxError) {
+      showToast('Users JSON должен быть массивом', 'error');
+    }
+  }
+}
+
+async function loadOpcUaStatus() {
+  try {
+    var status = await apiFetch('/api/opcua/status');
+    document.getElementById('opcua-status').innerHTML =
+      '<div>Статус: <b>' + esc(status.state || 'unknown') + '</b></div>' +
+      '<div>Endpoint: <span class="mono-value">' + esc(status.endpoint || '') + '</span></div>' +
+      '<div>Датчиков в OPC UA: <b>' + esc(status.exported_sensor_count || 0) + '</b></div>' +
+      '<div>Обновлено: <b>' + esc(status.updated_at || '-') + '</b></div>' +
+      '<div>' + esc(status.message || status.error || '') + '</div>';
+  } catch(e) {}
+}
+
+async function reloadOpcUa() {
+  try {
+    await apiFetch('/api/opcua/reload', {method: 'POST', body: '{}'});
+    showToast('OPC UA перечитает настройки');
+    loadOpcUaStatus();
+  } catch(e) {}
+}
+
+function esc(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
+
+['o-host', 'o-port', 'o-endpoint-path'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', endpointPreview);
+});
+endpointPreview();
+syncSelectionMode();
+loadOpcUaStatus();
+</script>
+{% endblock %}

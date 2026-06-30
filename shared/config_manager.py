@@ -13,6 +13,7 @@ CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 SYSTEM_CONFIG_PATH = os.path.join(CONFIG_DIR, 'system_config.json')
 POLLER_CONFIG_PATH = os.path.join(CONFIG_DIR, 'poller_config.json')
 ARCHIVE_CONFIG_PATH = os.path.join(CONFIG_DIR, 'archive_config.json')
+OPCUA_CONFIG_PATH = os.path.join(CONFIG_DIR, 'opcua_config.json')
 NOTIFICATIONS_CONFIG_PATH = os.path.join(CONFIG_DIR, 'notifications.json')
 LAYOUT_CONFIG_PATH = os.path.join(CONFIG_DIR, 'layout.json')
 THEME_CONFIG_PATH = os.path.join(CONFIG_DIR, 'theme_config.json')
@@ -105,6 +106,173 @@ def load_archive_config():
 
 def save_archive_config(config):
     save_json(ARCHIVE_CONFIG_PATH, config)
+
+
+def _default_opcua_config():
+    return {
+        "enabled": False,
+        "server": {
+            "host": "0.0.0.0",
+            "port": 4840,
+            "endpoint_path": "/kvt/",
+            "server_name": "KVT-C OPC UA Server",
+            "namespace_uri": "urn:kvt:c:monitoring",
+            "namespace_name": "KVT-C",
+        },
+        "publishing": {
+            "update_interval_ms": 1000,
+            "stale_after_ms": 30000,
+            "publish_only_enabled_sensors": True,
+        },
+        "selection": {
+            "sensor_ids": [],
+        },
+        "fields": {
+            "temperature": True,
+            "humidity": True,
+            "combined_status": True,
+            "timestamp": True,
+            "poll_port_metadata": True,
+            "limits": True,
+        },
+        "security": {
+            "mode": "anonymous_readonly",
+            "security_policies": ["None"],
+            "certificate_path": "",
+            "private_key_path": "",
+            "users": [],
+        },
+    }
+
+
+def _deep_merge(base, patch):
+    result = deepcopy(base)
+    if not isinstance(patch, dict):
+        return result
+    for key, value in patch.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = deepcopy(value)
+    return result
+
+
+def _as_bool(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on", "да"}
+    return bool(value)
+
+
+def _as_int(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _coerce_opcua_config(payload, validate_sensor_ids=False):
+    config = _deep_merge(_default_opcua_config(), payload or {})
+    errors = []
+
+    config["enabled"] = _as_bool(config.get("enabled"))
+
+    server = config.setdefault("server", {})
+    server["host"] = str(server.get("host") or "0.0.0.0").strip() or "0.0.0.0"
+    server["port"] = _as_int(server.get("port"), 4840)
+    if not 1 <= server["port"] <= 65535:
+        errors.append("OPC UA port должен быть от 1 до 65535")
+
+    endpoint_path = str(server.get("endpoint_path") or "/kvt/").strip() or "/kvt/"
+    if not endpoint_path.startswith("/"):
+        endpoint_path = "/" + endpoint_path
+    if not endpoint_path.endswith("/"):
+        endpoint_path += "/"
+    if " " in endpoint_path:
+        errors.append("OPC UA endpoint_path не должен содержать пробелы")
+    server["endpoint_path"] = endpoint_path
+    server["server_name"] = str(server.get("server_name") or "KVT-C OPC UA Server").strip() or "KVT-C OPC UA Server"
+    server["namespace_uri"] = str(server.get("namespace_uri") or "urn:kvt:c:monitoring").strip() or "urn:kvt:c:monitoring"
+    server["namespace_name"] = str(server.get("namespace_name") or "KVT-C").strip() or "KVT-C"
+
+    publishing = config.setdefault("publishing", {})
+    publishing["update_interval_ms"] = _as_int(publishing.get("update_interval_ms"), 1000)
+    publishing["stale_after_ms"] = _as_int(publishing.get("stale_after_ms"), 30000)
+    if not 250 <= publishing["update_interval_ms"] <= 60000:
+        errors.append("OPC UA update_interval_ms должен быть от 250 до 60000")
+    if not 1000 <= publishing["stale_after_ms"] <= 3600000:
+        errors.append("OPC UA stale_after_ms должен быть от 1000 до 3600000")
+    publishing["publish_only_enabled_sensors"] = _as_bool(publishing.get("publish_only_enabled_sensors"))
+
+    selection = config.setdefault("selection", {})
+    sensor_ids = []
+    seen = set()
+    for raw_id in selection.get("sensor_ids") or []:
+        try:
+            sensor_id = int(raw_id)
+        except (TypeError, ValueError):
+            errors.append(f"Некорректный ID датчика для OPC UA: {raw_id}")
+            continue
+        if sensor_id not in seen:
+            seen.add(sensor_id)
+            sensor_ids.append(sensor_id)
+    if validate_sensor_ids and sensor_ids:
+        valid_ids = {int(s.get("id")) for s in load_system_config().get("sensors", []) if s.get("id") is not None}
+        missing = [sid for sid in sensor_ids if sid not in valid_ids]
+        if missing:
+            errors.append("OPC UA sensor_ids отсутствуют в конфигурации датчиков: " + ", ".join(map(str, missing)))
+    selection["sensor_ids"] = sensor_ids
+
+    defaults = _default_opcua_config()["fields"]
+    fields = config.setdefault("fields", {})
+    for key, default in defaults.items():
+        fields[key] = _as_bool(fields.get(key, default))
+    for key in list(fields.keys()):
+        if key not in defaults:
+            fields.pop(key, None)
+
+    security = config.setdefault("security", {})
+    mode = str(security.get("mode") or "anonymous_readonly").strip()
+    if mode not in {"anonymous_readonly", "certificate", "user_password"}:
+        errors.append("OPC UA security.mode должен быть anonymous_readonly, certificate или user_password")
+        mode = "anonymous_readonly"
+    security["mode"] = mode
+    policies = security.get("security_policies")
+    if not isinstance(policies, list) or not policies:
+        policies = ["None"]
+    security["security_policies"] = [str(item).strip() for item in policies if str(item).strip()] or ["None"]
+    security["certificate_path"] = str(security.get("certificate_path") or "").strip()
+    security["private_key_path"] = str(security.get("private_key_path") or "").strip()
+    users = security.get("users")
+    security["users"] = users if isinstance(users, list) else []
+    if mode == "certificate" and (not security["certificate_path"] or not security["private_key_path"]):
+        errors.append("Для OPC UA security.mode=certificate нужны certificate_path и private_key_path")
+    if mode == "user_password" and not security["users"]:
+        errors.append("Для OPC UA security.mode=user_password нужен хотя бы один пользователь")
+
+    return config, errors
+
+
+def load_opcua_config():
+    try:
+        data = load_json(OPCUA_CONFIG_PATH)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = _default_opcua_config()
+        save_json(OPCUA_CONFIG_PATH, data)
+        return data
+    config, _errors = _coerce_opcua_config(data, validate_sensor_ids=False)
+    return config
+
+
+def validated_opcua_config_patch(patch, current=None):
+    current = current if current is not None else load_opcua_config()
+    return _coerce_opcua_config(_deep_merge(current, patch or {}), validate_sensor_ids=True)
+
+
+def save_opcua_config(config):
+    save_json(OPCUA_CONFIG_PATH, config)
+    return config
 
 
 def load_notifications_config():
