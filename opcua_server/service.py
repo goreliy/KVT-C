@@ -311,9 +311,17 @@ class OpcUaService:
         elif value is None and variant_type == ua.VariantType.String:
             good = False
             encoded_value = ""
+        status = ua.StatusCode(ua.StatusCodes.Good if good else ua.StatusCodes.BadNoData)
+        # ua.DataValue — frozen dataclass: качество и метку времени нужно задавать в
+        # конструкторе. Присваивание data_value.StatusCode_ после создания бросает
+        # FrozenInstanceError, из-за чего прежний код молча падал в fallback и писал
+        # значение с качеством Good (поэтому у датчиков без данных было 0.0/Good).
         try:
-            data_value = ua.DataValue(ua.Variant(encoded_value, variant_type))
-            data_value.StatusCode = ua.StatusCode(ua.StatusCodes.Good if good else ua.StatusCodes.BadNoData)
+            data_value = ua.DataValue(
+                Value=ua.Variant(encoded_value, variant_type),
+                StatusCode_=status,
+                SourceTimestamp=datetime.now(timezone.utc),
+            )
             await node.write_value(data_value)
         except Exception:
             await node.write_value(encoded_value, varianttype=variant_type)

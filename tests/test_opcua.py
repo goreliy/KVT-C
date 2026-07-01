@@ -87,7 +87,10 @@ class OpcUaIntegrationTests(unittest.IsolatedAsyncioTestCase):
                 children = await sensors_node.get_children()
                 self.assertGreaterEqual(len(children), 1)
                 temp_node = client.get_node(f"ns={nsidx};s=KVT.Sensors.1.Temperature")
-                await temp_node.read_value()
+                # Значение может быть Good (есть данные) или BadNoData (датчик без данных).
+                # Тесту важно, что узел существует и читается; не поднимаем исключение на bad-quality.
+                data_value = await temp_node.read_data_value(raise_on_bad_status=False)
+                self.assertIsNotNone(data_value)
         finally:
             service.stop()
             await asyncio.wait_for(task, timeout=3.0)
