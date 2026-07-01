@@ -141,6 +141,26 @@
   <div class="section-note">Текущий runtime реализует только anonymous read-only; certificate/user-password сохранены в конфиге для следующего ужесточения безопасности.</div>
 </div>
 
+<div class="form-section">
+  <div class="form-section__title">Historical Access (архивные данные)</div>
+  <div class="form-group">
+    <label><input type="checkbox" id="o-ha-enabled" {{ 'checked' if opcua.historical_access.enabled }}> Включить OPC UA Historical Access</label>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Источник истории</label>
+      <select id="o-ha-source">
+        <option value="archive_manager" {{ 'selected' if opcua.historical_access.source == 'archive_manager' }}>Archive Manager</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Макс. точек за один HistoryRead</label>
+      <input type="number" id="o-ha-max" min="100" max="1000000" value="{{ opcua.historical_access.max_values_per_read }}">
+    </div>
+  </div>
+  <div class="section-note">HistoryRead отдаёт архивные значения температуры и влажности из хранилища Archive Manager по датчику и диапазону времени. Требует запущенной подсистемы Archive Manager.</div>
+</div>
+
 <button class="btn btn-primary" onclick="saveOpcUa()">Сохранить OPC UA</button>
 <p class="text-muted mt-2">Изменения выбора датчиков и полей перечитываются сервисом автоматически; смена host/port/security может потребовать перезапуска `python run_kvt.py restart --service opcua`.</p>
 {% endblock %}
@@ -216,6 +236,11 @@ function opcUaConfigFromForm() {
       certificate_path: document.getElementById('o-cert').value.trim(),
       private_key_path: document.getElementById('o-key').value.trim(),
       users: usersFromForm()
+    },
+    historical_access: {
+      enabled: document.getElementById('o-ha-enabled').checked,
+      source: document.getElementById('o-ha-source').value,
+      max_values_per_read: parseInt(document.getElementById('o-ha-max').value || '5000')
     }
   };
 }

@@ -142,6 +142,11 @@ def _default_opcua_config():
             "private_key_path": "",
             "users": [],
         },
+        "historical_access": {
+            "enabled": False,
+            "source": "archive_manager",
+            "max_values_per_read": 5000,
+        },
     }
 
 
@@ -250,6 +255,17 @@ def _coerce_opcua_config(payload, validate_sensor_ids=False):
         errors.append("Для OPC UA security.mode=certificate нужны certificate_path и private_key_path")
     if mode == "user_password" and not security["users"]:
         errors.append("Для OPC UA security.mode=user_password нужен хотя бы один пользователь")
+
+    ha = config.setdefault("historical_access", {})
+    ha["enabled"] = _as_bool(ha.get("enabled"))
+    ha_source = str(ha.get("source") or "archive_manager").strip()
+    if ha_source not in {"archive_manager"}:
+        errors.append("OPC UA historical_access.source должен быть archive_manager")
+        ha_source = "archive_manager"
+    ha["source"] = ha_source
+    ha["max_values_per_read"] = _as_int(ha.get("max_values_per_read"), 5000)
+    if not 100 <= ha["max_values_per_read"] <= 1000000:
+        errors.append("OPC UA historical_access.max_values_per_read должен быть от 100 до 1000000")
 
     return config, errors
 

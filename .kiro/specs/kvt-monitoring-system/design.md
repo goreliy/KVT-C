@@ -390,31 +390,29 @@ REST API:
 
 Отвечает за предоставление данных внешним SCADA-системам по протоколу OPC UA.
 
+Библиотека: `asyncua` 2.x (opcua-asyncio). Endpoint по умолчанию `opc.tcp://0.0.0.0:4840/kvt/`, namespace `urn:kvt:c:monitoring`. Режим безопасности `anonymous_readonly` (параметры `certificate`/`user_password` — заготовки в конфиге). Источник текущих значений — тот же нормализованный срез, что и `/api/current`; сервер не опрашивает оборудование сам.
+
 Модули:
-- `opcua_server/app.py` — запуск OPC UA сервера
-- `opcua_server/opcua_server.py` — конфигурация сервера, endpoint, security
-- `opcua_server/address_space.py` — построение адресного пространства (узлы датчиков)
-- `opcua_server/ha_provider.py` — Historical Access: чтение архивных данных из storage
-- `opcua_server/config.py` — загрузка opcua_config.json
+- `opcua_server/app.py` — CLI entrypoint (`python -m opcua_server.app`), разбор `--host/--port/--endpoint-path`, запуск сервиса
+- `opcua_server/service.py` — asyncua-рантайм: построение адресного пространства, публикация текущего среза по `publishing.update_interval_ms`, запись `data/opcua_status.json`, автоперечитывание `opcua_config.json`
+- `opcua_server/nodes.py` — стабильные NodeId и выбор публикуемых датчиков/полей
+- `opcua_server/ha_provider.py` — OPC UA Historical Access: чтение архивных данных температуры/влажности из хранилища Archive_Manager по sensor_id и диапазону времени *(планируется; зависит от Archive Manager)*
+- конфигурация читается через `shared.config_manager.load_opcua_config()` (`data/config/opcua_config.json`)
 
 Адресное пространство OPC UA:
 
 ```
-Root
-└── Objects
-    └── KVT_System
-        ├── Sensor_1
-        │   ├── Temperature (Double)
-        │   ├── Humidity (Double)
-        │   ├── CombinedStatus (String)
-        │   └── LastUpdate (DateTime)
-        ├── Sensor_2
-        │   ├── Temperature (Double)
-        │   ├── Humidity (Double)
-        │   ├── CombinedStatus (String)
-        │   └── LastUpdate (DateTime)
-        └── ...
+Objects
+└── KVT
+    ├── System            (ServerName, NamespaceUri, LastUpdate, SourceTimestamp, ExportedSensorCount)
+    ├── PollPorts
+    │   └── PollPort_<id>  (Name, Transport, State, LastPingMs, LastError)
+    └── Sensors
+        └── Sensor_<id>    (Name, DisplayNumber, Temperature, Humidity, CombinedStatus,
+                            Timestamp, PollPortId, PollPortName, Transport, TempMin/TempMax, HumMin/HumMax)
 ```
+
+Стабильные NodeId: `KVT.Sensors.<id>.<Field>` (например `KVT.Sensors.7.Temperature`), `KVT.PollPorts.<token>.<Field>`. При отсутствии/устаревании значения числовой узел публикуется с качеством BadNoData, но browse-метка и служебные поля остаются доступны. Состояние сервиса пишется в `data/opcua_status.json` и доступно через Web Visualizer (`/api/opcua/status`); настройка — на `/settings/opcua`.
 
 ### Общие модули (shared/)
 

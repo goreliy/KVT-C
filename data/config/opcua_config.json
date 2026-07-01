@@ -1,5 +1,5 @@
-{
-  "enabled": false,
+﻿{
+  "enabled": true,
   "server": {
     "host": "0.0.0.0",
     "port": 4840,
@@ -32,5 +32,10 @@
     "certificate_path": "",
     "private_key_path": "",
     "users": []
+  },
+  "historical_access": {
+    "enabled": false,
+    "source": "archive_manager",
+    "max_values_per_read": 5000
   }
 }

@@ -79,6 +79,7 @@ pip install -r requirements.txt
 - Адресное пространство: `KVT/System`, `KVT/PollPorts/<poll_port_id>`, `KVT/Sensors/Sensor_<id>`. NodeId датчиков стабильные: `KVT.Sensors.<id>.Temperature`, `Humidity`, `CombinedStatus`, `Timestamp`, `PollPortId`.
 - На `/settings/opcua` настраиваются host/port/path, namespace, интервал публикации, список датчиков, экспортируемые поля и заготовки security. Runtime сейчас поддерживает read-only anonymous mode; certificate/user-password сохраняются в конфиге для следующего ужесточения.
 - Статус пишется в `data/opcua_status.json` и доступен через Visualizer API `/api/opcua/status`.
+- Historical Access (HA): при `historical_access.enabled=true` сервер отдаёт архивные значения температуры/влажности через OPC UA HistoryRead (`KVT.Sensors.<id>.Temperature`/`Humidity`), читая их из хранилища Archive Manager; настраивается на `/settings/opcua` (источник, лимит точек). Требует запущенной подсистемы Archive Manager.
 
 ## Импорт/экспорт конфигурации
 - Страница переноса настроек: `http://127.0.0.1:5000/settings/config-transfer`.

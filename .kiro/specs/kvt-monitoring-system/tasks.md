@@ -277,26 +277,30 @@
     - _Requirements: 14.2, 14.3_
 
 - [ ] 8. Реализовать подсистему OPC UA Server
-  - [ ] 8.1 Реализовать OPC UA сервер (opcua_server/opcua_server.py)
-    - Инициализация сервера (python-opcua / opcua-asyncio)
-    - Настройка endpoint URL, порт (default 4840)
-    - Security policy: None, Basic256Sha256
-    - Аутентификация: Anonymous, Username/Password
-    - _Requirements: 15.4_
-  - [ ] 8.2 Реализовать адресное пространство (opcua_server/address_space.py)
-    - Создание узла KVT_System под Objects
-    - Для каждого датчика: узел Sensor_{id} с переменными Temperature, Humidity, CombinedStatus, LastUpdate
-    - Динамическое обновление при добавлении/удалении датчиков (в течение 5 секунд)
+  - [x] 8.1 Реализовать OPC UA сервис (opcua_server/service.py + opcua_server/app.py)
+    - asyncua-рантайм; endpoint/порт (default 4840), путь /kvt/, namespace urn:kvt:c:monitoring
+    - Режим anonymous_readonly; certificate/user_password — заготовки в opcua_config.json
+    - Запись состояния в data/opcua_status.json
+    - _Requirements: 15.4, 15.6, 17.4_
+  - [x] 8.2 Построить адресное пространство (opcua_server/nodes.py + service.py)
+    - Объект KVT: System, PollPorts/PollPort_<id>, Sensors/Sensor_<id>
+    - Стабильные NodeId KVT.Sensors.<id>.<Field>; выбор датчиков и экспортируемых полей из конфига
     - _Requirements: 15.1, 15.5_
-  - [ ] 8.3 Реализовать обновление данных из current.json
-    - Периодическое чтение current.json, обновление переменных OPC UA в течение 2 секунд
-    - _Requirements: 15.2_
+  - [x] 8.3 Публикация текущего среза и автоперечитывание конфига
+    - Обновление значений из current.json по publishing.update_interval_ms; BadNoData при отсутствии данных
+    - Перечитывание opcua_config.json без перезапуска (host/port/security — через restart)
+    - _Requirements: 15.2, 15.5_
   - [ ] 8.4 Реализовать Historical Access (opcua_server/ha_provider.py)
-    - Интерфейс OPC UA HA: чтение архивных данных из storage по sensor_id и time range
+    - OPC UA HistoryRead: чтение архивных T/H из хранилища Archive_Manager по sensor_id и диапазону времени
+    - Настройки HA в opcua_config.json (historical_access); зависит от подсистемы Archive Manager (раздел 3)
     - _Requirements: 15.3_
-  - [ ] 8.5 Написать unit-тесты для address_space
-    - Тесты построения адресного пространства, динамического обновления
-    - _Requirements: 15.1, 15.5_
+  - [x] 8.5 Страница и API в Web Visualizer + интеграция в run_kvt.py
+    - /settings/opcua (полный редактор opcua_config.json + статус + reload), /api/opcua/config|status|reload
+    - Сервис opcua в run_kvt.py (start/stop/restart/status --service opcua), логи и PID
+    - _Requirements: 15.4, 15.6, 5a.1_
+  - [x] 8.6 Unit-тесты OPC UA (tests/test_opcua.py)
+    - Валидация конфига, стабильность NodeId, выбор датчиков, интеграционный тест asyncua-клиента
+    - _Requirements: 15.1, 15.4_
 
 - [ ] 9. Docker-контейнеризация
   - [ ] 9.1 Создать Dockerfile
