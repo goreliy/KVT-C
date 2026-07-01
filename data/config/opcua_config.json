@@ -19,10 +19,10 @@
   "fields": {
     "temperature": true,
     "humidity": true,
-    "combined_status": true,
-    "timestamp": true,
-    "poll_port_metadata": true,
-    "limits": true
+    "combined_status": false,
+    "timestamp": false,
+    "poll_port_metadata": false,
+    "limits": false
   },
   "security": {
     "mode": "anonymous_readonly",

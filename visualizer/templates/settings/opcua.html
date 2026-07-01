@@ -22,15 +22,19 @@
   <div class="form-section__title">Состояние сервера</div>
   <div id="opcua-status" class="opcua-status text-muted">Загрузка...</div>
   <div class="opcua-actions mt-2">
+    <button class="btn btn-primary btn-sm" id="opcua-start-btn" onclick="startOpcUa()">▶ Запустить</button>
+    <button class="btn btn-danger btn-sm" id="opcua-stop-btn" onclick="stopOpcUa()">■ Остановить</button>
     <button class="btn btn-secondary btn-sm" onclick="loadOpcUaStatus()">Обновить статус</button>
     <button class="btn btn-secondary btn-sm" onclick="reloadOpcUa()">Перечитать настройки</button>
   </div>
+  <div class="section-note">«Запустить/Остановить» переключают публикацию (флаг <code>enabled</code>) и сохраняются в конфиге — то есть одновременно задают <b>автозапуск</b> при старте системы. Сам процесс сервиса поднимается через <code>run_kvt.py --service opcua</code> (или <code>--service all</code>) и применяет флаг в течение ~2 секунд.</div>
 </div>
 
 <div class="form-section">
   <div class="form-section__title">Сервер</div>
   <div class="form-group">
-    <label><input type="checkbox" id="o-enabled" {{ 'checked' if opcua.enabled }}> Включить OPC UA публикацию</label>
+    <label><input type="checkbox" id="o-enabled" {{ 'checked' if opcua.enabled }}> Публиковать OPC UA (автозапуск при старте системы)</label>
+    <div class="section-note">Тот же флаг, что кнопки «Запустить/Остановить» в блоке состояния: сохраняется в конфиге и применяется процессом в течение ~2 секунд.</div>
   </div>
   <div class="form-row">
     <div class="form-group">
@@ -258,15 +262,63 @@ async function saveOpcUa() {
   }
 }
 
+function opcuaStale(status) {
+  if (!status || !status.updated_at) return true;
+  var t = Date.parse(status.updated_at);
+  if (isNaN(t)) return false;
+  return (Date.now() - t) > 15000; // статус не обновлялся >15с → процесс, вероятно, не запущен
+}
+
 async function loadOpcUaStatus() {
   try {
     var status = await apiFetch('/api/opcua/status');
+    var stale = opcuaStale(status);
+    var running = !stale && status.state === 'running';
+    var stateText = stale ? 'процесс не запущен' : (status.state || 'unknown');
     document.getElementById('opcua-status').innerHTML =
-      '<div>Статус: <b>' + esc(status.state || 'unknown') + '</b></div>' +
+      '<div>Статус: <b>' + esc(stateText) + '</b></div>' +
       '<div>Endpoint: <span class="mono-value">' + esc(status.endpoint || '') + '</span></div>' +
       '<div>Датчиков в OPC UA: <b>' + esc(status.exported_sensor_count || 0) + '</b></div>' +
       '<div>Обновлено: <b>' + esc(status.updated_at || '-') + '</b></div>' +
-      '<div>' + esc(status.message || status.error || '') + '</div>';
+      '<div>' + esc(status.message || status.error || '') + '</div>' +
+      (stale ? '<div class="text-muted">Похоже, сервис не запущен. Выполните: <span class="mono-value">python run_kvt.py start --service opcua</span></div>' : '');
+    var startBtn = document.getElementById('opcua-start-btn');
+    var stopBtn = document.getElementById('opcua-stop-btn');
+    if (startBtn) startBtn.disabled = running;
+    if (stopBtn) stopBtn.disabled = !running;
+    var chk = document.getElementById('o-enabled');
+    if (chk && typeof status.enabled === 'boolean') chk.checked = status.enabled;
+  } catch(e) {}
+}
+
+async function setOpcuaEnabled(enabled) {
+  await apiFetch('/api/opcua/config', {method: 'POST', body: JSON.stringify({enabled: enabled})});
+  var chk = document.getElementById('o-enabled');
+  if (chk) chk.checked = enabled;
+}
+
+function pollOpcUaStatus(times) {
+  loadOpcUaStatus();
+  var n = times || 3;
+  var timer = setInterval(function() {
+    loadOpcUaStatus();
+    if (--n <= 0) clearInterval(timer);
+  }, 2000);
+}
+
+async function startOpcUa() {
+  try {
+    await setOpcuaEnabled(true);
+    showToast('OPC UA запускается…');
+    pollOpcUaStatus(4);
+  } catch(e) {}
+}
+
+async function stopOpcUa() {
+  try {
+    await setOpcuaEnabled(false);
+    showToast('OPC UA остановлен');
+    pollOpcUaStatus(3);
   } catch(e) {}
 }
 
