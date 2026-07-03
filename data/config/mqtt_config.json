@@ -1,0 +1,32 @@
+{
+  "enabled": false,
+  "broker": {
+    "host": "127.0.0.1",
+    "port": 1883,
+    "keepalive_seconds": 60,
+    "client_id": "kvt-c-mqtt",
+    "username": ""
+  },
+  "topics": {
+    "base": "kvt-c"
+  },
+  "publishing": {
+    "enabled": true,
+    "interval_ms": 1000,
+    "qos": 0,
+    "retain": true,
+    "publish_snapshot": true,
+    "publish_per_sensor": true
+  },
+  "receiving": {
+    "enabled": true,
+    "qos": 0
+  },
+  "tls": {
+    "enabled": false,
+    "ca_cert_path": "",
+    "client_cert_path": "",
+    "client_key_path": "",
+    "insecure": false
+  }
+}

@@ -5,7 +5,7 @@ import zipfile
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from shared.config_manager import load_json, save_json
+from shared.config_manager import default_mqtt_config, load_json, save_json
 
 
 BUNDLE_FORMAT = "kvt-config-bundle"
@@ -30,7 +30,12 @@ DIAGNOSTIC_DATA_FILES = (
     "modbus_log.json",
     "events.json",
     "opcua_status.json",
+    "mqtt_status.json",
+    "mqtt_inbound.json",
 )
+OPTIONAL_DEFAULT_CONFIG_FILES = {
+    "mqtt_config.json": default_mqtt_config,
+}
 ALLOWED_DIRECTORY_ENTRIES = {"config/", "assets/", "assets/floorplans/", "diagnostics/"}
 
 
@@ -226,6 +231,8 @@ def _read_config_payloads(archive: zipfile.ZipFile) -> Dict[str, Any]:
     missing = sorted(REQUIRED_CONFIG_FILES - set(configs))
     if missing:
         raise ConfigBundleError("В архиве нет обязательных конфигов: " + ", ".join(missing))
+    for filename, factory in OPTIONAL_DEFAULT_CONFIG_FILES.items():
+        configs.setdefault(filename, factory())
     return configs
 
 

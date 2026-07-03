@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Настройки MQTT{% endblock %}
+
+{% block head %}
+<style>
+  .mqtt-status { display: grid; gap: 6px; font-size: 13px; }
+  .mqtt-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px 12px; margin-top: 8px; }
+  .check-grid label, .inline-check { color: var(--text-primary); font-size: 13px; display: flex; align-items: center; gap: 7px; }
+  .check-grid input, .inline-check input { width: auto; }
+  .section-note { color: var(--text-secondary); font-size: 12px; margin-top: 6px; line-height: 1.4; }
+  .mono-value { font-family: Consolas, monospace; overflow-wrap: anywhere; }
+  .mqtt-preview { display: grid; gap: 4px; margin-top: 8px; font-size: 12px; }
+  .mqtt-inbound { white-space: pre-wrap; max-height: 320px; overflow: auto; font-family: Consolas, monospace; font-size: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Настройки MQTT</h1>
+
+{% include "settings/_nav.html" %}
+
+<div class="form-section">
+  <div class="form-section__title">Состояние bridge</div>
+  <div id="mqtt-status" class="mqtt-status text-muted">Загрузка...</div>
+  <div class="mqtt-actions mt-2">
+    <button class="btn btn-primary btn-sm" id="mqtt-start-btn" onclick="startMqtt()">▶ Запустить</button>
+    <button class="btn btn-danger btn-sm" id="mqtt-stop-btn" onclick="stopMqtt()">■ Остановить</button>
+    <button class="btn btn-secondary btn-sm" onclick="loadMqttStatus()">Обновить статус</button>
+    <button class="btn btn-secondary btn-sm" onclick="reloadMqtt()">Перечитать настройки</button>
+  </div>
+  <div class="section-note">«Запустить/Остановить» переключают флаг <code>enabled</code> в конфиге. Процесс поднимается через <code>python run_kvt.py start --service mqtt</code> или вместе со всеми сервисами.</div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Broker</div>
+  <div class="form-group">
+    <label><input type="checkbox" id="m-enabled" {{ 'checked' if mqtt.enabled }}> Включить MQTT bridge</label>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Host</label>
+      <input type="text" id="m-host" value="{{ mqtt.broker.host }}">
+    </div>
+    <div class="form-group">
+      <label>Port</label>
+      <input type="number" id="m-port" min="1" max="65535" value="{{ mqtt.broker.port }}">
+    </div>
+    <div class="form-group">
+      <label>Keepalive (сек)</label>
+      <input type="number" id="m-keepalive" min="5" max="3600" value="{{ mqtt.broker.keepalive_seconds }}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Client ID</label>
+      <input type="text" id="m-client-id" value="{{ mqtt.broker.client_id }}">
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="m-username" value="{{ mqtt.broker.username }}">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="m-password" placeholder="{{ 'задан, оставить пустым чтобы не менять' if mqtt_password_set else 'не задан' }}">
+      <label class="inline-check mt-1"><input type="checkbox" id="m-clear-password"> Очистить сохранённый пароль</label>
+    </div>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Topics</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Base topic</label>
+      <input type="text" id="m-base-topic" value="{{ mqtt.topics.base }}">
+    </div>
+  </div>
+  <div class="mqtt-preview" id="mqtt-topic-preview"></div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Публикация</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Интервал (мс)</label>
+      <input type="number" id="m-interval" min="250" max="60000" value="{{ mqtt.publishing.interval_ms }}">
+    </div>
+    <div class="form-group">
+      <label>QoS</label>
+      <select id="m-pub-qos">
+        <option value="0" {{ 'selected' if mqtt.publishing.qos == 0 }}>0</option>
+        <option value="1" {{ 'selected' if mqtt.publishing.qos == 1 }}>1</option>
+        <option value="2" {{ 'selected' if mqtt.publishing.qos == 2 }}>2</option>
+      </select>
+    </div>
+  </div>
+  <div class="check-grid">
+    <label><input type="checkbox" id="m-pub-enabled" {{ 'checked' if mqtt.publishing.enabled }}> Публиковать данные</label>
+    <label><input type="checkbox" id="m-retain" {{ 'checked' if mqtt.publishing.retain }}> Retain</label>
+    <label><input type="checkbox" id="m-publish-snapshot" {{ 'checked' if mqtt.publishing.publish_snapshot }}> Общий snapshot</label>
+    <label><input type="checkbox" id="m-publish-per-sensor" {{ 'checked' if mqtt.publishing.publish_per_sensor }}> Отдельно по датчикам</label>
+  </div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">Приём</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>QoS подписки</label>
+      <select id="m-sub-qos">
+        <option value="0" {{ 'selected' if mqtt.receiving.qos == 0 }}>0</option>
+        <option value="1" {{ 'selected' if mqtt.receiving.qos == 1 }}>1</option>
+        <option value="2" {{ 'selected' if mqtt.receiving.qos == 2 }}>2</option>
+      </select>
+    </div>
+  </div>
+  <label class="inline-check"><input type="checkbox" id="m-recv-enabled" {{ 'checked' if mqtt.receiving.enabled }}> Принимать входящие данные и команды</label>
+  <div class="section-note">Входящие payload датчиков сохраняются в <code>data/mqtt_inbound.json</code> и не перезаписывают текущие данные poller.</div>
+</div>
+
+<div class="form-section">
+  <div class="form-section__title">TLS</div>
+  <div class="form-group">
+    <label><input type="checkbox" id="m-tls-enabled" {{ 'checked' if mqtt.tls.enabled }}> Использовать TLS</label>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>CA certificate path</label>
+      <input type="text" id="m-ca-cert" value="{{ mqtt.tls.ca_cert_path }}">
+    </div>
+    <div class="form-group">
+      <label>Client certificate path</label>
+      <input type="text" id="m-client-cert" value="{{ mqtt.tls.client_cert_path }}">
+    </div>
+    <div class="form-group">
+      <label>Client key path</label>
+      <input type="text" id="m-client-key" value="{{ mqtt.tls.client_key_path }}">
+    </div>
+  </div>
+  <label class="inline-check"><input type="checkbox" id="m-tls-insecure" {{ 'checked' if mqtt.tls.insecure }}> Не проверять имя/сертификат broker</label>
+</div>
+
+<button class="btn btn-primary" onclick="saveMqtt()">Сохранить MQTT</button>
+<button class="btn btn-secondary" onclick="loadInbound()">Обновить входящие</button>
+
+<div class="form-section mt-3">
+  <div class="form-section__title">Входящие MQTT-сообщения</div>
+  <pre class="mqtt-inbound" id="mqtt-inbound">Загрузка...</pre>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function cleanBaseTopic() {
+  var base = document.getElementById('m-base-topic').value || 'kvt-c';
+  base = base.trim().replace(/^\/+|\/+$/g, '');
+  while (base.indexOf('//') >= 0) base = base.replace('//', '/');
+  return base || 'kvt-c';
+}
+
+function updateTopicPreview() {
+  var base = cleanBaseTopic();
+  document.getElementById('mqtt-topic-preview').innerHTML =
+    '<div>Status: <span class="mono-value">' + esc(base + '/status') + '</span></div>' +
+    '<div>Snapshot: <span class="mono-value">' + esc(base + '/current') + '</span></div>' +
+    '<div>Датчик: <span class="mono-value">' + esc(base + '/sensors/<sensor_id>') + '</span></div>' +
+    '<div>Входящие: <span class="mono-value">' + esc(base + '/inbound/sensors/<sensor_id>') + '</span></div>' +
+    '<div>Команды: <span class="mono-value">' + esc(base + '/commands/republish') + '</span>, <span class="mono-value">' + esc(base + '/commands/ping') + '</span></div>';
+}
+
+function mqttConfigFromForm() {
+  var payload = {
+    enabled: document.getElementById('m-enabled').checked,
+    broker: {
+      host: document.getElementById('m-host').value.trim(),
+      port: parseInt(document.getElementById('m-port').value || '1883'),
+      keepalive_seconds: parseInt(document.getElementById('m-keepalive').value || '60'),
+      client_id: document.getElementById('m-client-id').value.trim(),
+      username: document.getElementById('m-username').value.trim()
+    },
+    topics: {base: cleanBaseTopic()},
+    publishing: {
+      enabled: document.getElementById('m-pub-enabled').checked,
+      interval_ms: parseInt(document.getElementById('m-interval').value || '1000'),
+      qos: parseInt(document.getElementById('m-pub-qos').value || '0'),
+      retain: document.getElementById('m-retain').checked,
+      publish_snapshot: document.getElementById('m-publish-snapshot').checked,
+      publish_per_sensor: document.getElementById('m-publish-per-sensor').checked
+    },
+    receiving: {
+      enabled: document.getElementById('m-recv-enabled').checked,
+      qos: parseInt(document.getElementById('m-sub-qos').value || '0')
+    },
+    tls: {
+      enabled: document.getElementById('m-tls-enabled').checked,
+      ca_cert_path: document.getElementById('m-ca-cert').value.trim(),
+      client_cert_path: document.getElementById('m-client-cert').value.trim(),
+      client_key_path: document.getElementById('m-client-key').value.trim(),
+      insecure: document.getElementById('m-tls-insecure').checked
+    }
+  };
+  var password = document.getElementById('m-password').value;
+  if (password) payload.password = password;
+  if (document.getElementById('m-clear-password').checked) payload.clear_password = true;
+  return payload;
+}
+
+async function saveMqtt() {
+  await apiFetch('/api/mqtt/config', {method: 'POST', body: JSON.stringify(mqttConfigFromForm())});
+  document.getElementById('m-password').value = '';
+  document.getElementById('m-clear-password').checked = false;
+  showToast('Настройки MQTT сохранены');
+  updateTopicPreview();
+  loadMqttStatus();
+}
+
+async function setMqttEnabled(enabled) {
+  await apiFetch('/api/mqtt/config', {method: 'POST', body: JSON.stringify({enabled: enabled})});
+  document.getElementById('m-enabled').checked = enabled;
+}
+
+function mqttStale(status) {
+  if (!status || !status.updated_at) return true;
+  var t = Date.parse(status.updated_at);
+  if (isNaN(t)) return false;
+  return (Date.now() - t) > 15000;
+}
+
+async function loadMqttStatus() {
+  try {
+    var status = await apiFetch('/api/mqtt/status');
+    var stale = mqttStale(status);
+    var stateText = stale ? 'процесс не запущен' : (status.state || 'unknown');
+    var broker = status.broker || {};
+    document.getElementById('mqtt-status').innerHTML =
+      '<div>Статус: <b>' + esc(stateText) + '</b></div>' +
+      '<div>Broker: <span class="mono-value">' + esc((broker.host || '-') + ':' + (broker.port || '-')) + '</span></div>' +
+      '<div>Base topic: <span class="mono-value">' + esc(status.base_topic || '') + '</span></div>' +
+      '<div>Connected: <b>' + esc(status.connected ? 'да' : 'нет') + '</b></div>' +
+      '<div>Опубликовано датчиков: <b>' + esc(status.exported_sensor_count || 0) + '</b></div>' +
+      '<div>Обновлено: <b>' + esc(status.updated_at || '-') + '</b></div>' +
+      '<div>' + esc(status.message || status.error || '') + '</div>' +
+      (stale ? '<div class="text-muted">Похоже, сервис не запущен. Выполните: <span class="mono-value">python run_kvt.py start --service mqtt</span></div>' : '');
+    document.getElementById('mqtt-start-btn').disabled = !stale && status.state === 'running';
+    document.getElementById('mqtt-stop-btn').disabled = stale || status.state !== 'running';
+    if (typeof status.enabled === 'boolean') document.getElementById('m-enabled').checked = status.enabled;
+  } catch(e) {}
+}
+
+function pollMqttStatus(times) {
+  loadMqttStatus();
+  var n = times || 3;
+  var timer = setInterval(function() {
+    loadMqttStatus();
+    if (--n <= 0) clearInterval(timer);
+  }, 2000);
+}
+
+async function startMqtt() {
+  try {
+    await setMqttEnabled(true);
+    showToast('MQTT bridge запускается...');
+    pollMqttStatus(4);
+  } catch(e) {}
+}
+
+async function stopMqtt() {
+  try {
+    await setMqttEnabled(false);
+    showToast('MQTT bridge остановлен');
+    pollMqttStatus(3);
+  } catch(e) {}
+}
+
+async function reloadMqtt() {
+  await apiFetch('/api/mqtt/reload', {method: 'POST', body: '{}'});
+  showToast('MQTT bridge перечитает настройки');
+  loadMqttStatus();
+}
+
+async function loadInbound() {
+  try {
+    var data = await apiFetch('/api/mqtt/inbound');
+    document.getElementById('mqtt-inbound').textContent = JSON.stringify(data, null, 2);
+  } catch(e) {}
+}
+
+function esc(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+  });
+}
+
+document.getElementById('m-base-topic').addEventListener('input', updateTopicPreview);
+updateTopicPreview();
+loadMqttStatus();
+loadInbound();
+</script>
+{% endblock %}

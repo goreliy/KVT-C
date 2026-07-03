@@ -18,6 +18,8 @@ data/modbus_log.json.tmp
 data/.modbus_log.json.*.tmp
 data/events.json
 data/opcua_status.json
+data/mqtt_status.json
+data/mqtt_inbound.json
 data/logbook_signoffs.json
 data/availability_daily.json
 data/.availability_daily.json.*.tmp
@@ -29,6 +31,7 @@ data/*.tmp
 
 # Local secrets and generated config backups.
 data/config/flask_secret.key
+data/config/mqtt_password.key
 data/config/backups/
 data/config/import_backups/
 

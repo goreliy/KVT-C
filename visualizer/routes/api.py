@@ -20,6 +20,8 @@ from shared.config_manager import (
     load_system_config, save_system_config,
     load_poller_config, save_poller_config,
     load_opcua_config, save_opcua_config, validated_opcua_config_patch,
+    load_mqtt_config, save_mqtt_config, validated_mqtt_config_patch,
+    save_mqtt_password, mqtt_password_set,
     load_notifications_config, save_notifications_config,
     load_theme_config, save_theme_config,
     load_mnemo_tree, save_mnemo_tree,
@@ -162,6 +164,42 @@ def _load_opcua_status():
         'exported_sensor_count': 0,
         'message': 'OPC UA service status is not available yet',
     })
+
+
+def _load_mqtt_status():
+    path = os.path.join(DATA_DIR, 'mqtt_status.json')
+    cfg = load_mqtt_config()
+    broker = cfg.get('broker') or {}
+    base_topic = (cfg.get('topics') or {}).get('base') or 'kvt-c'
+    return load_runtime_json(path, default={
+        'service': 'mqtt',
+        'state': 'unknown',
+        'enabled': bool(cfg.get('enabled')),
+        'connected': False,
+        'broker': {
+            'host': broker.get('host'),
+            'port': broker.get('port'),
+            'client_id': broker.get('client_id'),
+            'username_set': bool(broker.get('username')),
+        },
+        'base_topic': base_topic,
+        'message': 'MQTT bridge status is not available yet',
+    })
+
+
+def _load_mqtt_inbound():
+    return load_runtime_json(os.path.join(DATA_DIR, 'mqtt_inbound.json'), default={
+        'service': 'mqtt',
+        'updated_at': None,
+        'sensors': {},
+        'commands': [],
+    })
+
+
+def _mqtt_config_response(config):
+    payload = dict(config)
+    payload['password_set'] = mqtt_password_set()
+    return payload
 
 
 def _opcua_endpoint(cfg):
@@ -544,6 +582,58 @@ def api_opcua_status():
 def api_opcua_reload():
     status = _load_opcua_status()
     status['message'] = 'OPC UA service rereads opcua_config.json automatically; host/port/security changes may require restart'
+    return jsonify(status)
+
+
+# --- MQTT bridge config ---
+
+@api_bp.route('/mqtt/config')
+def api_mqtt_config():
+    return jsonify(_mqtt_config_response(load_mqtt_config()))
+
+
+@api_bp.route('/mqtt/config', methods=['POST'])
+def api_save_mqtt_config():
+    data = request.get_json(silent=True) or {}
+    password = data.pop('password', None)
+    clear_password = bool(data.pop('clear_password', False))
+    data.pop('password_set', None)
+    config, errors = validated_mqtt_config_patch(data, load_mqtt_config())
+    if errors:
+        return jsonify({'errors': errors}), 400
+    saved = save_mqtt_config(config)
+    if clear_password:
+        save_mqtt_password('')
+    elif password:
+        save_mqtt_password(password)
+    return jsonify(_mqtt_config_response(saved))
+
+
+@api_bp.route('/mqtt/status')
+def api_mqtt_status():
+    status = _load_mqtt_status()
+    cfg = load_mqtt_config()
+    broker = cfg.get('broker') or {}
+    status.setdefault('enabled', bool(cfg.get('enabled')))
+    status.setdefault('broker', {
+        'host': broker.get('host'),
+        'port': broker.get('port'),
+        'client_id': broker.get('client_id'),
+        'username_set': bool(broker.get('username')),
+    })
+    status.setdefault('base_topic', (cfg.get('topics') or {}).get('base') or 'kvt-c')
+    return jsonify(status)
+
+
+@api_bp.route('/mqtt/inbound')
+def api_mqtt_inbound():
+    return jsonify(_load_mqtt_inbound())
+
+
+@api_bp.route('/mqtt/reload', methods=['POST'])
+def api_mqtt_reload():
+    status = _load_mqtt_status()
+    status['message'] = 'MQTT bridge rereads mqtt_config.json automatically; broker/TLS changes trigger reconnect'
     return jsonify(status)
 
 

@@ -12,6 +12,7 @@ LOG_DIR = ROOT / "logs"
 PID_DIR = ROOT / ".run"
 SYSTEM_CONFIG = ROOT / "data" / "config" / "system_config.json"
 OPCUA_CONFIG = ROOT / "data" / "config" / "opcua_config.json"
+MQTT_CONFIG = ROOT / "data" / "config" / "mqtt_config.json"
 
 SERVICES = {
     "poller": {
@@ -54,6 +55,16 @@ SERVICES = {
         "stdout": LOG_DIR / "opcua.out.log",
         "stderr": LOG_DIR / "opcua.err.log",
     },
+    "mqtt": {
+        "module": "mqtt_bridge.app",
+        "port": 1883,
+        "host": "127.0.0.1",
+        "config_file": "mqtt",
+        "pass_bind_args": False,
+        "pid_file": PID_DIR / "mqtt.pid",
+        "stdout": LOG_DIR / "mqtt.out.log",
+        "stderr": LOG_DIR / "mqtt.err.log",
+    },
 }
 
 
@@ -82,12 +93,25 @@ def _opcua_server_config() -> dict:
         return {}
 
 
+def _mqtt_broker_config() -> dict:
+    try:
+        with open(MQTT_CONFIG, "r", encoding="utf-8-sig") as handle:
+            return (json.load(handle).get("broker") or {})
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
 def _service_bind(name: str) -> tuple[str, int]:
     cfg = SERVICES[name]
     if cfg.get("config_file") == "opcua":
         server = _opcua_server_config()
         host = str(server.get("host", cfg["host"]) or cfg["host"]).strip()
         port = int(server.get("port", cfg["port"]) or cfg["port"])
+        return host, port
+    if cfg.get("config_file") == "mqtt":
+        broker = _mqtt_broker_config()
+        host = str(broker.get("host", cfg["host"]) or cfg["host"]).strip()
+        port = int(broker.get("port", cfg["port"]) or cfg["port"])
         return host, port
     network = _network_config()
     host = str(network.get(cfg["network_host_key"], cfg["host"]) or cfg["host"]).strip()
@@ -190,8 +214,9 @@ def stop_service(name: str) -> None:
         _remove_pid(cfg["pid_file"])
 
 
-def status_services() -> None:
-    for name, cfg in SERVICES.items():
+def status_services(targets=None) -> None:
+    for name in (targets or SERVICES.keys()):
+        cfg = SERVICES[name]
         host, port = _service_bind(name)
         pid = _read_pid(cfg["pid_file"])
         if pid and _pid_alive(pid):
@@ -205,12 +230,12 @@ def status_services() -> None:
 def parse_args():
     parser = argparse.ArgumentParser(description="KVT single entrypoint launcher")
     parser.add_argument("command", choices=["start", "stop", "restart", "status"])
-    parser.add_argument("--service", choices=["all", "poller", "archiver", "visualizer", "opcua"], default="all")
+    parser.add_argument("--service", choices=["all", "poller", "archiver", "visualizer", "opcua", "mqtt"], default="all")
     return parser.parse_args()
 
 
 def selected_services(service: str):
-    return ["poller", "archiver", "visualizer", "opcua"] if service == "all" else [service]
+    return ["poller", "archiver", "visualizer", "opcua", "mqtt"] if service == "all" else [service]
 
 
 def main() -> int:
@@ -233,7 +258,7 @@ def main() -> int:
         for name in targets:
             start_service(name)
     else:
-        status_services()
+        status_services(targets)
     return 0
 
 

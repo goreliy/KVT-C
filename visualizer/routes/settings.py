@@ -3,6 +3,7 @@ from flask import Blueprint, render_template
 from shared.config_manager import (
     load_system_config, load_poller_config,
     load_opcua_config,
+    load_mqtt_config, mqtt_password_set,
     load_archive_config, load_notifications_config,
     load_theme_config
 )
@@ -35,6 +36,12 @@ def settings_opcua():
     config = load_system_config()
     opcua = load_opcua_config()
     return render_template('settings/opcua.html', config=config, opcua=opcua)
+
+
+@settings_bp.route('/mqtt')
+def settings_mqtt():
+    mqtt = load_mqtt_config()
+    return render_template('settings/mqtt.html', mqtt=mqtt, mqtt_password_set=mqtt_password_set())
 
 
 @settings_bp.route('/network')

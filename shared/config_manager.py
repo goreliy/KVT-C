@@ -14,6 +14,8 @@ SYSTEM_CONFIG_PATH = os.path.join(CONFIG_DIR, 'system_config.json')
 POLLER_CONFIG_PATH = os.path.join(CONFIG_DIR, 'poller_config.json')
 ARCHIVE_CONFIG_PATH = os.path.join(CONFIG_DIR, 'archive_config.json')
 OPCUA_CONFIG_PATH = os.path.join(CONFIG_DIR, 'opcua_config.json')
+MQTT_CONFIG_PATH = os.path.join(CONFIG_DIR, 'mqtt_config.json')
+MQTT_PASSWORD_PATH = os.path.join(CONFIG_DIR, 'mqtt_password.key')
 NOTIFICATIONS_CONFIG_PATH = os.path.join(CONFIG_DIR, 'notifications.json')
 LAYOUT_CONFIG_PATH = os.path.join(CONFIG_DIR, 'layout.json')
 THEME_CONFIG_PATH = os.path.join(CONFIG_DIR, 'theme_config.json')
@@ -150,6 +152,41 @@ def _default_opcua_config():
     }
 
 
+def default_mqtt_config():
+    return {
+        "enabled": False,
+        "broker": {
+            "host": "127.0.0.1",
+            "port": 1883,
+            "keepalive_seconds": 60,
+            "client_id": "kvt-c-mqtt",
+            "username": "",
+        },
+        "topics": {
+            "base": "kvt-c",
+        },
+        "publishing": {
+            "enabled": True,
+            "interval_ms": 1000,
+            "qos": 0,
+            "retain": True,
+            "publish_snapshot": True,
+            "publish_per_sensor": True,
+        },
+        "receiving": {
+            "enabled": True,
+            "qos": 0,
+        },
+        "tls": {
+            "enabled": False,
+            "ca_cert_path": "",
+            "client_cert_path": "",
+            "client_key_path": "",
+            "insecure": False,
+        },
+    }
+
+
 def _deep_merge(base, patch):
     result = deepcopy(base)
     if not isinstance(patch, dict):
@@ -175,6 +212,21 @@ def _as_int(value, default):
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _normalize_mqtt_topic(value, default):
+    topic = str(value or default).strip().strip("/")
+    while "//" in topic:
+        topic = topic.replace("//", "/")
+    return topic or default
+
+
+def _coerce_qos(value, default, errors, label):
+    qos = _as_int(value, default)
+    if qos not in (0, 1, 2):
+        errors.append(f"{label} должен быть 0, 1 или 2")
+        qos = default
+    return qos
 
 
 def _coerce_opcua_config(payload, validate_sensor_ids=False):
@@ -289,6 +341,126 @@ def validated_opcua_config_patch(patch, current=None):
 def save_opcua_config(config):
     save_json(OPCUA_CONFIG_PATH, config)
     return config
+
+
+def _coerce_mqtt_config(payload):
+    config = _deep_merge(default_mqtt_config(), payload or {})
+    errors = []
+
+    allowed_top = set(default_mqtt_config().keys())
+    for key in list(config.keys()):
+        if key not in allowed_top:
+            config.pop(key, None)
+
+    config["enabled"] = _as_bool(config.get("enabled"))
+
+    broker = config.setdefault("broker", {})
+    for key in list(broker.keys()):
+        if key not in default_mqtt_config()["broker"]:
+            broker.pop(key, None)
+    broker["host"] = str(broker.get("host") or "127.0.0.1").strip() or "127.0.0.1"
+    broker["port"] = _as_int(broker.get("port"), 1883)
+    broker["keepalive_seconds"] = _as_int(broker.get("keepalive_seconds"), 60)
+    broker["client_id"] = str(broker.get("client_id") or "kvt-c-mqtt").strip() or "kvt-c-mqtt"
+    broker["username"] = str(broker.get("username") or "").strip()
+    if not 1 <= broker["port"] <= 65535:
+        errors.append("MQTT broker.port должен быть от 1 до 65535")
+    if not 5 <= broker["keepalive_seconds"] <= 3600:
+        errors.append("MQTT keepalive_seconds должен быть от 5 до 3600")
+
+    topics = config.setdefault("topics", {})
+    for key in list(topics.keys()):
+        if key not in default_mqtt_config()["topics"]:
+            topics.pop(key, None)
+    topics["base"] = _normalize_mqtt_topic(topics.get("base"), "kvt-c")
+    if any(ch in topics["base"] for ch in ("#", "+", " ")):
+        errors.append("MQTT topics.base не должен содержать пробелы или wildcard #/+")
+
+    publishing = config.setdefault("publishing", {})
+    for key in list(publishing.keys()):
+        if key not in default_mqtt_config()["publishing"]:
+            publishing.pop(key, None)
+    publishing["enabled"] = _as_bool(publishing.get("enabled"))
+    publishing["interval_ms"] = _as_int(publishing.get("interval_ms"), 1000)
+    publishing["qos"] = _coerce_qos(publishing.get("qos"), 0, errors, "MQTT publishing.qos")
+    publishing["retain"] = _as_bool(publishing.get("retain"))
+    publishing["publish_snapshot"] = _as_bool(publishing.get("publish_snapshot"))
+    publishing["publish_per_sensor"] = _as_bool(publishing.get("publish_per_sensor"))
+    if not 250 <= publishing["interval_ms"] <= 60000:
+        errors.append("MQTT publishing.interval_ms должен быть от 250 до 60000")
+
+    receiving = config.setdefault("receiving", {})
+    for key in list(receiving.keys()):
+        if key not in default_mqtt_config()["receiving"]:
+            receiving.pop(key, None)
+    receiving["enabled"] = _as_bool(receiving.get("enabled"))
+    receiving["qos"] = _coerce_qos(receiving.get("qos"), 0, errors, "MQTT receiving.qos")
+
+    tls = config.setdefault("tls", {})
+    for key in list(tls.keys()):
+        if key not in default_mqtt_config()["tls"]:
+            tls.pop(key, None)
+    tls["enabled"] = _as_bool(tls.get("enabled"))
+    tls["ca_cert_path"] = str(tls.get("ca_cert_path") or "").strip()
+    tls["client_cert_path"] = str(tls.get("client_cert_path") or "").strip()
+    tls["client_key_path"] = str(tls.get("client_key_path") or "").strip()
+    tls["insecure"] = _as_bool(tls.get("insecure"))
+    if tls["client_cert_path"] and not tls["client_key_path"]:
+        errors.append("Для MQTT client_cert_path нужен client_key_path")
+    if tls["client_key_path"] and not tls["client_cert_path"]:
+        errors.append("Для MQTT client_key_path нужен client_cert_path")
+
+    return config, errors
+
+
+def load_mqtt_config():
+    try:
+        data = load_json(MQTT_CONFIG_PATH)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = default_mqtt_config()
+        save_json(MQTT_CONFIG_PATH, data)
+        return data
+    config, _errors = _coerce_mqtt_config(data)
+    return config
+
+
+def validated_mqtt_config_patch(patch, current=None):
+    current = current if current is not None else load_mqtt_config()
+    return _coerce_mqtt_config(_deep_merge(current, patch or {}))
+
+
+def save_mqtt_config(config):
+    save_json(MQTT_CONFIG_PATH, config)
+    return config
+
+
+def load_mqtt_password():
+    env_password = os.environ.get("KVT_MQTT_PASSWORD")
+    if env_password is not None:
+        return env_password
+    try:
+        with open(MQTT_PASSWORD_PATH, "r", encoding="utf-8") as handle:
+            return handle.read().strip()
+    except FileNotFoundError:
+        return ""
+
+
+def save_mqtt_password(password):
+    _ensure_dirs()
+    value = str(password or "")
+    if not value:
+        try:
+            os.remove(MQTT_PASSWORD_PATH)
+        except FileNotFoundError:
+            pass
+        return False
+    with open(MQTT_PASSWORD_PATH, "w", encoding="utf-8") as handle:
+        handle.write(value)
+    return True
+
+
+def mqtt_password_set():
+    return bool(load_mqtt_password())
 
 
 def load_notifications_config():
