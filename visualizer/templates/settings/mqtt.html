@@ -29,13 +29,17 @@
     <button class="btn btn-secondary btn-sm" onclick="loadMqttStatus()">Обновить статус</button>
     <button class="btn btn-secondary btn-sm" onclick="reloadMqtt()">Перечитать настройки</button>
   </div>
-  <div class="section-note">«Запустить/Остановить» переключают флаг <code>enabled</code> в конфиге. Процесс поднимается через <code>python run_kvt.py start --service mqtt</code> или вместе со всеми сервисами.</div>
+  <div class="section-note">«Запустить/Остановить» переключают флаг <code>enabled</code> в уже запущенном процессе. Галочка автозапуска ниже решает, будет ли <code>run_kvt.py start --service all</code> поднимать процесс MQTT при старте системы.</div>
 </div>
 
 <div class="form-section">
   <div class="form-section__title">Broker</div>
   <div class="form-group">
     <label><input type="checkbox" id="m-enabled" {{ 'checked' if mqtt.enabled }}> Включить MQTT bridge</label>
+  </div>
+  <div class="form-group">
+    <label><input type="checkbox" id="m-autostart" {{ 'checked' if mqtt.autostart }}> Автозапуск MQTT при старте системы</label>
+    <div class="section-note">Если выключено, <code>python run_kvt.py start</code> и <code>--service all</code> пропустят процесс MQTT. Ручной запуск <code>python run_kvt.py start --service mqtt</code> всё равно доступен.</div>
   </div>
   <div class="form-row">
     <div class="form-group">
@@ -172,6 +176,7 @@ function updateTopicPreview() {
 function mqttConfigFromForm() {
   var payload = {
     enabled: document.getElementById('m-enabled').checked,
+    autostart: document.getElementById('m-autostart').checked,
     broker: {
       host: document.getElementById('m-host').value.trim(),
       port: parseInt(document.getElementById('m-port').value || '1883'),
@@ -237,6 +242,7 @@ async function loadMqttStatus() {
       '<div>Статус: <b>' + esc(stateText) + '</b></div>' +
       '<div>Broker: <span class="mono-value">' + esc((broker.host || '-') + ':' + (broker.port || '-')) + '</span></div>' +
       '<div>Base topic: <span class="mono-value">' + esc(status.base_topic || '') + '</span></div>' +
+      '<div>Автозапуск: <b>' + esc(status.autostart ? 'включён' : 'выключен') + '</b></div>' +
       '<div>Connected: <b>' + esc(status.connected ? 'да' : 'нет') + '</b></div>' +
       '<div>Опубликовано датчиков: <b>' + esc(status.exported_sensor_count || 0) + '</b></div>' +
       '<div>Обновлено: <b>' + esc(status.updated_at || '-') + '</b></div>' +
@@ -245,6 +251,7 @@ async function loadMqttStatus() {
     document.getElementById('mqtt-start-btn').disabled = !stale && status.state === 'running';
     document.getElementById('mqtt-stop-btn').disabled = stale || status.state !== 'running';
     if (typeof status.enabled === 'boolean') document.getElementById('m-enabled').checked = status.enabled;
+    if (typeof status.autostart === 'boolean') document.getElementById('m-autostart').checked = status.autostart;
   } catch(e) {}
 }
 

@@ -23,6 +23,7 @@ class MqttConfigTests(unittest.TestCase):
     def test_defaults_match_public_interface(self):
         config, errors = validated_mqtt_config_patch({})
         self.assertEqual(errors, [])
+        self.assertFalse(config["autostart"])
         self.assertEqual(config["broker"]["host"], "127.0.0.1")
         self.assertEqual(config["broker"]["port"], 1883)
         self.assertEqual(config["topics"]["base"], "kvt-c")
@@ -30,6 +31,11 @@ class MqttConfigTests(unittest.TestCase):
         self.assertTrue(config["publishing"]["retain"])
         self.assertEqual(config["publishing"]["interval_ms"], 1000)
         self.assertTrue(config["receiving"]["enabled"])
+
+    def test_legacy_enabled_config_autostarts(self):
+        config, errors = validated_mqtt_config_patch({}, {"enabled": True})
+        self.assertEqual(errors, [])
+        self.assertTrue(config["autostart"])
 
     def test_validation_rejects_bad_port_qos_and_topic(self):
         _config, errors = validated_mqtt_config_patch({
@@ -121,6 +127,7 @@ class MqttConfigBundleTests(unittest.TestCase):
             with open(mqtt_path, "r", encoding="utf-8-sig") as handle:
                 imported = json.load(handle)
             self.assertEqual(imported["topics"]["base"], "kvt-c")
+            self.assertFalse(imported["autostart"])
 
     def test_password_file_is_not_exported(self):
         with tempfile.TemporaryDirectory() as root:

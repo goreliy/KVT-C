@@ -86,7 +86,7 @@ python run_kvt.py start --service mqtt
 python run_kvt.py stop --service visualizer
 ```
 
-`--service all` (по умолчанию) поднимает `poller`, `archiver`, `visualizer`, `opcua` и `mqtt`.
+`--service all` (по умолчанию) поднимает `poller`, `archiver`, `visualizer` и только те интеграционные сервисы `opcua`/`mqtt`, у которых включён `autostart` в настройках.
 
 Логи:
 - `logs/poller.out.log`, `logs/poller.err.log`
@@ -160,9 +160,9 @@ pip install -r requirements.txt
 - Админка журналов — на `/settings/reports`.
 
 ## OPC UA сервер
-- Конфиг сервера хранится в `data/config/opcua_config.json`; включается/выключается кнопками «Запустить/Остановить» на `/settings/opcua` (флаг `enabled` сохраняется в конфиге и задаёт автозапуск при старте системы).
+- Конфиг сервера хранится в `data/config/opcua_config.json`; публикация включается/выключается кнопками «Запустить/Остановить» на `/settings/opcua` (флаг `enabled`), а отдельная галочка `autostart` задаёт запуск процесса при `python run_kvt.py start` / `--service all`.
 - Endpoint по умолчанию: `opc.tcp://0.0.0.0:4840/kvt/`; namespace URI: `urn:kvt:c:monitoring`.
-- Сервер запускается отдельным процессом через `python run_kvt.py start --service opcua`; при `--service all` — вместе с poller/archiver/visualizer. Флаг `enabled` процесс применяет вживую (~2 секунды), без перезапуска.
+- Сервер запускается отдельным процессом через `python run_kvt.py start --service opcua`; при `--service all` — только если включён `autostart`. Флаг `enabled` процесс применяет вживую (~2 секунды), без перезапуска.
 - OPC UA публикует тот же нормализованный срез датчиков, что и `/api/current`: значения из `current.json`, fallback на последние временные снимки и архивные значения, плюс привязка к `poll_port_id`.
 - Адресное пространство: `KVT/System`, `KVT/PollPorts/<poll_port_id>`, `KVT/Sensors/Sensor_<id>`. NodeId датчиков стабильные: `KVT.Sensors.<id>.Temperature`, `Humidity`, `CombinedStatus`, `Timestamp`, `PollPortId`.
 - На `/settings/opcua` настраиваются host/port/path, namespace, интервал публикации, список датчиков, экспортируемые поля и заготовки security. Runtime сейчас поддерживает read-only anonymous mode; certificate/user-password сохраняются в конфиге для следующего ужесточения.
@@ -171,11 +171,11 @@ pip install -r requirements.txt
 
 ## MQTT bridge
 - Конфиг bridge хранится в `data/config/mqtt_config.json`; пароль broker хранится отдельно в `data/config/mqtt_password.key` или берётся из `KVT_MQTT_PASSWORD` и не попадает в Git/config bundle.
-- Сервис запускается отдельным процессом через `python run_kvt.py start --service mqtt`; при `--service all` — вместе с остальными сервисами. Флаг `enabled` в конфиге включает/выключает соединение с broker.
+- Сервис запускается отдельным процессом через `python run_kvt.py start --service mqtt`; при `--service all` — только если включён `autostart`. Флаг `enabled` в конфиге включает/выключает соединение с broker.
 - Публикуется тот же нормализованный срез датчиков, что и `/api/current`: общий retained snapshot и отдельные retained payload по каждому датчику.
 - Topics при `base_topic="kvt-c"`: `kvt-c/status`, `kvt-c/current`, `kvt-c/sensors/<sensor_id>`, `kvt-c/inbound/sensors/<sensor_id>`, `kvt-c/commands/republish`, `kvt-c/commands/ping`.
 - Входящие payload датчиков сохраняются в `data/mqtt_inbound.json` и доступны через `/api/mqtt/inbound`; они не перезаписывают `data/current.json` в текущей версии.
-- Настройки broker, username/password, TLS-пути, QoS, retain, interval и base topic доступны на `/settings/mqtt`; статус — через `/api/mqtt/status`.
+- Настройки автозапуска, broker, username/password, TLS-пути, QoS, retain, interval и base topic доступны на `/settings/mqtt`; статус — через `/api/mqtt/status`.
 
 ## Импорт/экспорт конфигурации
 - Страница переноса настроек: `http://127.0.0.1:5000/settings/config-transfer`.
@@ -212,13 +212,13 @@ pip install -r requirements.txt
 
 ## Журнал документации
 - 2026-07-03: добавлен двунаправленный MQTT bridge (`mqtt_bridge`, `data/config/mqtt_config.json`, `/settings/mqtt`, `/api/mqtt/*`, запуск через `run_kvt.py --service mqtt`) для публикации текущих данных и приёма входящих MQTT-сообщений.
-- 2026-07-01: README переписан — добавлены описание оборудования Болид (С2000-ВТ → ДПЛС/С2000-КДЛ → С2000-ПП → Modbus RTU через USB-RS485 или С2000-Ethernet, настройка UProg) и диаграмма пути данных; на `/settings/opcua` добавлены кнопки «Запустить/Остановить» и автозапуск (флаг `enabled`).
+- 2026-07-03: для OPC UA и MQTT добавлена отдельная галочка `autostart`: `run_kvt.py start --service all` поднимает эти процессы только при включённом автозапуске, ручной `--service opcua|mqtt` остаётся доступен.
+- 2026-07-01: README переписан — добавлены описание оборудования Болид (С2000-ВТ → ДПЛС/С2000-КДЛ → С2000-ПП → Modbus RTU через USB-RS485 или С2000-Ethernet, настройка UProg) и диаграмма пути данных; на `/settings/opcua` добавлены кнопки «Запустить/Остановить».
 - 2026-06-30: добавлен отдельный OPC UA сервер на `asyncua` (`opcua_server`, `data/config/opcua_config.json`, `/settings/opcua`, `/api/opcua/*`, запуск через `run_kvt.py --service opcua`) для read-only передачи текущих данных датчиков внешним клиентам.
 - 2026-06-24: реализован `archiver` как Archive Manager (`archive.json`, `archive_daily.json`, SQLite-зеркало, REST API, запуск через `run_kvt.py`) и складской журнал учёта (`/settings/reports`, `/logbook`, подписи со снимками значений, пакетная подпись нерабочих дней, печатный лист).
 - 2026-06-19: добавлен полный импорт/экспорт конфигурационного ZIP-архива (`/settings/config-transfer`, `/api/config/bundle/*`) для передачи настроек, планов, мнемосхемы и диагностических снимков на завод и восстановления на другой установке.
 - 2026-06-17: с мнемосхемы убрана плашка «Доступность Ethernet-линий»; ping показывается строкой в карточке каждого Ethernet-датчика (у COM-датчиков скрыт); добавлены дерево датчиков (`mnemo_tree.json`, API `/api/mnemo/tree`) с min-max в корне ветки и встроенный «Режим редактирования». В `visualizer/app.py` включён авто-перечитыватель шаблонов/статики. Обновлены `README.md`, `Общее ТЗ на систему КВТ С.md` (раздел 5) и `.kiro` specs.
 - 2026-06-03: исправлена кодировка русских строк в `Общее ТЗ на систему КВТ С.md`, `visualizer/routes/api.py` и `shared/config_manager.py`; общий ТЗ снова корректно отображается в GitHub.
-- 2026-06-03: файл ревью `CODE_REVIEW_RECOMMENDATIONS.md` обновлён: пункт про кодировки отмечен как выполненный, а оставшиеся рекомендации сохранены как открытые.
-- 2026-06-03: выполнен первый проход по `CODE_REVIEW_RECOMMENDATIONS.md`: добавлены atomic JSON helpers, tolerant runtime JSON reads, отложенное применение poller config, запрет scan во время polling, throttling записи `modbus_log.json`, generated Flask secret, MockServer stdout/stderr logs, валидация poller config и `.gitignore` для runtime/cache/secret артефактов.
+- 2026-06-03: выполнен первый проход по ревью: добавлены atomic JSON helpers, tolerant runtime JSON reads, отложенное применение poller config, запрет scan во время polling, throttling записи `modbus_log.json`, generated Flask secret, MockServer stdout/stderr logs, валидация poller config и `.gitignore` для runtime/cache/secret артефактов.
 - 2026-06-03: дополнительно закрыты пункты ревью `P1 Кодировки`, `P1 Runtime logs`, `P2 Репозиторий/runtime`: добавлены `.editorconfig`/`.gitattributes`, `modbus_log.json` переведён на компактную atomic-запись, `.gitignore` расширен на runtime JSON и `data/config/backups/`.
 - 2026-06-03: закрыт пункт ревью про умножение timeout на группы регистров: при ошибке чтения `values` poller явно пропускает `statuses`, пишет `status="skipped"` в exchange log и считает `skipped_status_reads`.

@@ -91,6 +91,7 @@ def _status_payload(config, state, connected=False, message="", error=None, **ex
         "updated_at": utc_now(),
         "state": state,
         "enabled": bool(config.get("enabled")),
+        "autostart": bool(config.get("autostart")),
         "connected": bool(connected),
         "broker": {
             "host": broker.get("host"),

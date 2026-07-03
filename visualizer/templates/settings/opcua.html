@@ -27,14 +27,18 @@
     <button class="btn btn-secondary btn-sm" onclick="loadOpcUaStatus()">Обновить статус</button>
     <button class="btn btn-secondary btn-sm" onclick="reloadOpcUa()">Перечитать настройки</button>
   </div>
-  <div class="section-note">«Запустить/Остановить» переключают публикацию (флаг <code>enabled</code>) и сохраняются в конфиге — то есть одновременно задают <b>автозапуск</b> при старте системы. Сам процесс сервиса поднимается через <code>run_kvt.py --service opcua</code> (или <code>--service all</code>) и применяет флаг в течение ~2 секунд.</div>
+  <div class="section-note">«Запустить/Остановить» переключают публикацию (флаг <code>enabled</code>) в уже запущенном процессе. Галочка автозапуска ниже решает, будет ли <code>run_kvt.py start --service all</code> поднимать процесс OPC UA при старте системы.</div>
 </div>
 
 <div class="form-section">
   <div class="form-section__title">Сервер</div>
   <div class="form-group">
-    <label><input type="checkbox" id="o-enabled" {{ 'checked' if opcua.enabled }}> Публиковать OPC UA (автозапуск при старте системы)</label>
+    <label><input type="checkbox" id="o-enabled" {{ 'checked' if opcua.enabled }}> Публиковать OPC UA</label>
     <div class="section-note">Тот же флаг, что кнопки «Запустить/Остановить» в блоке состояния: сохраняется в конфиге и применяется процессом в течение ~2 секунд.</div>
+  </div>
+  <div class="form-group">
+    <label><input type="checkbox" id="o-autostart" {{ 'checked' if opcua.autostart }}> Автозапуск OPC UA при старте системы</label>
+    <div class="section-note">Если выключено, <code>python run_kvt.py start</code> и <code>--service all</code> пропустят процесс OPC UA. Ручной запуск <code>python run_kvt.py start --service opcua</code> всё равно доступен.</div>
   </div>
   <div class="form-row">
     <div class="form-group">
@@ -212,6 +216,7 @@ function opcUaConfigFromForm() {
   }
   return {
     enabled: document.getElementById('o-enabled').checked,
+    autostart: document.getElementById('o-autostart').checked,
     server: {
       host: document.getElementById('o-host').value.trim(),
       port: parseInt(document.getElementById('o-port').value || '4840'),
@@ -278,6 +283,7 @@ async function loadOpcUaStatus() {
     document.getElementById('opcua-status').innerHTML =
       '<div>Статус: <b>' + esc(stateText) + '</b></div>' +
       '<div>Endpoint: <span class="mono-value">' + esc(status.endpoint || '') + '</span></div>' +
+      '<div>Автозапуск: <b>' + esc(status.autostart ? 'включён' : 'выключен') + '</b></div>' +
       '<div>Датчиков в OPC UA: <b>' + esc(status.exported_sensor_count || 0) + '</b></div>' +
       '<div>Обновлено: <b>' + esc(status.updated_at || '-') + '</b></div>' +
       '<div>' + esc(status.message || status.error || '') + '</div>' +
@@ -288,6 +294,8 @@ async function loadOpcUaStatus() {
     if (stopBtn) stopBtn.disabled = !running;
     var chk = document.getElementById('o-enabled');
     if (chk && typeof status.enabled === 'boolean') chk.checked = status.enabled;
+    var autostart = document.getElementById('o-autostart');
+    if (autostart && typeof status.autostart === 'boolean') autostart.checked = status.autostart;
   } catch(e) {}
 }
 

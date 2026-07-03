@@ -113,6 +113,7 @@ def save_archive_config(config):
 def _default_opcua_config():
     return {
         "enabled": False,
+        "autostart": False,
         "server": {
             "host": "0.0.0.0",
             "port": 4840,
@@ -155,6 +156,7 @@ def _default_opcua_config():
 def default_mqtt_config():
     return {
         "enabled": False,
+        "autostart": False,
         "broker": {
             "host": "127.0.0.1",
             "port": 1883,
@@ -230,10 +232,12 @@ def _coerce_qos(value, default, errors, label):
 
 
 def _coerce_opcua_config(payload, validate_sensor_ids=False):
-    config = _deep_merge(_default_opcua_config(), payload or {})
+    raw = payload if isinstance(payload, dict) else {}
+    config = _deep_merge(_default_opcua_config(), raw)
     errors = []
 
     config["enabled"] = _as_bool(config.get("enabled"))
+    config["autostart"] = _as_bool(raw.get("autostart", config["enabled"]))
 
     server = config.setdefault("server", {})
     server["host"] = str(server.get("host") or "0.0.0.0").strip() or "0.0.0.0"
@@ -344,7 +348,8 @@ def save_opcua_config(config):
 
 
 def _coerce_mqtt_config(payload):
-    config = _deep_merge(default_mqtt_config(), payload or {})
+    raw = payload if isinstance(payload, dict) else {}
+    config = _deep_merge(default_mqtt_config(), raw)
     errors = []
 
     allowed_top = set(default_mqtt_config().keys())
@@ -353,6 +358,7 @@ def _coerce_mqtt_config(payload):
             config.pop(key, None)
 
     config["enabled"] = _as_bool(config.get("enabled"))
+    config["autostart"] = _as_bool(raw.get("autostart", config["enabled"]))
 
     broker = config.setdefault("broker", {})
     for key in list(broker.keys()):

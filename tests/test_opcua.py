@@ -26,6 +26,11 @@ class OpcUaConfigTests(unittest.TestCase):
         self.assertEqual(config["server"]["endpoint_path"], "/kvt/")
         self.assertEqual(endpoint_from_config(config), "opc.tcp://127.0.0.1:4840/kvt/")
 
+    def test_legacy_enabled_config_autostarts(self):
+        config, errors = validated_opcua_config_patch({}, {"enabled": True})
+        self.assertEqual(errors, [])
+        self.assertTrue(config["autostart"])
+
     def test_sensor_selection_empty_means_all(self):
         current = {"sensors": [{"id": 1, "enabled": True}, {"id": 2, "enabled": True}]}
         config = {"selection": {"sensor_ids": []}, "publishing": {"publish_only_enabled_sensors": True}}

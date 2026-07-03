@@ -160,6 +160,7 @@ def _load_opcua_status():
         'service': 'opcua',
         'state': 'unknown',
         'enabled': bool(cfg.get('enabled')),
+        'autostart': bool(cfg.get('autostart')),
         'endpoint': endpoint,
         'exported_sensor_count': 0,
         'message': 'OPC UA service status is not available yet',
@@ -175,6 +176,7 @@ def _load_mqtt_status():
         'service': 'mqtt',
         'state': 'unknown',
         'enabled': bool(cfg.get('enabled')),
+        'autostart': bool(cfg.get('autostart')),
         'connected': False,
         'broker': {
             'host': broker.get('host'),
@@ -574,7 +576,9 @@ def api_save_opcua_config():
 @api_bp.route('/opcua/status')
 def api_opcua_status():
     status = _load_opcua_status()
-    status.setdefault('endpoint', _opcua_endpoint(load_opcua_config()))
+    cfg = load_opcua_config()
+    status.setdefault('endpoint', _opcua_endpoint(cfg))
+    status['autostart'] = bool(cfg.get('autostart'))
     return jsonify(status)
 
 
@@ -615,6 +619,7 @@ def api_mqtt_status():
     cfg = load_mqtt_config()
     broker = cfg.get('broker') or {}
     status.setdefault('enabled', bool(cfg.get('enabled')))
+    status['autostart'] = bool(cfg.get('autostart'))
     status.setdefault('broker', {
         'host': broker.get('host'),
         'port': broker.get('port'),

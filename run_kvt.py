@@ -85,20 +85,29 @@ def _network_config() -> dict:
         return {}
 
 
-def _opcua_server_config() -> dict:
+def _load_config(path: Path) -> dict:
     try:
-        with open(OPCUA_CONFIG, "r", encoding="utf-8-sig") as handle:
-            return (json.load(handle).get("server") or {})
+        with open(path, "r", encoding="utf-8-sig") as handle:
+            payload = json.load(handle)
+            return payload if isinstance(payload, dict) else {}
     except (OSError, json.JSONDecodeError):
         return {}
+
+
+def _opcua_config() -> dict:
+    return _load_config(OPCUA_CONFIG)
+
+
+def _opcua_server_config() -> dict:
+    return _opcua_config().get("server") or {}
+
+
+def _mqtt_config() -> dict:
+    return _load_config(MQTT_CONFIG)
 
 
 def _mqtt_broker_config() -> dict:
-    try:
-        with open(MQTT_CONFIG, "r", encoding="utf-8-sig") as handle:
-            return (json.load(handle).get("broker") or {})
-    except (OSError, json.JSONDecodeError):
-        return {}
+    return _mqtt_config().get("broker") or {}
 
 
 def _service_bind(name: str) -> tuple[str, int]:
@@ -117,6 +126,42 @@ def _service_bind(name: str) -> tuple[str, int]:
     host = str(network.get(cfg["network_host_key"], cfg["host"]) or cfg["host"]).strip()
     port = int(network.get(cfg["network_port_key"], cfg["port"]) or cfg["port"])
     return host, port
+
+
+def _as_bool(value, default=False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on", "да"}
+    return bool(value)
+
+
+def _service_config(name: str) -> dict:
+    cfg = SERVICES[name]
+    if cfg.get("config_file") == "opcua":
+        return _opcua_config()
+    if cfg.get("config_file") == "mqtt":
+        return _mqtt_config()
+    return {}
+
+
+def _service_autostart(name: str) -> bool:
+    config = _service_config(name)
+    if not config:
+        return True
+    if "autostart" in config:
+        return _as_bool(config.get("autostart"), default=True)
+    if "enabled" in config:
+        return _as_bool(config.get("enabled"), default=True)
+    return True
+
+
+def _autostart_label(name: str) -> str:
+    if not _service_config(name):
+        return ""
+    return f", autostart={'on' if _service_autostart(name) else 'off'}"
 
 
 def _pid_alive(pid: int) -> bool:
@@ -162,12 +207,15 @@ def _remove_pid(path: Path) -> None:
         pass
 
 
-def start_service(name: str) -> None:
+def start_service(name: str, honor_autostart: bool = False) -> None:
     cfg = SERVICES[name]
     host, port = _service_bind(name)
+    if honor_autostart and not _service_autostart(name):
+        print(f"{name}: skipped by autostart setting (host={host}, port={port})")
+        return
     pid = _read_pid(cfg["pid_file"])
     if pid and _pid_alive(pid):
-        print(f"{name}: already running (pid={pid}, host={host}, port={port})")
+        print(f"{name}: already running (pid={pid}, host={host}, port={port}{_autostart_label(name)})")
         return
     if pid and not _pid_alive(pid):
         _remove_pid(cfg["pid_file"])
@@ -183,7 +231,7 @@ def start_service(name: str) -> None:
     with open(cfg["stdout"], "a", encoding="utf-8") as stdout, open(cfg["stderr"], "a", encoding="utf-8") as stderr:
         proc = subprocess.Popen(cmd, cwd=str(ROOT), stdout=stdout, stderr=stderr, creationflags=creationflags)
     _write_pid(cfg["pid_file"], proc.pid)
-    print(f"{name}: started (pid={proc.pid}, host={host}, port={port})")
+    print(f"{name}: started (pid={proc.pid}, host={host}, port={port}{_autostart_label(name)})")
 
 
 def stop_service(name: str) -> None:
@@ -220,11 +268,11 @@ def status_services(targets=None) -> None:
         host, port = _service_bind(name)
         pid = _read_pid(cfg["pid_file"])
         if pid and _pid_alive(pid):
-            print(f"{name}: running (pid={pid}, host={host}, port={port})")
+            print(f"{name}: running (pid={pid}, host={host}, port={port}{_autostart_label(name)})")
         elif pid:
-            print(f"{name}: stale pid={pid}")
+            print(f"{name}: stale pid={pid}{_autostart_label(name)}")
         else:
-            print(f"{name}: stopped (host={host}, port={port})")
+            print(f"{name}: stopped (host={host}, port={port}{_autostart_label(name)})")
 
 
 def parse_args():
@@ -245,7 +293,7 @@ def main() -> int:
 
     if args.command == "start":
         for name in targets:
-            start_service(name)
+            start_service(name, honor_autostart=args.service == "all")
     elif args.command == "stop":
         for name in reversed(targets):
             stop_service(name)
@@ -256,7 +304,7 @@ def main() -> int:
             stop_service(name)
         time.sleep(0.5)
         for name in targets:
-            start_service(name)
+            start_service(name, honor_autostart=args.service == "all")
     else:
         status_services(targets)
     return 0
