@@ -1,11 +1,22 @@
 pymodbus==2.5.3
 pyserial==3.5
-sqlalchemy==1.4.46
-apscheduler==3.9.1
 requests==2.28.1
 jsonschema==4.17.3
 asyncua==2.0.1; python_version >= "3.10"
+# asyncua тянет cryptography и pyopenssl. На armv7l-контроллере нет компилятора, а cffi>=2.0
+# (нужен новым cryptography, который тянет свежий pyopenssl) не имеет armv7l-колеса → сборка
+# падает. Фиксируем версии, совместимые с предустановленными на контроллере cryptography 42 /
+# cffi 1.16 (на них ничего не пересобирается):
+cryptography>=42.0.4,<43
+pyopenssl>=24,<25
 paho-mqtt==2.1.0
+
+# Опционально — только для будущего Archive Manager с PostgreSQL и планировщика отчётов.
+# Кодом пока НЕ используются. У sqlalchemy==1.4.46 нет готового wheel под Python 3.12+,
+# поэтому он собирается из исходников и ронял установку на контроллере. Включайте при
+# необходимости, желательно современные версии с колёсами под вашу платформу (aarch64/cp312):
+#   sqlalchemy>=2.0,<3
+#   apscheduler>=3.10
 
 # Python 3.14+ no longer has ast.Str; old Werkzeug 2.0.x crashes while Flask
 # builds routes. Keep the legacy stack for old Python, use current Flask stack
