@@ -30,7 +30,7 @@
     </div>
     <div class="form-group">
       <label>URL Mock Server</label>
-      <input type="text" id="p-mock-url" value="{{ poller.mock_server_url or 'http://127.0.0.1:8000' }}">
+      <input type="text" id="p-mock-url" value="{{ poller.mock_server_url or 'http://0.0.0.0:8000' }}">
     </div>
     <div class="form-group">
       <label>Статус</label>
@@ -124,7 +124,10 @@
       <div class="transport-fields" data-transport="udp_rtu,udp_c2000pp">
         <div class="form-row">
           <div class="form-group"><label>Локальный IP</label>
-            <div style="display:flex; gap:6px; align-items:center;"><input id="port-local-host" type="text" placeholder="192.168.66.97" style="flex:1;"><button type="button" class="btn btn-secondary btn-sm" onclick="detectLocalIp()" title="Подставить IP этого компьютера">Определить</button></div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input id="port-local-host" type="text" placeholder="192.168.66.97" style="flex:1 1 auto; min-width:0; width:auto;">
+              <button type="button" class="btn btn-secondary btn-sm" style="flex:0 0 auto; white-space:nowrap;" onclick="detectLocalIp()" title="Подставить IP этого компьютера">Определить</button>
+            </div>
           </div>
           <div class="form-group"><label>Локальный порт</label><input id="port-local-port" type="number" min="0" max="65535"></div>
           <div class="form-group"><label>IP прибора</label><input id="port-remote-host" type="text" placeholder="192.168.66.100"></div>
@@ -240,7 +243,7 @@ function addPort(transport) {
     stopbits: 1,
     local_host: '',
     local_port: transport === 'serial' ? 0 : 40005,
-    remote_host: transport === 'serial' ? '127.0.0.1' : '192.168.66.100',
+    remote_host: transport === 'serial' ? '' : '192.168.66.100',
     remote_port: transport === 'serial' ? 502 : 40005,
     timeout_ms: parseInt(document.getElementById('p-timeout').value || '500'),
     prefix: '0x10',
@@ -274,7 +277,7 @@ function fillPortEditor() {
   document.getElementById('port-stopbits').value = port.stopbits ?? 1;
   document.getElementById('port-local-host').value = port.local_host || '';
   document.getElementById('port-local-port').value = port.local_port ?? 0;
-  document.getElementById('port-remote-host').value = port.remote_host || port.udp_host || '127.0.0.1';
+  document.getElementById('port-remote-host').value = port.remote_host || port.udp_host || '';
   document.getElementById('port-remote-port').value = port.remote_port || port.udp_port || 502;
   document.getElementById('port-prefix').value = port.prefix || '0x10';
   document.getElementById('port-channel').value = port.channel || '0x10';
@@ -386,7 +389,7 @@ async function refreshMockStatus() {
 }
 async function startMockServer(){ await apiFetch('/api/mockserver/start',{method:'POST'}); showToast('Mock Server запущен'); await refreshMockStatus(); }
 async function stopMockServer(){ await apiFetch('/api/mockserver/stop',{method:'POST'}); showToast('Mock Server остановлен'); await refreshMockStatus(); }
-function openMockServerPage(){ const url=document.getElementById('p-mock-url').value.trim()||'http://127.0.0.1:8000'; window.open(url,'_blank'); }
+function openMockServerPage(){ const url=document.getElementById('p-mock-url').value.trim()||('http://'+window.location.hostname+':8000'); window.open(url,'_blank'); }
 
 async function refreshPollerStatus(){
   try {

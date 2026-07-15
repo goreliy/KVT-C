@@ -227,7 +227,7 @@ class ModbusClient:
         tx_transport_frame = tx_frame
         started = time.perf_counter()
         if self.transport in ("udp_rtu", "udp_c2000pp"):
-            host = str(self.config.get("remote_host") or self.config.get("udp_host", "127.0.0.1")).strip()
+            host = str(self.config.get("remote_host") or self.config.get("udp_host") or "").strip()
             port = int(self.config.get("remote_port") or self.config.get("udp_port", 502))
             drained = self._drain_udp_socket()
             if drained:

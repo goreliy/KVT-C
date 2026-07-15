@@ -12,6 +12,7 @@ from shared.config_manager import (
     load_runtime_json,
 )
 from shared.current_data import load_current_payload
+from shared.net import resolve_self_host
 
 try:
     import paho.mqtt.client as mqtt
@@ -242,7 +243,7 @@ class MqttBridgeService:
         self._client = client
         write_status(config, "connecting", connected=False, message="Connecting to MQTT broker")
         client.connect_async(
-            broker.get("host") or "127.0.0.1",
+            resolve_self_host(broker.get("host")),
             int(broker.get("port") or 1883),
             keepalive=int(broker.get("keepalive_seconds") or 60),
         )

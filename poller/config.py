@@ -15,7 +15,7 @@ DEFAULT_POLL_PORT: Dict[str, Any] = {
     "bytesize": 8,
     "parity": "N",
     "stopbits": 1,
-    "remote_host": "127.0.0.1",
+    "remote_host": "",
     "remote_port": 502,
     "local_host": "",
     "local_port": 0,
@@ -30,8 +30,8 @@ DEFAULT_POLL_PORT: Dict[str, Any] = {
 DEFAULT_POLLER_CONFIG: Dict[str, Any] = {
     "transport": "serial",
     "use_mock_server": False,
-    "mock_server_url": "http://127.0.0.1:8000",
-    "mock_server_host": "127.0.0.1",
+    "mock_server_url": "http://0.0.0.0:8000",
+    "mock_server_host": "0.0.0.0",
     "mock_server_port": 8000,
     "com_port": "COM8",
     "device_slave_id": 16,
@@ -39,7 +39,7 @@ DEFAULT_POLLER_CONFIG: Dict[str, Any] = {
     "bytesize": 8,
     "parity": "N",
     "stopbits": 1,
-    "udp_host": "127.0.0.1",
+    "udp_host": "",
     "udp_port": 502,
     "timeout_ms": 500,
     "poll_period_ms": 1000,
@@ -94,7 +94,7 @@ def _sync_legacy_fields(config: Dict[str, Any]) -> Dict[str, Any]:
     config["bytesize"] = primary.get("bytesize", config.get("bytesize", 8))
     config["parity"] = primary.get("parity", config.get("parity", "N"))
     config["stopbits"] = primary.get("stopbits", config.get("stopbits", 1))
-    config["udp_host"] = primary.get("remote_host", config.get("udp_host", "127.0.0.1"))
+    config["udp_host"] = primary.get("remote_host", config.get("udp_host", ""))
     config["udp_port"] = primary.get("remote_port", config.get("udp_port", 502))
     return config
 
@@ -267,8 +267,8 @@ def validated_poller_config_patch(patch: Dict[str, Any], base: Dict[str, Any] = 
 
     merged["com_port"] = str(merged.get("com_port", "")).strip()
     merged["udp_host"] = str(merged.get("udp_host", "")).strip()
-    merged["mock_server_host"] = str(merged.get("mock_server_host", "127.0.0.1")).strip()
-    merged["mock_server_url"] = str(merged.get("mock_server_url", "http://127.0.0.1:8000")).strip()
+    merged["mock_server_host"] = str(merged.get("mock_server_host", "0.0.0.0")).strip()
+    merged["mock_server_url"] = str(merged.get("mock_server_url", "http://0.0.0.0:8000")).strip()
     merged["use_mock_server"] = bool(merged.get("use_mock_server", False))
     merged["auto_start"] = bool(merged.get("auto_start", True))
     merged = _sync_legacy_fields(merged)

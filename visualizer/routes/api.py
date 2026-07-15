@@ -10,6 +10,7 @@ import requests
 from archiver.archive_service import ArchiveService
 from poller.config import validated_poller_config_patch
 from shared.availability import is_ethernet_port, sync_daily_availability_from_current
+from shared.net import local_ip, resolve_self_host, resolve_url_self_host
 from shared.config_bundle import (
     ConfigBundleError,
     config_bundle_summary,
@@ -69,7 +70,7 @@ _LOCAL_HTTP.trust_env = False
 
 def _mock_server_url() -> str:
     poller_cfg = load_poller_config()
-    return str(poller_cfg.get('mock_server_url', 'http://127.0.0.1:8000')).rstrip('/')
+    return resolve_url_self_host(str(poller_cfg.get('mock_server_url') or 'http://0.0.0.0:8000')).rstrip('/')
 
 
 def _is_mock_reachable(base_url: str) -> bool:
@@ -108,9 +109,7 @@ def _tail_file(path: str, max_chars: int = 2000) -> str:
 
 def _poller_base_url() -> str:
     cfg = load_system_config().get('network', {})
-    host = str(cfg.get('poller_host', '127.0.0.1'))
-    if host in ('0.0.0.0', '::'):
-        host = '127.0.0.1'
+    host = resolve_self_host(cfg.get('poller_host'))
     port = int(cfg.get('poller_port', 5001))
     return f"http://{host}:{port}"
 
@@ -142,25 +141,9 @@ def _poller_call(method: str, path: str, payload=None):
         return {'error': f'Ошибка проксирования Poller: {ex}'}, 500
 
 
-def _detect_local_ip(target=None):
-    """IP этого компьютера в сети. UDP-connect не шлёт пакетов, только выбирает
-    исходящий интерфейс — если задан target (IP прибора/С2000-Ethernet), берём тот
-    интерфейс, что смотрит на прибор; иначе — интерфейс маршрута по умолчанию."""
-    import socket
-    probe = (str(target).strip() if target else '') or '8.8.8.8'
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        sock.connect((probe, 9))
-        return sock.getsockname()[0]
-    except OSError:
-        return ''
-    finally:
-        sock.close()
-
-
 @api_bp.route('/network/local-ip')
 def api_local_ip():
-    return jsonify({'ip': _detect_local_ip(request.args.get('target') or None)})
+    return jsonify({'ip': local_ip(request.args.get('target') or None)})
 
 
 def _load_archive():
@@ -516,7 +499,7 @@ def api_mockserver_start():
     if _MOCK_SERVER_PROCESS is None or _MOCK_SERVER_PROCESS.poll() is not None:
         script_path = os.path.join(ROOT_DIR, 'MocTestServer', 'server', 'run.py')
         poller_cfg = load_poller_config()
-        host = str(poller_cfg.get('mock_server_host', '127.0.0.1'))
+        host = resolve_self_host(poller_cfg.get('mock_server_host'))
         port = int(poller_cfg.get('mock_server_port', 8000))
         os.makedirs(LOG_DIR, exist_ok=True)
         with open(MOCKSERVER_OUT_LOG, 'a', encoding='utf-8') as stdout, open(MOCKSERVER_ERR_LOG, 'a', encoding='utf-8') as stderr:

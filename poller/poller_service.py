@@ -421,80 +421,120 @@ class PollPortWorker:
 
     def _run(self):
         reconnect_pause = 5.0
+        # Опрос НИКОГДА не должен останавливаться сам. Любая ошибка — таймаут, сбой
+        # порта, переполнение/сбой записи лога, что угодно — логируется, и цикл
+        # продолжается. Единственный способ остановки — self._stop (ручной stop).
         while not self._stop.is_set():
-            if not self._client.connect():
-                now_iso = datetime.now().isoformat()
+            try:
+                connected = False
+                try:
+                    connected = self._client.connect()
+                except Exception as error:
+                    with self._lock:
+                        self._state = "error"
+                        self._last_error = f"connect error: {error}"
+                if not connected:
+                    now_iso = datetime.now().isoformat()
+                    with self._lock:
+                        self._state = "error"
+                        if not self._last_error:
+                            self._last_error = f"Cannot open {self.port_name}"
+                    try:
+                        self.manager.update_port_snapshot(self.port_id, self.status(), [], self._stats, self._network_check_if_due(now_iso))
+                    except Exception:
+                        pass
+                    self._stop.wait(reconnect_pause)
+                    continue
+
+                with self._lock:
+                    self._state = "running"
+                    self._last_error = None
+
+                while not self._stop.is_set():
+                    try:
+                        self._poll_cycle_once()
+                    except Exception as error:
+                        with self._lock:
+                            self._state = "degraded"
+                            self._last_error = f"cycle error: {error}"
+                        try:
+                            self._log_rx(None, {"slave_id": self.port_config.get("device_slave_id", 0), "function": 3, "description": f"Cycle error: {error}"})
+                        except Exception:
+                            pass
+                    try:
+                        period_ms = int(self.global_config.get("poll_period_ms", 1000))
+                    except (TypeError, ValueError):
+                        period_ms = 1000
+                    self._stop.wait(max(0.1, period_ms / 1000.0))
+            except Exception as error:
+                # Даже неожиданная ошибка уровня воркера не должна убить поток опроса.
                 with self._lock:
                     self._state = "error"
-                    self._last_error = f"Cannot open {self.port_name}"
-                self.manager.update_port_snapshot(self.port_id, self.status(), [], self._stats, self._network_check_if_due(now_iso))
-                time.sleep(reconnect_pause)
-                continue
+                    self._last_error = f"worker error: {error}"
+                self._stop.wait(reconnect_pause)
+            finally:
+                try:
+                    self._client.close()
+                except Exception:
+                    pass
 
-            with self._lock:
+    def _poll_cycle_once(self):
+        now_iso = datetime.now().isoformat()
+        cycle_started = time.perf_counter()
+        with self._lock:
+            self._last_poll_at = now_iso
+            self._stats["total_polls"] += 1
+
+        out_sensors = []
+        cycle_failed = False
+        for sensor in self._enabled_sensors():
+            success = False
+            last_sensor_error: Optional[Exception] = None
+            for attempt in range(int(self.global_config.get("retry_count", 3)) + 1):
+                try:
+                    out_sensors.append(self._poll_sensor(sensor, now_iso, attempt=attempt))
+                    success = True
+                    break
+                except ModbusError as error:
+                    last_sensor_error = error
+                    with self._lock:
+                        self._last_error = str(error)
+                    if attempt < int(self.global_config.get("retry_count", 3)):
+                        time.sleep(0.05)
+                except Exception as error:
+                    last_sensor_error = error
+                    with self._lock:
+                        self._last_error = str(error)
+                    self._log_rx(None, {"slave_id": self.port_config.get("device_slave_id", 0), "function": 3, "description": f"Poll error: {error}"})
+                    if attempt < int(self.global_config.get("retry_count", 3)):
+                        time.sleep(0.05)
+
+            if not success:
+                cycle_failed = True
+                if last_sensor_error is not None:
+                    with self._lock:
+                        self._last_error = str(last_sensor_error)
+                out_sensors.append(self._offline_sensor(sensor, now_iso))
+
+        duration_ms = round((time.perf_counter() - cycle_started) * 1000, 2)
+        with self._lock:
+            self._last_cycle_duration_ms = duration_ms
+            if cycle_failed:
+                self._stats["failed_polls"] += 1
+                self._state = "degraded"
+            else:
+                self._stats["successful_polls"] += 1
                 self._state = "running"
+                self._last_success_at = now_iso
                 self._last_error = None
 
-            while not self._stop.is_set():
-                now_iso = datetime.now().isoformat()
-                cycle_started = time.perf_counter()
-                with self._lock:
-                    self._last_poll_at = now_iso
-                    self._stats["total_polls"] += 1
-
-                out_sensors = []
-                cycle_failed = False
-                for sensor in self._enabled_sensors():
-                    success = False
-                    last_sensor_error: Optional[Exception] = None
-                    for attempt in range(int(self.global_config.get("retry_count", 3)) + 1):
-                        try:
-                            out_sensors.append(self._poll_sensor(sensor, now_iso, attempt=attempt))
-                            success = True
-                            break
-                        except ModbusError as error:
-                            last_sensor_error = error
-                            with self._lock:
-                                self._last_error = str(error)
-                            if attempt < int(self.global_config.get("retry_count", 3)):
-                                time.sleep(0.05)
-                        except Exception as error:
-                            last_sensor_error = error
-                            with self._lock:
-                                self._last_error = str(error)
-                            self._log_rx(None, {"slave_id": self.port_config.get("device_slave_id", 0), "function": 3, "description": f"Poll error: {error}"})
-                            if attempt < int(self.global_config.get("retry_count", 3)):
-                                time.sleep(0.05)
-
-                    if not success:
-                        cycle_failed = True
-                        if last_sensor_error is not None:
-                            with self._lock:
-                                self._last_error = str(last_sensor_error)
-                        out_sensors.append(self._offline_sensor(sensor, now_iso))
-
-                duration_ms = round((time.perf_counter() - cycle_started) * 1000, 2)
-                with self._lock:
-                    self._last_cycle_duration_ms = duration_ms
-                    if cycle_failed:
-                        self._stats["failed_polls"] += 1
-                        self._state = "degraded"
-                    else:
-                        self._stats["successful_polls"] += 1
-                        self._state = "running"
-                        self._last_success_at = now_iso
-                        self._last_error = None
-
-                self.manager.update_port_snapshot(
-                    self.port_id,
-                    self.status(),
-                    out_sensors,
-                    self._stats,
-                    self._network_check_if_due(now_iso),
-                )
-                time.sleep(max(0.1, int(self.global_config["poll_period_ms"]) / 1000.0))
-
-            self._client.close()
+        self.manager.update_port_snapshot(
+            self.port_id,
+            self.status(),
+            out_sensors,
+            self._stats,
+            self._network_check_if_due(now_iso),
+        )
 
 
 class PollerService:
@@ -514,6 +554,25 @@ class PollerService:
         self._exchange_queue = deque(maxlen=log_max)
         self._last_log_write_at = 0.0
         self._log_dirty = False
+        self._watchdog_thread = None
+
+    def _ensure_watchdog(self):
+        """Сторож: если воркер линии по любой причине умер, поднять его заново.
+        Гарантирует, что опрос не остаётся остановленным ни при каких ошибках."""
+        if self._watchdog_thread is not None and self._watchdog_thread.is_alive():
+            return
+        self._watchdog_thread = threading.Thread(target=self._watchdog_loop, name="poller-watchdog", daemon=True)
+        self._watchdog_thread.start()
+
+    def _watchdog_loop(self):
+        while True:
+            time.sleep(5.0)
+            try:
+                with self._lock:
+                    if self._running:
+                        self._reconcile_workers_locked()
+            except Exception:
+                pass
 
     def _log_buffer_maxlen(self):
         """Единый предел размера журнала — из настройки log_max_entries.
@@ -535,6 +594,7 @@ class PollerService:
 
     def start(self):
         with self._lock:
+            self._ensure_watchdog()
             if self._running:
                 return
             self._running = True
@@ -553,6 +613,7 @@ class PollerService:
 
     def start_port(self, port_id: str):
         with self._lock:
+            self._ensure_watchdog()
             self._running = True
             self._state = "running"
             port = self._port_config(port_id)
@@ -604,7 +665,8 @@ class PollerService:
         desired = {str(port["id"]): dict(port) for port in self._config.get("poll_ports", []) if port.get("enabled", True)}
         for port_id in list(self._workers):
             current = self._workers[port_id]
-            if port_id not in desired or current.port_config != desired[port_id] or current.global_config != self._config:
+            if (port_id not in desired or current.port_config != desired[port_id]
+                    or current.global_config != self._config or not current.running):
                 worker = self._workers.pop(port_id)
                 worker.stop()
         for port_id, port in desired.items():

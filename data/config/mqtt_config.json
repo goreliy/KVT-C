@@ -2,7 +2,7 @@
   "enabled": false,
   "autostart": false,
   "broker": {
-    "host": "127.0.0.1",
+    "host": "0.0.0.0",
     "port": 1883,
     "keepalive_seconds": 60,
     "client_id": "kvt-c-mqtt",

@@ -158,7 +158,7 @@ def default_mqtt_config():
         "enabled": False,
         "autostart": False,
         "broker": {
-            "host": "127.0.0.1",
+            "host": "0.0.0.0",
             "port": 1883,
             "keepalive_seconds": 60,
             "client_id": "kvt-c-mqtt",
@@ -364,7 +364,7 @@ def _coerce_mqtt_config(payload):
     for key in list(broker.keys()):
         if key not in default_mqtt_config()["broker"]:
             broker.pop(key, None)
-    broker["host"] = str(broker.get("host") or "127.0.0.1").strip() or "127.0.0.1"
+    broker["host"] = str(broker.get("host") or "0.0.0.0").strip() or "0.0.0.0"
     broker["port"] = _as_int(broker.get("port"), 1883)
     broker["keepalive_seconds"] = _as_int(broker.get("keepalive_seconds"), 60)
     broker["client_id"] = str(broker.get("client_id") or "kvt-c-mqtt").strip() or "kvt-c-mqtt"

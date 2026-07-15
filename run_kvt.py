@@ -58,7 +58,7 @@ SERVICES = {
     "mqtt": {
         "module": "mqtt_bridge.app",
         "port": 1883,
-        "host": "127.0.0.1",
+        "host": "0.0.0.0",
         "config_file": "mqtt",
         "pass_bind_args": False,
         "pid_file": PID_DIR / "mqtt.pid",

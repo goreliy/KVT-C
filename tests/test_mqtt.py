@@ -24,7 +24,7 @@ class MqttConfigTests(unittest.TestCase):
         config, errors = validated_mqtt_config_patch({})
         self.assertEqual(errors, [])
         self.assertFalse(config["autostart"])
-        self.assertEqual(config["broker"]["host"], "127.0.0.1")
+        self.assertEqual(config["broker"]["host"], "0.0.0.0")
         self.assertEqual(config["broker"]["port"], 1883)
         self.assertEqual(config["topics"]["base"], "kvt-c")
         self.assertTrue(config["publishing"]["enabled"])
