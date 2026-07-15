@@ -111,6 +111,13 @@
         <div class="form-group"><label>Таймаут, мс</label><input id="port-timeout" type="number" min="50" max="10000"></div>
       </div>
 
+      <div class="form-row">
+        <div class="form-group"><label>Период опроса, мс</label><input id="port-poll-period" type="number" min="0" max="60000" placeholder="пусто = общий"></div>
+        <div class="form-group"><label>Повторы (до медленного цикла)</label><input id="port-retry" type="number" min="0" max="10" placeholder="пусто = общие"></div>
+        <div class="form-group"><label>Медленный цикл, мс</label><input id="port-slow-period" type="number" min="1000" max="3600000" value="30000"></div>
+      </div>
+      <p class="text-muted" style="margin:4px 0 10px;">Датчик, не ответивший заданное число повторов, переводится в «медленный цикл»: опрашивается раз в указанный период и автоматически возвращается в обычный опрос при первом ответе. Из опроса датчик не выпадает никогда.</p>
+
       <div class="transport-fields" data-transport="serial">
         <div class="form-row">
           <div class="form-group"><label>COM-порт</label><input id="port-com" type="text"></div>
@@ -246,6 +253,9 @@ function addPort(transport) {
     remote_host: transport === 'serial' ? '' : '192.168.66.100',
     remote_port: transport === 'serial' ? 502 : 40005,
     timeout_ms: parseInt(document.getElementById('p-timeout').value || '500'),
+    poll_period_ms: 0,
+    retry_count: -1,
+    slow_poll_period_ms: 30000,
     prefix: '0x10',
     channel: '0x10',
     seq_start: '0x21D1',
@@ -270,6 +280,9 @@ function fillPortEditor() {
   document.getElementById('port-enabled').checked = port.enabled !== false;
   document.getElementById('port-slave').value = port.device_slave_id ?? 16;
   document.getElementById('port-timeout').value = port.timeout_ms ?? 500;
+  document.getElementById('port-poll-period').value = (port.poll_period_ms && port.poll_period_ms > 0) ? port.poll_period_ms : '';
+  document.getElementById('port-retry').value = (port.retry_count != null && port.retry_count >= 0) ? port.retry_count : '';
+  document.getElementById('port-slow-period').value = port.slow_poll_period_ms ?? 30000;
   document.getElementById('port-com').value = port.com_port || 'COM8';
   document.getElementById('port-baud').value = port.baudrate ?? 9600;
   document.getElementById('port-bytesize').value = port.bytesize ?? 8;
@@ -323,6 +336,9 @@ function readSelectedPortForm() {
     transport: document.getElementById('port-transport').value,
     device_slave_id: parseInt(document.getElementById('port-slave').value || '16'),
     timeout_ms: parseInt(document.getElementById('port-timeout').value || '500'),
+    poll_period_ms: parseInt(document.getElementById('port-poll-period').value || '0'),
+    retry_count: document.getElementById('port-retry').value.trim() === '' ? -1 : parseInt(document.getElementById('port-retry').value),
+    slow_poll_period_ms: parseInt(document.getElementById('port-slow-period').value || '30000'),
     com_port: document.getElementById('port-com').value.trim(),
     baudrate: parseInt(document.getElementById('port-baud').value || '9600'),
     bytesize: parseInt(document.getElementById('port-bytesize').value || '8'),

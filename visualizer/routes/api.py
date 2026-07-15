@@ -160,7 +160,7 @@ def _load_opcua_status():
     path = os.path.join(DATA_DIR, 'opcua_status.json')
     cfg = load_opcua_config()
     endpoint = _opcua_endpoint(cfg)
-    return load_runtime_json(path, default={
+    status = load_runtime_json(path, default={
         'service': 'opcua',
         'state': 'unknown',
         'enabled': bool(cfg.get('enabled')),
@@ -169,6 +169,17 @@ def _load_opcua_status():
         'exported_sensor_count': 0,
         'message': 'OPC UA service status is not available yet',
     })
+    # Свежесть статуса считаем на сервере по mtime файла: часы браузера и
+    # контроллера могут расходиться, и сравнение «now браузера - updated_at»
+    # давало ложное «процесс не запущен» при работающем сервисе.
+    try:
+        age = max(0.0, time.time() - os.path.getmtime(path))
+        status['age_seconds'] = round(age, 1)
+        status['stale'] = age > 15.0
+    except OSError:
+        status['age_seconds'] = None
+        status['stale'] = True
+    return status
 
 
 def _load_mqtt_status():
@@ -210,7 +221,9 @@ def _mqtt_config_response(config):
 
 def _opcua_endpoint(cfg):
     server = cfg.get('server') or {}
-    host = str(server.get('host') or '0.0.0.0')
+    # Показываем endpoint, по которому реально можно подключиться: self-маркеры
+    # (0.0.0.0 / localhost / пусто) заменяются на актуальный IP машины.
+    host = resolve_self_host(server.get('host'))
     port = int(server.get('port') or 4840)
     path = str(server.get('endpoint_path') or '/kvt/')
     if not path.startswith('/'):

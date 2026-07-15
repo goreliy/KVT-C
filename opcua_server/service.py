@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from shared.config_manager import atomic_save_json, load_opcua_config
 from shared.current_data import load_current_payload
+from shared.net import resolve_self_host
 from opcua_server.nodes import (
     poll_port_node_id,
     poll_port_object_node_id,
@@ -32,6 +33,22 @@ def utc_now():
 def endpoint_from_config(config):
     server = config.get("server") or {}
     host = str(server.get("host") or "0.0.0.0").strip() or "0.0.0.0"
+    port = int(server.get("port") or 4840)
+    path = str(server.get("endpoint_path") or "/kvt/")
+    if not path.startswith("/"):
+        path = "/" + path
+    if not path.endswith("/"):
+        path += "/"
+    return f"opc.tcp://{host}:{port}{path}"
+
+
+def advertised_endpoint_from_config(config):
+    """Endpoint, публикуемый клиентам. host 0.0.0.0/localhost/пусто заменяется на
+    реальный IP машины: OPC UA клиенты после discovery подключаются по адресу ИЗ
+    ответа сервера, и объявленный 0.0.0.0 снаружи недостижим — поэтому наружу
+    всегда объявляем актуальный IP."""
+    server = config.get("server") or {}
+    host = resolve_self_host(server.get("host"))
     port = int(server.get("port") or 4840)
     path = str(server.get("endpoint_path") or "/kvt/")
     if not path.startswith("/"):
@@ -91,7 +108,7 @@ class OpcUaService:
     async def run_forever(self):
         while not self._stop.is_set():
             config = self._effective_config()
-            endpoint = endpoint_from_config(config)
+            endpoint = advertised_endpoint_from_config(config)
             if not config.get("enabled"):
                 _write_status({
                     "state": "disabled",
@@ -132,12 +149,26 @@ class OpcUaService:
         self._objects = {}
         self._variables = {}
         server_cfg = config.get("server") or {}
-        endpoint = endpoint_from_config(config)
+        # Клиентам объявляем endpoint с реальным IP машины (0.0.0.0 снаружи недостижим),
+        # а сокет привязываем к сконфигурированному host (обычно 0.0.0.0 = все интерфейсы).
+        endpoint = advertised_endpoint_from_config(config)
+        bind_host = str(server_cfg.get("host") or "0.0.0.0").strip() or "0.0.0.0"
+        bind_port = int(server_cfg.get("port") or 4840)
         signature = config_signature(config)
 
         server = Server()
         await server.init()
         server.set_endpoint(endpoint)
+        try:
+            # asyncua: отдельный адрес привязки сокета (иначе привязка идёт по host из endpoint)
+            server.socket_address = (bind_host, bind_port)
+        except Exception:
+            pass
+        try:
+            # Подставлять в ответ discovery адрес, по которому клиент реально обратился
+            server.set_match_discovery_client_ip(True)
+        except Exception:
+            pass
         server.set_server_name(server_cfg.get("server_name") or "KVT-C OPC UA Server")
         self._namespace_idx = await server.register_namespace(server_cfg.get("namespace_uri") or "urn:kvt:c:monitoring")
         await self._build_static_tree(server, config)
@@ -154,14 +185,16 @@ class OpcUaService:
             })
             while not self._stop.is_set():
                 latest_config = self._effective_config()
-                if config_signature(latest_config) != signature:
+                if (config_signature(latest_config) != signature
+                        or advertised_endpoint_from_config(latest_config) != endpoint):
+                    # Изменился конфиг ИЛИ IP машины — пересоздаём endpoint/адресное пространство.
                     _write_status({
                         "state": "reloading",
                         "enabled": True,
                         "endpoint": endpoint,
                         "namespace_uri": server_cfg.get("namespace_uri"),
                         "exported_sensor_count": 0,
-                        "message": "OPC UA config changed; restarting address space",
+                        "message": "OPC UA config or IP changed; restarting address space",
                     })
                     break
                 current = load_current_payload()

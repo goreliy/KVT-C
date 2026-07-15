@@ -50,6 +50,40 @@ class PollPortWorker:
             "failed_polls": 0,
             "skipped_status_reads": 0,
         }
+        # Медленный цикл: датчики, исчерпавшие повторы, опрашиваются реже,
+        # но никогда не выпадают из опроса и из выдачи current.json.
+        self._slow_sensors: Dict[Any, float] = {}  # sensor_id -> monotonic-время следующей медленной попытки
+        self._last_sensor_payload: Dict[Any, Dict[str, Any]] = {}
+
+    def _port_poll_period_ms(self) -> int:
+        try:
+            value = int(self.port_config.get("poll_period_ms") or 0)
+        except (TypeError, ValueError):
+            value = 0
+        if value >= 100:
+            return value
+        try:
+            return max(100, int(self.global_config.get("poll_period_ms", 1000)))
+        except (TypeError, ValueError):
+            return 1000
+
+    def _port_retry_count(self) -> int:
+        try:
+            value = int(self.port_config.get("retry_count", -1))
+        except (TypeError, ValueError):
+            value = -1
+        if value >= 0:
+            return min(10, value)
+        try:
+            return max(0, int(self.global_config.get("retry_count", 3)))
+        except (TypeError, ValueError):
+            return 3
+
+    def _slow_poll_period_ms(self) -> int:
+        try:
+            return max(1000, int(self.port_config.get("slow_poll_period_ms") or 30000))
+        except (TypeError, ValueError):
+            return 30000
 
     def start(self):
         with self._lock:
@@ -81,6 +115,10 @@ class PollPortWorker:
                 "last_success_at": self._last_success_at,
                 "last_cycle_duration_ms": self._last_cycle_duration_ms,
                 "seq_current": f"{self._client.current_seq():04X}" if self.port_config.get("transport") == "udp_c2000pp" else None,
+                "poll_period_ms": self._port_poll_period_ms(),
+                "retry_count": self._port_retry_count(),
+                "slow_poll_period_ms": self._slow_poll_period_ms(),
+                "slow_poll_sensors": sorted(self._slow_sensors.keys(), key=str),
                 **self._stats,
             }
             return payload
@@ -461,11 +499,7 @@ class PollPortWorker:
                             self._log_rx(None, {"slave_id": self.port_config.get("device_slave_id", 0), "function": 3, "description": f"Cycle error: {error}"})
                         except Exception:
                             pass
-                    try:
-                        period_ms = int(self.global_config.get("poll_period_ms", 1000))
-                    except (TypeError, ValueError):
-                        period_ms = 1000
-                    self._stop.wait(max(0.1, period_ms / 1000.0))
+                    self._stop.wait(max(0.1, self._port_poll_period_ms() / 1000.0))
             except Exception as error:
                 # Даже неожиданная ошибка уровня воркера не должна убить поток опроса.
                 with self._lock:
@@ -487,34 +521,57 @@ class PollPortWorker:
 
         out_sensors = []
         cycle_failed = False
+        retry_count = self._port_retry_count()
+        slow_period_s = self._slow_poll_period_ms() / 1000.0
+        now_mono = time.monotonic()
         for sensor in self._enabled_sensors():
+            sensor_id = sensor.get("id")
+
+            # Датчик в «медленном цикле»: между медленными попытками не опрашиваем,
+            # но оставляем в выдаче (последний снимок/offline) — датчик не пропадает.
+            if sensor_id in self._slow_sensors and now_mono < self._slow_sensors[sensor_id]:
+                cached = self._last_sensor_payload.get(sensor_id) or self._offline_sensor(sensor, now_iso)
+                out_sensors.append({**cached, "slow_poll": True})
+                continue
+
+            # В медленном цикле — одна попытка за медленный период; в обычном — 1 + retry_count.
+            attempts = 1 if sensor_id in self._slow_sensors else retry_count + 1
             success = False
             last_sensor_error: Optional[Exception] = None
-            for attempt in range(int(self.global_config.get("retry_count", 3)) + 1):
+            for attempt in range(attempts):
                 try:
-                    out_sensors.append(self._poll_sensor(sensor, now_iso, attempt=attempt))
+                    payload = self._poll_sensor(sensor, now_iso, attempt=attempt)
+                    out_sensors.append(payload)
+                    self._last_sensor_payload[sensor_id] = payload
                     success = True
                     break
                 except ModbusError as error:
                     last_sensor_error = error
                     with self._lock:
                         self._last_error = str(error)
-                    if attempt < int(self.global_config.get("retry_count", 3)):
+                    if attempt < attempts - 1:
                         time.sleep(0.05)
                 except Exception as error:
                     last_sensor_error = error
                     with self._lock:
                         self._last_error = str(error)
                     self._log_rx(None, {"slave_id": self.port_config.get("device_slave_id", 0), "function": 3, "description": f"Poll error: {error}"})
-                    if attempt < int(self.global_config.get("retry_count", 3)):
+                    if attempt < attempts - 1:
                         time.sleep(0.05)
 
-            if not success:
+            if success:
+                # Датчик ответил — возвращаем в обычный (быстрый) цикл.
+                self._slow_sensors.pop(sensor_id, None)
+            else:
                 cycle_failed = True
                 if last_sensor_error is not None:
                     with self._lock:
                         self._last_error = str(last_sensor_error)
-                out_sensors.append(self._offline_sensor(sensor, now_iso))
+                # Повторы исчерпаны — датчик уходит в медленный цикл до следующей попытки.
+                self._slow_sensors[sensor_id] = time.monotonic() + slow_period_s
+                offline = {**self._offline_sensor(sensor, now_iso), "slow_poll": True}
+                self._last_sensor_payload[sensor_id] = offline
+                out_sensors.append(offline)
 
         duration_ms = round((time.perf_counter() - cycle_started) * 1000, 2)
         with self._lock:

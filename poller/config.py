@@ -20,6 +20,12 @@ DEFAULT_POLL_PORT: Dict[str, Any] = {
     "local_host": "",
     "local_port": 0,
     "timeout_ms": 500,
+    # Пер-линейные параметры опроса. 0 = использовать общий параметр.
+    "poll_period_ms": 0,
+    "retry_count": -1,  # -1 = использовать общий retry_count
+    # Период «медленного цикла»: датчик, не ответивший retry_count раз подряд,
+    # опрашивается реже (раз в slow_poll_period_ms), но НИКОГДА не выпадает из опроса.
+    "slow_poll_period_ms": 30000,
     "prefix": "0x10",
     "channel": "0x10",
     "seq_start": "0x21D1",
@@ -177,8 +183,16 @@ def _validate_poll_port(port: Dict[str, Any], index: int, errors) -> Dict[str, A
     for key, min_value, max_value in (
         ("device_slave_id", 0, 247),
         ("timeout_ms", 50, 10000),
+        ("slow_poll_period_ms", 1000, 3600000),
     ):
         _as_int(item, key, errors, min_value, max_value)
+
+    # 0 = использовать общий poll_period_ms; иначе 100..60000
+    _as_int(item, "poll_period_ms", errors, 0, 60000)
+    if item.get("poll_period_ms") and item["poll_period_ms"] < 100:
+        errors.append(f"{prefix}.poll_period_ms должен быть 0 (общий) или >= 100")
+    # -1 = использовать общий retry_count; иначе 0..10
+    _as_int(item, "retry_count", errors, -1, 10)
 
     if transport == "serial":
         item["com_port"] = str(item.get("com_port", "")).strip()

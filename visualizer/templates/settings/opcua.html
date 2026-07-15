@@ -268,10 +268,14 @@ async function saveOpcUa() {
 }
 
 function opcuaStale(status) {
+  // Свежесть определяет СЕРВЕР (по mtime файла статуса) — часы браузера и
+  // контроллера могут расходиться, локальное сравнение дат давало ложное
+  // «процесс не запущен». Фолбэк на локальную проверку — только для старых API.
+  if (status && typeof status.stale === 'boolean') return status.stale;
   if (!status || !status.updated_at) return true;
   var t = Date.parse(status.updated_at);
   if (isNaN(t)) return false;
-  return (Date.now() - t) > 15000; // статус не обновлялся >15с → процесс, вероятно, не запущен
+  return (Date.now() - t) > 15000;
 }
 
 async function loadOpcUaStatus() {
