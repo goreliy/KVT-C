@@ -508,11 +508,30 @@ class PollerService:
         self._sensor_snapshots: Dict[str, List[Dict[str, Any]]] = {}
         self._stats = {"total_polls": 0, "successful_polls": 0, "failed_polls": 0, "skipped_status_reads": 0}
         self._log_entries: List[Dict[str, Any]] = []
-        self._tx_queue = deque(maxlen=5000)
-        self._rx_queue = deque(maxlen=5000)
-        self._exchange_queue = deque(maxlen=5000)
+        log_max = self._log_buffer_maxlen()
+        self._tx_queue = deque(maxlen=log_max)
+        self._rx_queue = deque(maxlen=log_max)
+        self._exchange_queue = deque(maxlen=log_max)
         self._last_log_write_at = 0.0
         self._log_dirty = False
+
+    def _log_buffer_maxlen(self):
+        """Единый предел размера журнала — из настройки log_max_entries.
+        Ограничивает и записи, и TX/RX/exchange очереди, чтобы modbus_log.json не рос
+        бесконтрольно и запись файла не тормозила опрос (опрос никогда не встаёт)."""
+        try:
+            return max(1, int(self._config.get("log_max_entries", 1000)))
+        except (TypeError, ValueError):
+            return 1000
+
+    def _resize_log_buffers_locked(self):
+        max_entries = self._log_buffer_maxlen()
+        if self._tx_queue.maxlen != max_entries:
+            self._tx_queue = deque(self._tx_queue, maxlen=max_entries)
+            self._rx_queue = deque(self._rx_queue, maxlen=max_entries)
+            self._exchange_queue = deque(self._exchange_queue, maxlen=max_entries)
+        if len(self._log_entries) > max_entries:
+            self._log_entries = self._log_entries[-max_entries:]
 
     def start(self):
         with self._lock:
@@ -569,6 +588,7 @@ class PollerService:
         with self._lock:
             self._config = config
             save_poller_config(config)
+            self._resize_log_buffers_locked()
             if self._running:
                 self._reconcile_workers_locked()
             else:

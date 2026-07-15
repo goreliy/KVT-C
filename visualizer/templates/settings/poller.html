@@ -123,7 +123,9 @@
 
       <div class="transport-fields" data-transport="udp_rtu,udp_c2000pp">
         <div class="form-row">
-          <div class="form-group"><label>Локальный IP</label><input id="port-local-host" type="text" placeholder="192.168.66.97"></div>
+          <div class="form-group"><label>Локальный IP</label>
+            <div style="display:flex; gap:6px; align-items:center;"><input id="port-local-host" type="text" placeholder="192.168.66.97" style="flex:1;"><button type="button" class="btn btn-secondary btn-sm" onclick="detectLocalIp()" title="Подставить IP этого компьютера">Определить</button></div>
+          </div>
           <div class="form-group"><label>Локальный порт</label><input id="port-local-port" type="number" min="0" max="65535"></div>
           <div class="form-group"><label>IP прибора</label><input id="port-remote-host" type="text" placeholder="192.168.66.100"></div>
           <div class="form-group"><label>Порт прибора</label><input id="port-remote-port" type="number" min="1" max="65535"></div>
@@ -236,7 +238,7 @@ function addPort(transport) {
     bytesize: 8,
     parity: 'N',
     stopbits: 1,
-    local_host: transport === 'serial' ? '' : '192.168.66.97',
+    local_host: '',
     local_port: transport === 'serial' ? 0 : 40005,
     remote_host: transport === 'serial' ? '127.0.0.1' : '192.168.66.100',
     remote_port: transport === 'serial' ? 502 : 40005,
@@ -287,6 +289,27 @@ function refreshPortTransportFields() {
     const variants = (el.dataset.transport || '').split(',');
     el.classList.toggle('active', variants.includes(transport));
   });
+  // Для ethernet-линий (udp_rtu / udp_c2000pp) подставляем IP этого компьютера, если пусто
+  const ethernet = transport === 'udp_rtu' || transport === 'udp_c2000pp';
+  const localHost = document.getElementById('port-local-host');
+  if (ethernet && localHost && !localHost.value.trim()) {
+    detectLocalIp(true);
+  }
+}
+
+async function detectLocalIp(silent) {
+  try {
+    const target = (document.getElementById('port-remote-host').value || '').trim();
+    const q = target ? ('?target=' + encodeURIComponent(target)) : '';
+    const res = await apiFetch('/api/network/local-ip' + q);
+    if (res.ip) {
+      document.getElementById('port-local-host').value = res.ip;
+      portEditorDirty = true;
+      if (!silent) showToast('Локальный IP: ' + res.ip);
+    } else if (!silent) {
+      showToast('Не удалось определить локальный IP', 'error');
+    }
+  } catch(e) {}
 }
 
 function readSelectedPortForm() {

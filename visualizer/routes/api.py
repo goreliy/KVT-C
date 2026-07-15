@@ -118,7 +118,7 @@ def _poller_base_url() -> str:
 def _poller_call(method: str, path: str, payload=None):
     try:
         url = f"{_poller_base_url()}{path}"
-        timeout = 25 if '/api/poller/scan' in path else 3
+        timeout = 25 if '/api/poller/scan' in path else 12
         if method == 'GET':
             response = _LOCAL_HTTP.get(url, timeout=timeout)
         elif method == 'DELETE':
@@ -140,6 +140,27 @@ def _poller_call(method: str, path: str, payload=None):
         return {'error': f'Poller недоступен: {ex}'}, 502
     except Exception as ex:
         return {'error': f'Ошибка проксирования Poller: {ex}'}, 500
+
+
+def _detect_local_ip(target=None):
+    """IP этого компьютера в сети. UDP-connect не шлёт пакетов, только выбирает
+    исходящий интерфейс — если задан target (IP прибора/С2000-Ethernet), берём тот
+    интерфейс, что смотрит на прибор; иначе — интерфейс маршрута по умолчанию."""
+    import socket
+    probe = (str(target).strip() if target else '') or '8.8.8.8'
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.connect((probe, 9))
+        return sock.getsockname()[0]
+    except OSError:
+        return ''
+    finally:
+        sock.close()
+
+
+@api_bp.route('/network/local-ip')
+def api_local_ip():
+    return jsonify({'ip': _detect_local_ip(request.args.get('target') or None)})
 
 
 def _load_archive():
