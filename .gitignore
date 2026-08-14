@@ -1,4 +1,4 @@
-__pycache__/
+﻿__pycache__/
 *.py[cod]
 .pytest_cache/
 
@@ -39,3 +39,7 @@ data/config/import_backups/
 MocTestServer/123/
 MocTestServer/data/
 MocTestServer/logs/
+# Local packaged Win64 builds.
+win64/
+
+
