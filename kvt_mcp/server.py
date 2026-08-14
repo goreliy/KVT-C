@@ -236,6 +236,10 @@ def create_mcp_server() -> Server:
             
             elif name == "get_mcp_config":
                 result = {
+                    "kvt": {
+                        "host": config.kvt_host,
+                        "description": "Основной IP адрес системы KVT-C"
+                    },
                     "visualizer": {
                         "host": config.visualizer_host,
                         "port": config.visualizer_port,
