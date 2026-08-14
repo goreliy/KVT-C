@@ -8,7 +8,9 @@ from typing import Any, Dict, List, Optional
 from shared.config_manager import atomic_save_json, load_runtime_json
 
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+from shared.paths import data_dir as _data_dir
+
+DATA_DIR = _data_dir()
 AVAILABILITY_DAILY_PATH = os.path.join(DATA_DIR, "availability_daily.json")
 MAX_NETWORK_HISTORY = 1440
 _LOCK = threading.RLock()

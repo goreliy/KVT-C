@@ -20,8 +20,10 @@ except ImportError:  # pragma: no cover - exercised on deployments missing the o
     mqtt = None
 
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(ROOT_DIR, "data")
+from shared.paths import app_root as _app_root, data_dir as _data_dir
+
+ROOT_DIR = _app_root()
+DATA_DIR = _data_dir()
 STATUS_PATH = os.path.join(DATA_DIR, "mqtt_status.json")
 INBOUND_PATH = os.path.join(DATA_DIR, "mqtt_inbound.json")
 

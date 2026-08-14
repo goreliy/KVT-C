@@ -6,11 +6,12 @@ from opcua_server.nodes import selected_sensors, sensor_node_id
 from opcua_server.service import OpcUaService, endpoint_from_config
 from shared.config_manager import validated_opcua_config_patch
 from shared.current_data import load_current_payload, with_configured_sensors
+from shared.net import local_ip
 
 
 def free_tcp_port():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(("127.0.0.1", 0))
+    sock.bind((local_ip(), 0))
     port = sock.getsockname()[1]
     sock.close()
     return port
@@ -18,13 +19,15 @@ def free_tcp_port():
 
 class OpcUaConfigTests(unittest.TestCase):
     def test_endpoint_and_validation_defaults(self):
+        # 192.0.2.10 — адрес из TEST-NET-1 (RFC 5737): проверяем, что явный host
+        # сохраняется в endpoint без подмены.
         config, errors = validated_opcua_config_patch({
             "enabled": True,
-            "server": {"host": "127.0.0.1", "port": 4840, "endpoint_path": "kvt"},
+            "server": {"host": "192.0.2.10", "port": 4840, "endpoint_path": "kvt"},
         })
         self.assertEqual(errors, [])
         self.assertEqual(config["server"]["endpoint_path"], "/kvt/")
-        self.assertEqual(endpoint_from_config(config), "opc.tcp://127.0.0.1:4840/kvt/")
+        self.assertEqual(endpoint_from_config(config), "opc.tcp://192.0.2.10:4840/kvt/")
 
     def test_legacy_enabled_config_autostarts(self):
         config, errors = validated_opcua_config_patch({}, {"enabled": True})
@@ -70,7 +73,7 @@ class OpcUaIntegrationTests(unittest.IsolatedAsyncioTestCase):
         config, errors = validated_opcua_config_patch({
             "enabled": True,
             "server": {
-                "host": "127.0.0.1",
+                "host": local_ip(),  # реальный интерфейс машины, как в боевой конфигурации
                 "port": port,
                 "endpoint_path": "/kvt-test/",
                 "namespace_uri": "urn:kvt:test",

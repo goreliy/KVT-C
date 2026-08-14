@@ -44,7 +44,8 @@ class ConfigBundleError(ValueError):
 
 
 def project_root() -> str:
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    from shared.paths import app_root
+    return app_root()
 
 
 def _config_dir(root_dir: str) -> str:

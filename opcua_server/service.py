@@ -22,7 +22,9 @@ except ImportError:  # pragma: no cover - exercised on deployments missing the o
     ua = None
 
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from shared.paths import app_root as _app_root
+
+ROOT_DIR = _app_root()
 STATUS_PATH = os.path.join(ROOT_DIR, "data", "opcua_status.json")
 
 

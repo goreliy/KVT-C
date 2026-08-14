@@ -325,8 +325,7 @@ class PollPortWorker:
         return "guarded" if sensor.get("guarded", True) else "normal"
 
     def _poll_sensor(self, sensor: Dict[str, Any], now_iso: str, attempt: int = 0):
-        configured_slave = int(self.port_config.get("device_slave_id", 0) or 0)
-        slave_id = configured_slave if configured_slave > 0 else int(sensor["modbus_slave_id"])
+        slave_id = int(sensor["modbus_slave_id"])
         addr_t = int(sensor["modbus_addr_temp"])
         addr_h = int(sensor["modbus_addr_hum"])
         value_start = int(self.global_config["value_register_base"]) + addr_t - 1
@@ -398,7 +397,7 @@ class PollPortWorker:
             "local_number": sensor.get("local_number"),
             "display_number": sensor.get("display_number"),
             "name": sensor.get("name", f"Sensor {sensor['id']}"),
-            "modbus_slave_id": self.port_config.get("device_slave_id") or sensor["modbus_slave_id"],
+            "modbus_slave_id": int(sensor["modbus_slave_id"]),
             "modbus_addr_temp": sensor["modbus_addr_temp"],
             "modbus_addr_hum": sensor["modbus_addr_hum"],
             "temperature": {"value": None, "raw": None, "status": "offline", "modbus_status": 4, "timestamp": now_iso},

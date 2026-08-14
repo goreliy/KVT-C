@@ -57,7 +57,9 @@ def _no_store(response):
     response.headers['Expires'] = '0'
     return response
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
+from shared.paths import app_root as _app_root, data_dir as _data_dir
+
+DATA_DIR = _data_dir()
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOG_DIR = os.path.join(ROOT_DIR, 'logs')
 MOCKSERVER_OUT_LOG = os.path.join(LOG_DIR, 'mockserver.out.log')

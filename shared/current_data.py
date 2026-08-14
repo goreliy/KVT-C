@@ -4,8 +4,10 @@ import os
 from shared.config_manager import load_poller_config, load_runtime_json, load_system_config
 
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(ROOT_DIR, 'data')
+from shared.paths import app_root as _app_root, data_dir as _data_dir
+
+ROOT_DIR = _app_root()
+DATA_DIR = _data_dir()
 
 
 def _has_value(metric):

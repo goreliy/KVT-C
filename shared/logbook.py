@@ -12,7 +12,9 @@ from shared.config_manager import (
 )
 
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
+from shared.paths import app_root as _app_root
+
+ROOT_DIR = Path(_app_root())
 DATA_DIR = ROOT_DIR / "data"
 CONFIG_DIR = DATA_DIR / "config"
 REPORTS_CONFIG_PATH = CONFIG_DIR / "reports_config.json"

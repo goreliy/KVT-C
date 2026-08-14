@@ -65,6 +65,23 @@
   - [ ] 2.4 Написать unit-тесты для modbus_client
     - Mock pymodbus, тесты парсинга регистров, обработки ошибок
     - _Requirements: 1.1, 1.3, 1.4_
+  - [x] 2.5 Пер-линейные параметры опроса и «медленный цикл» (poller/config.py, poller/poller_service.py)
+    - Поля линии poll_ports[]: poll_period_ms (0 = общий), retry_count (-1 = общий), slow_poll_period_ms (default 30000) + валидация
+    - Датчик, исчерпавший повторы, переводится в медленный цикл (одна попытка в slow_poll_period_ms), остаётся в current.json (slow_poll: true) и возвращается в обычный цикл при первом ответе
+    - Поля в редакторе линии /settings/poller; действующие значения и slow_poll_sensors — в статусе линии
+    - _Requirements: 2.16, 2.17_
+  - [x] 2.6 Гарантия непрерывности опроса (poller/poller_service.py)
+    - Полностью защищённый цикл worker (любая ошибка — лог + продолжение), watchdog (5 с) пересоздаёт упавшие workers
+    - Журнал ограничен log_max_entries целиком (записи + TX/RX/exchange, кольцевые deque), рост modbus_log.json не останавливает опрос
+    - _Requirements: 2.18_
+  - [x] 2.7 Определение собственного IP без 127.0.0.1 (shared/net.py)
+    - local_ip/resolve_self_host/resolve_url_self_host; self-маркеры (0.0.0.0/localhost/127.0.0.1/пусто) разрешаются в актуальный IP машины, смена IP подхватывается на лету
+    - Используется в прокси visualizer→poller, mock server, MQTT broker, OPC UA advertised endpoint; GET /api/network/local-ip и автоподстановка «Локальный IP» в ethernet-линии
+    - _Requirements: 2.16, 15.7_
+  - [x] 2.8 Выбор COM-порта из доступных и /dev-нормализация (poller/config.py, settings/poller.html)
+    - Галочка «Выбрать из доступных» в редакторе линии → список из GET /api/poller/ports (COMx / /dev/tty*)
+    - tty-имена без пути дополняются /dev/ на клиенте (normalizeComPort) и при валидации (_normalize_com_port)
+    - _Requirements: 2.19_
 
 - [ ] 3. Реализовать подсистему Archive Manager
   - [ ] 3.1 Реализовать SQLite-хранилище (archiver/storage/sqlite_storage.py)
@@ -301,6 +318,10 @@
   - [x] 8.6 Unit-тесты OPC UA (tests/test_opcua.py)
     - Валидация конфига, стабильность NodeId, выбор датчиков, интеграционный тест asyncua-клиента
     - _Requirements: 15.1, 15.4_
+  - [x] 8.7 Объявляемый endpoint с реальным IP и серверная свежесть статуса
+    - advertised_endpoint_from_config: self-адреса (0.0.0.0/localhost) → актуальный IP машины (shared/net.py); привязка сокета остаётся на все интерфейсы; при смене IP — автоматическая перепубликация endpoint
+    - Свежесть статуса stale/age_seconds считается в visualizer по mtime data/opcua_status.json (устойчиво к расхождению часов браузера и контроллера)
+    - _Requirements: 15.7_
 
 - [ ] 9. Docker-контейнеризация
   - [ ] 9.1 Создать Dockerfile

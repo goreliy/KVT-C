@@ -2,9 +2,13 @@
 
 ## Overview
 
-Система КВТ — комплекс мониторинга температуры и влажности на базе датчиков С2000-ВТ/С2000-ВТИ (Болид) через преобразователь С2000-ПП по протоколу Modbus RTU. Система состоит из шести независимых подсистем: Modbus Poller, Archive Manager, Web Visualizer, Telegram Bot, Report Generator и OPC UA Server. Все подсистемы взаимодействуют через файловую систему (current.json, конфигурационные файлы) и общую базу данных (SQLite/PostgreSQL).
+Система КВТ — комплекс мониторинга температуры и влажности на базе датчиков С2000-ВТ/С2000-ВТИ (Болид) через преобразователь С2000-ПП по протоколу Modbus RTU.
 
-Технологический стек: Python 3.8+, Flask, pymodbus, SQLAlchemy, python-telegram-bot, matplotlib, opcua.
+**Реализованные подсистемы:** Modbus Poller (5001), Archive Manager (5002), Web Visualizer (5000, включая журнал учёта), OPC UA Server (4840), MQTT Bridge. **Специфицированы, но не реализованы:** Telegram Bot, Report Generator (см. плашки в соответствующих разделах и сводку в [индексе документации](../README.md)).
+
+Все подсистемы взаимодействуют **через файловую систему** (`current.json`, конфигурационные файлы, `archive.json`); дополнительно Web Visualizer проксирует HTTP-запросы к Poller и Archive Manager. Общей базы данных нет: первичное хранилище архива — `archive.json`, а SQLite (`archive.db`) — его зеркало.
+
+Технологический стек: Python 3.9+ (3.10+ для OPC UA), Flask, pyserial, asyncua, paho-mqtt, requests, jsonschema. SQLAlchemy/PostgreSQL и matplotlib/python-telegram-bot в текущей реализации не используются.
 
 ## Architecture
 
@@ -45,7 +49,7 @@ flowchart TB
         templates[Templates + Static]
     end
 
-    subgraph telegram [Подсистема 4: Telegram Bot]
+    subgraph telegram [Подсистема 6: Telegram Bot — НЕ РЕАЛИЗОВАНО]
         bot[bot.py]
         handlers[handlers.py]
         notifications_mod[notifications.py]
@@ -53,16 +57,21 @@ flowchart TB
         scheduler[scheduler.py]
     end
 
-    subgraph report_gen [Подсистема 5: Report Generator :5003]
+    subgraph report_gen [Подсистема 7: Report Generator :5003 — НЕ РЕАЛИЗОВАНО]
         report_service[report_service.py]
         report_scheduler[report_scheduler.py]
         report_formats[PDF / HTML / CSV]
     end
 
-    subgraph opcua [Подсистема 6: OPC UA Server :4840]
+    subgraph opcua [Подсистема 4: OPC UA Server :4840]
         opcua_server[opcua_server.py]
         address_space[Address Space]
-        ha_provider[Historical Access]
+        ha_provider[Historical Access — не реализовано]
+    end
+
+    subgraph mqtt [Подсистема 5: MQTT Bridge]
+        mqtt_service[mqtt_bridge/service.py]
+        mqtt_broker[(MQTT-брокер :1883)]
     end
 
     sensors --> rs485
@@ -97,6 +106,9 @@ flowchart TB
     storage_layer --> report_service
     report_service --> report_scheduler
     report_service --> report_formats
+
+    current_json --> mqtt_service
+    mqtt_service <--> mqtt_broker
 
     current_json --> opcua_server
     storage_layer --> ha_provider
@@ -156,10 +168,15 @@ sequenceDiagram
 |---|------------|------|----------|------------|
 | 1 | Modbus Poller | 5001 | HTTP REST | Управление опросом, конфигурация |
 | 2 | Archive Manager | 5002 | HTTP REST | Запросы архива, экспорт, журналы |
-| 3 | Web Visualizer | 5000 | HTTP | Веб-интерфейс + REST API |
-| 4 | Telegram Bot | — | Telegram API | Команды, уведомления, отчёты |
-| 5 | Report Generator | 5003 | HTTP REST | Управление генерацией отчётов |
-| 6 | OPC UA Server | 4840 | OPC UA | Данные для SCADA-клиентов |
+| 3 | Web Visualizer | 5000 | HTTP | Веб-интерфейс + REST API + журнал учёта |
+| 4 | OPC UA Server | 4840 | OPC UA | Данные для SCADA-клиентов |
+| 5 | MQTT Bridge | 1883 (брокер) | MQTT | Публикация данных, приём значений и команд |
+| 6 | Telegram Bot | — | Telegram API | Команды, уведомления, отчёты ⚠️ не реализовано |
+| 7 | Report Generator | 5003 | HTTP REST | Управление генерацией отчётов ⚠️ не реализовано |
+
+Значения `--service` в `run_kvt.py`: `poller`, `archiver`, `visualizer`, `opcua`, `mqtt`
+(и `all`). Сервисы `opcua`/`mqtt` при `--service all` поднимаются только при включённом
+`autostart` в их конфигурации. Порт 5003 не используется — Report Generator не реализован.
 
 ### Решение по межсервисному взаимодействию
 
@@ -184,6 +201,7 @@ flowchart LR
     SC -->|get_sensors| T[Telegram Bot]
     SC -->|get_sensors| R[Report Generator]
     SC -->|get_sensors| O[OPC UA Server]
+    SC -->|get_sensors| M[MQTT Bridge]
     V -->|CRUD sensors| SC
 ```
 
@@ -204,10 +222,12 @@ flowchart LR
 Ограничения: система поддерживает до 256 датчиков на одном С2000-ПП, каждый датчик занимает 2 Modbus-адреса (температура + влажность) (Req 4.5).
 
 Протокол опроса:
-- Функция Modbus 0x04 (Read Input Registers)
+- Функция Modbus **0x03 (Read Holding Registers)** — читаются и значения, и статусы
+  (`read_holding_registers_raw`); 0x04 реализована в клиенте, но в опросе не применяется
 - Регистры значений: base address 30000+N (чётный адрес — температура, нечётный — влажность)
 - Регистры статусов: base address 40000+N
-- Конвертация: raw 16-bit / 10 → физические единицы (°C, %)
+- Конвертация: **Q8.8** — знаковое 16-битное значение / 256 → физические единицы (°C, %),
+  округление до 4 знаков (`_signed_16(raw) / 256.0`)
 
 Модули:
 - `poller/app.py` — Flask-приложение, REST API (порт 5001)
@@ -233,7 +253,12 @@ REST API:
 Конфигурация подключения (poller_config.json):
 - com_port, baudrate (1200–115200), data_bits (7 или 8), parity (None, Even, Odd), stop_bits (1 или 2)
 - poll_period (100–60000 мс), timeout (100–5000 мс), retry_count (default 3)
+- Пер-линейные параметры в `poll_ports[]`: `poll_period_ms` (0 = общий), `timeout_ms`, `retry_count` (-1 = общий), `slow_poll_period_ms` (default 30000)
 - Список датчиков НЕ хранится — берётся из system_config.json
+
+Медленный цикл опроса (Req 2.17): датчик, не ответивший `retry_count` повторов подряд, переводится worker-ом линии в «медленный цикл» — одна попытка раз в `slow_poll_period_ms`; между попытками датчик остаётся в выдаче current.json (последний снимок/offline, `slow_poll: true`) и возвращается в обычный цикл при первом успешном ответе. Датчик никогда не выпадает из опроса.
+
+Гарантия непрерывности (Req 2.18): цикл `PollPortWorker._run` полностью защищён от исключений (любая ошибка — лог + продолжение); `PollerService` держит watchdog-поток (5 с), который пересоздаёт упавшие workers; журнал Modbus ограничен `log_max_entries` целиком (записи + TX/RX/exchange, кольцевые deque) — рост `modbus_log.json` не может остановить опрос. Опрос останавливается только явной командой stop.
 
 ### Подсистема 2: Archive Manager
 
@@ -325,6 +350,10 @@ REST API:
 
 ### Подсистема 4: Telegram Bot
 
+> ⚠️ **НЕ РЕАЛИЗОВАНО.** Пакета `telegram_bot/` в коде нет, зависимости
+> `python-telegram-bot`/`matplotlib` не входят в `requirements.txt`, сервис отсутствует
+> в `run_kvt.py`. Раздел описывает целевую подсистему.
+
 Отвечает за интерактивное взаимодействие через Telegram: команды, уведомления, регулярные отчёты.
 
 Модули:
@@ -354,6 +383,9 @@ REST API:
 | /help | Список команд |
 
 ### Подсистема 5: Report Generator
+
+> ⚠️ **НЕ РЕАЛИЗОВАНО.** Пакета `report_gen/` нет, порт 5003 не используется.
+> Страница `/settings/reports` в коде — админка журналов учёта, а не генератор отчётов.
 
 Отвечает за автоматическую генерацию отчётов по расписанию и сохранение на диск.
 
@@ -390,7 +422,7 @@ REST API:
 
 Отвечает за предоставление данных внешним SCADA-системам по протоколу OPC UA.
 
-Библиотека: `asyncua` 2.x (opcua-asyncio). Endpoint по умолчанию `opc.tcp://0.0.0.0:4840/kvt/`, namespace `urn:kvt:c:monitoring`. Режим безопасности `anonymous_readonly` (параметры `certificate`/`user_password` — заготовки в конфиге). Источник текущих значений — тот же нормализованный срез, что и `/api/current`; сервер не опрашивает оборудование сам.
+Библиотека: `asyncua` 2.x (opcua-asyncio). Endpoint по умолчанию `opc.tcp://0.0.0.0:4840/kvt/` (привязка сокета ко всем интерфейсам), namespace `urn:kvt:c:monitoring`. **Объявляемый endpoint:** self-адреса (`0.0.0.0`/`localhost`/пустой host) заменяются на актуальный IP машины (`shared/net.py`) — клиенты после discovery подключаются по адресу из ответа сервера, объявленный `0.0.0.0` снаружи недостижим; при смене IP сервер перепубликует endpoint автоматически. Режим безопасности `anonymous_readonly` (параметры `certificate`/`user_password` — заготовки в конфиге). Источник текущих значений — тот же нормализованный срез, что и `/api/current`; сервер не опрашивает оборудование сам. Свежесть статуса (`stale`/`age_seconds`) вычисляется Web Visualizer по mtime `data/opcua_status.json` на сервере (часы браузера и контроллера могут расходиться).
 
 Модули:
 - `opcua_server/app.py` — CLI entrypoint (`python -m opcua_server.app`), разбор `--host/--port/--endpoint-path`, запуск сервиса
@@ -414,10 +446,70 @@ Objects
 
 Стабильные NodeId: `KVT.Sensors.<id>.<Field>` (например `KVT.Sensors.7.Temperature`), `KVT.PollPorts.<token>.<Field>`. При отсутствии/устаревании значения числовой узел публикуется с качеством BadNoData, но browse-метка и служебные поля остаются доступны. Состояние сервиса пишется в `data/opcua_status.json` и доступно через Web Visualizer (`/api/opcua/status`); настройка — на `/settings/opcua`.
 
+### Подсистема 7: MQTT Bridge
+
+Двунаправленный мост между системой и MQTT-брокером. Публикует текущие данные датчиков в топики
+и принимает внешние значения и команды. Оборудование не опрашивает — источник данных тот же
+нормализованный срез, что и `/api/current`.
+
+Библиотека: `paho-mqtt` 2.1.0. Порт брокера по умолчанию 1883. Конфигурация —
+`data/config/mqtt_config.json` (брокер, топики, публикация, приём, TLS, `autostart`).
+
+Модули:
+- `mqtt_bridge/app.py` — CLI entrypoint (`python -m mqtt_bridge.app`)
+- `mqtt_bridge/service.py` — рантайм: подключение к брокеру, публикация по интервалу, подписки,
+  обработка команд, запись статуса
+
+Карта топиков (от `topics.base`, по умолчанию `kvt-c`):
+
+| Направление | Топик | Назначение |
+|---|---|---|
+| Публикация | `{base}/status` | Состояние сервиса |
+| Публикация | `{base}/current` | Полный текущий срез |
+| Публикация | `{base}/sensors/{id}` | Значения отдельного датчика |
+| Подписка | `{base}/inbound/sensors/+` | Приём внешних значений датчиков |
+| Подписка | `{base}/commands/republish` | Немедленная повторная публикация среза |
+| Подписка | `{base}/commands/ping` | Проверка связи, обновление статуса |
+
+Состояние — `data/mqtt_status.json`, журнал входящих — `data/mqtt_inbound.json`.
+Настройка — `/settings/mqtt`, API — `/api/mqtt/{config,status,inbound,reload}`.
+Детальная спецификация — [§7](../03-specification/07-mqtt-bridge.md).
+
+### Модуль: Журнал учёта (складская отчётность)
+
+Входит в состав Web Visualizer, отдельного сервиса не образует.
+
+Модули и точки входа:
+- `shared/logbook.py` — загрузка и нормализация конфигураций журналов, операторов и календаря;
+  производственный календарь РФ; формирование суточных строк (`daily_rows`); подписи
+  (`signoff_day`); контекст печати (`print_context`)
+- `visualizer/routes/journal.py` — страницы `/logbook` и `/logbook/<report_id>/print`
+- `visualizer/routes/api.py` — `GET /api/logbook/daily`, `POST /api/logbook/signoff`,
+  `POST /api/logbook/batch-signoff`, `GET/POST /api/operators`, `GET/POST /api/holidays`,
+  `POST /api/holidays/load-rf`
+- шаблоны `visualizer/templates/logbook.html`, `logbook_print.html`; админка — `/settings/reports`
+
+Конфигурации: `reports_config.json` (журналы), `operators.json` (ФИО), `holidays.json` (календарь).
+Хранилище подписей: `data/logbook_signoffs.json` — запись содержит журнал, дату, оператора,
+время подписи и **снимок суточных значений** (обеспечивает неизменяемость подписанной строки).
+Источник суточных значений — `data/archive_daily.json`, формируемый Archive Manager.
+Детальная спецификация — [§5.11](../03-specification/05-visualizer.md).
+
 ### Общие модули (shared/)
 
-- `shared/models.py` — dataclass-модели: SensorConfig, SensorReading, Measurement, Event, Violation (с полями квитирования), TemperatureLogEntry
-- `shared/config_manager.py` — загрузка/сохранение JSON-конфигов с версионностью и бэкапами
+Фактический состав (сверено с кодом):
+
+- `shared/config_manager.py` — загрузка/сохранение всех JSON-конфигов, валидация, CRUD датчиков, версионность и бэкапы
+- `shared/current_data.py` — нормализация текущего среза; единый источник состава датчиков и fallback-значений для UI, `/api/current`, OPC UA и MQTT
+- `shared/net.py` — определение собственного IP: `local_ip()`, `resolve_self_host()`, `resolve_url_self_host()`; self-маркеры (`""`/`0.0.0.0`/`localhost`/`127.0.0.1`/`auto`) разрешаются в актуальный IP машины (кэш ~10 с, подхватывает смену IP). Жёсткого `127.0.0.1` в коде и конфигах нет
+- `shared/availability.py` — суточный учёт доступности линий и датчиков, ping Ethernet-линий (`availability_daily.json`)
+- `shared/logbook.py` — журнал учёта (см. выше)
+- `shared/config_bundle.py` — экспорт/импорт полного конфигурационного ZIP-архива
+- `shared/python_compat.py` — `patch_legacy_werkzeug_ast()`: патч `ast` для запуска Flask 2.0.x на новых Python
+
+> Модулей `shared/models.py` (dataclass-модели) и `shared/utils.py` в коде **нет** — модели данных
+> ниже описаны как целевые; фактически подсистемы обмениваются словарями/JSON.
+- `shared/net.py` — определение собственного IP машины: `local_ip(target=None)` (UDP-connect, кэш ~10 с — подхватывает смену IP на лету), `resolve_self_host(host)` и `resolve_url_self_host(url)` заменяют self-маркеры (`""`/`0.0.0.0`/`localhost`/`127.0.0.1`/`auto`) на актуальный IP. Жёсткий `127.0.0.1` в коде и конфигах не используется; все внутренние обращения и объявляемые наружу адреса (OPC UA endpoint, прокси visualizer→poller, MQTT broker, mock server) строятся через эти функции
 - `shared/utils.py` — утилиты: форматирование дат, конвертация единиц, валидация
 
 ## Data Models

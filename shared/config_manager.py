@@ -9,7 +9,9 @@ import threading
 from datetime import datetime
 from copy import deepcopy
 
-CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'config')
+from shared.paths import config_dir as _config_dir
+
+CONFIG_DIR = _config_dir()
 SYSTEM_CONFIG_PATH = os.path.join(CONFIG_DIR, 'system_config.json')
 POLLER_CONFIG_PATH = os.path.join(CONFIG_DIR, 'poller_config.json')
 ARCHIVE_CONFIG_PATH = os.path.join(CONFIG_DIR, 'archive_config.json')

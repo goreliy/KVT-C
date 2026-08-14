@@ -120,7 +120,13 @@
 
       <div class="transport-fields" data-transport="serial">
         <div class="form-row">
-          <div class="form-group"><label>COM-порт</label><input id="port-com" type="text"></div>
+          <div class="form-group"><label>COM-порт</label>
+            <input id="port-com" type="text" placeholder="COM8 или /dev/ttyUSB0">
+            <select id="port-com-select" style="display:none;" onchange="pickComPort(this.value)"></select>
+            <label class="inline-check" style="margin-top:6px; display:flex; align-items:center; gap:6px; font-size:13px;">
+              <input type="checkbox" id="port-com-list" onchange="toggleComPortList(this.checked)" style="width:auto;"> Выбрать из доступных
+            </label>
+          </div>
           <div class="form-group"><label>Скорость</label><input id="port-baud" type="number"></div>
           <div class="form-group"><label>Биты данных</label><input id="port-bytesize" type="number" min="5" max="8"></div>
           <div class="form-group"><label>Чётность</label><input id="port-parity" type="text" maxlength="1"></div>
@@ -313,6 +319,48 @@ function refreshPortTransportFields() {
   }
 }
 
+function normalizeComPort(value) {
+  var name = (value || '').trim();
+  if (!name) return '';
+  // tty-имена на Linux дополняем /dev/ автоматически (ttyUSB0 -> /dev/ttyUSB0)
+  if (/^tty/i.test(name) && name.indexOf('/') < 0) return '/dev/' + name;
+  return name;
+}
+
+async function toggleComPortList(enabled) {
+  var select = document.getElementById('port-com-select');
+  var input = document.getElementById('port-com');
+  if (!enabled) {
+    select.style.display = 'none';
+    return;
+  }
+  select.style.display = '';
+  select.innerHTML = '<option value="">Загрузка портов…</option>';
+  try {
+    var data = await apiFetch('/api/poller/ports');
+    var ports = data.ports || [];
+    var current = input.value.trim();
+    if (!ports.length) {
+      select.innerHTML = '<option value="">Порты не найдены</option>';
+      return;
+    }
+    select.innerHTML = '<option value="">— выберите порт —</option>' + ports.map(function(p) {
+      var dev = p.device || '';
+      var label = dev + (p.description ? (' — ' + p.description) : '');
+      var sel = dev === current ? ' selected' : '';
+      return '<option value="' + dev.replace(/"/g, '&quot;') + '"' + sel + '>' + label.replace(/</g, '&lt;') + '</option>';
+    }).join('');
+  } catch (e) {
+    select.innerHTML = '<option value="">Не удалось получить список портов</option>';
+  }
+}
+
+function pickComPort(value) {
+  if (!value) return;
+  document.getElementById('port-com').value = value;
+  portEditorDirty = true;
+}
+
 async function detectLocalIp(silent) {
   try {
     const target = (document.getElementById('port-remote-host').value || '').trim();
@@ -339,7 +387,7 @@ function readSelectedPortForm() {
     poll_period_ms: parseInt(document.getElementById('port-poll-period').value || '0'),
     retry_count: document.getElementById('port-retry').value.trim() === '' ? -1 : parseInt(document.getElementById('port-retry').value),
     slow_poll_period_ms: parseInt(document.getElementById('port-slow-period').value || '30000'),
-    com_port: document.getElementById('port-com').value.trim(),
+    com_port: normalizeComPort(document.getElementById('port-com').value),
     baudrate: parseInt(document.getElementById('port-baud').value || '9600'),
     bytesize: parseInt(document.getElementById('port-bytesize').value || '8'),
     parity: document.getElementById('port-parity').value.trim().toUpperCase() || 'N',

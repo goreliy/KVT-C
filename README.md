@@ -57,14 +57,32 @@ flowchart LR
 
 > Настройка приборов Болид (адресация С2000-ВТ на ДПЛС, параметры С2000-КДЛ, таблица Modbus-регистров С2000-ПП) выполняется утилитой **UProg**. Сама система КВТ прибором не управляет — она только читает готовые значения из С2000-ПП по Modbus RTU. Mock-сервер из `MocTestServer` эмулирует ответы С2000-ПП для отладки без реального железа.
 
+## Документация
+
+Вся документация — в каталоге **[docs/](docs/)**, начните с [индекса `docs/README.md`](docs/README.md)
+(там же — сводная таблица состояния реализации подсистем).
+
+| Раздел | Что внутри |
+|---|---|
+| [docs/01-requirements](docs/01-requirements/) | Требования (EARS) — что система должна делать |
+| [docs/02-architecture](docs/02-architecture/) | Архитектура: подсистемы, модули, модели данных |
+| [docs/03-specification](docs/03-specification/) | Детальная спецификация по подсистемам (§1–§15) |
+| [docs/04-protocols](docs/04-protocols/) | Протоколы обмена с оборудованием (С2000-Ethernet) |
+| [docs/05-tasks](docs/05-tasks/) | План реализации со статусами |
+| [docs/06-development](docs/06-development/) | Разработчику: продукт, стек, структура кода |
+
 ## Что есть в проекте
-- `visualizer` (Flask, порт `5000`) — веб UI, настройки, API.
+- `visualizer` (Flask, порт `5000`) — веб UI, настройки, API, журналы, журнал учёта.
 - `poller` (Flask, порт `5001`) — опрос С2000-ПП по Modbus RTU, лог обменов, текущее состояние.
 - `archiver` (Flask, порт `5002`) — Archive Manager: архивирование `current.json`, `archive.json`, `archive_daily.json`, SQLite-зеркало и REST API.
 - `opcua` (asyncua, порт `4840`) — read-only OPC UA сервер для передачи текущих данных датчиков внешним SCADA/АСУ ТП клиентам.
 - `mqtt` (paho-mqtt) — двунаправленный MQTT bridge: публикация текущих данных и приём входящих MQTT-сообщений.
 - `MocTestServer` — тестовый сервер/генератор данных, эмулирует С2000-ПП (опционально).
 - `data/config/*.json` — рабочие конфиги системы.
+
+Не реализовано (описано в спецификации как планируемое): Telegram-бот, email-уведомления,
+генератор отчётов по расписанию, Docker-контейнеризация, PostgreSQL-хранилище архива,
+OPC UA Historical Access.
 
 ## Единая точка запуска
 Запуск/остановка/статус из одного места:
@@ -110,20 +128,14 @@ pip install -r requirements.txt
 ```
 
 ## Адреса сервисов
-- Visualizer UI: `http://127.0.0.1:5000/`
-- Poller API/UI: `http://127.0.0.1:5001/`
-- Archive Manager API/UI: `http://127.0.0.1:5002/`
-- OPC UA endpoint: `opc.tcp://127.0.0.1:4840/kvt/`
-- MQTT broker: по умолчанию `127.0.0.1:1883`, настраивается в `data/config/mqtt_config.json` и на `/settings/mqtt`
-- Poller status API: `http://127.0.0.1:5001/api/poller/status`
-- Archive status API: `http://127.0.0.1:5002/api/archive/status`
-
-При запуске через `python run_kvt.py start` сервисы слушают адреса из `data/config/system_config.json`.
-По умолчанию `web_host` и `poller_host` равны `0.0.0.0`, поэтому интерфейс доступен и по IP машины:
-- Visualizer UI: `http://<IP-компьютера>:5000/`
-- Poller API/UI: `http://<IP-компьютера>:5001/`
-- Archive Manager API/UI: `http://<IP-компьютера>:5002/`
-- OPC UA endpoint: `opc.tcp://<IP-компьютера>:4840/kvt/`
+Сервисы слушают адреса из `data/config/system_config.json` (по умолчанию `0.0.0.0` — все интерфейсы). Жёсткий `127.0.0.1` в системе не используется: свой IP машина определяет автоматически (`shared/net.py`), актуальное значение показывает `python run_kvt.py status` и `GET /api/network/local-ip`. Подставьте IP машины, на которой установлена система (`<IP-сервера>`):
+- Visualizer UI: `http://<IP-сервера>:5000/`
+- Poller API/UI: `http://<IP-сервера>:5001/`
+- Archive Manager API/UI: `http://<IP-сервера>:5002/`
+- OPC UA endpoint: `opc.tcp://<IP-сервера>:4840/kvt/`
+- MQTT broker: адрес брокера задаётся в `data/config/mqtt_config.json` и на `/settings/mqtt` (self-адреса разрешаются в IP машины)
+- Poller status API: `http://<IP-сервера>:5001/api/poller/status`
+- Archive status API: `http://<IP-сервера>:5002/api/archive/status`
 
 ## Poller: подключение к С2000-ПП (Modbus transport)
 Модуль `poller` — Modbus RTU **мастер**, С2000-ПП — ведомый. Поддерживаются режимы транспорта:
@@ -131,7 +143,15 @@ pip install -r requirements.txt
 - `udp` — нативный RTU-over-UDP (RTU-кадр + CRC через UDP-сокет).
 - `udp_c2000pp` — RTU в 5-байтовой UDP-обёртке `10 LEN SEQ 10` на передачу и приём — путь через **С2000-Ethernet**.
 
-Несколько именованных линий опроса задаются в `poll_ports[]` (независимый worker на каждый COM/UDP-порт под управлением `PollPortManager`), датчики привязываются к конкретной линии. Полная спецификация — в `Общее ТЗ на систему КВТ С.md`.
+Несколько именованных линий опроса задаются в `poll_ports[]` (независимый worker на каждый COM/UDP-порт под управлением `PollPortManager`), датчики привязываются к конкретной линии. Полная спецификация — [docs/03-specification/03-poller.md](docs/03-specification/03-poller.md); байтовый разбор обмена через С2000-Ethernet — [docs/04-protocols/c2000-ethernet-modbus-over-udp.md](docs/04-protocols/c2000-ethernet-modbus-over-udp.md).
+
+**Пер-линейные параметры опроса и «медленный цикл».** У каждой линии свои `poll_period_ms` (0 = общий), `timeout_ms`, `retry_count` (-1 = общий) и `slow_poll_period_ms` (по умолчанию 30000). Датчик, не ответивший `retry_count` повторов, переводится в «медленный цикл» (одна попытка раз в `slow_poll_period_ms`), при этом остаётся в `current.json` (признак `slow_poll: true`) и автоматически возвращается в обычный опрос при первом ответе — из опроса датчик не выпадает никогда. Настраивается в редакторе линии на `/settings/poller`.
+
+**Опрос никогда не останавливается сам.** Цикл каждой линии защищён от любых ошибок (таймауты, сбои порта, ошибки журнала), watchdog каждые 5 секунд пересоздаёт упавший worker, а журнал Modbus ограничен `log_max_entries` целиком (записи + TX/RX/обмены, перезатирается по кольцу) — рост `modbus_log.json` не может остановить опрос. Остановка — только явной командой оператора.
+
+**Свой IP вместо 127.0.0.1.** Все внутренние обращения и объявляемые адреса строятся через `shared/net.py`: self-маркеры (`0.0.0.0`/`localhost`/пусто) заменяются на актуальный IP машины, смена IP подхватывается на лету; жёсткого `127.0.0.1` в коде и конфигах нет. Endpoint `GET /api/network/local-ip` отдаёт текущий IP; в ethernet-линии поле «Локальный IP» заполняется автоматически (кнопка «Определить»).
+
+**COM-порт на Linux.** Поле «COM-порт» в редакторе линии имеет галочку «Выбрать из доступных» — список портов системы из `GET /api/poller/ports` (`COMx` на Windows, `/dev/tty*` на Linux). tty-имена, введённые без пути, автоматически дополняются `/dev/` (`ttyUSB0` → `/dev/ttyUSB0`).
 
 Базовые ключи в `data/config/poller_config.json`:
 
@@ -143,7 +163,7 @@ pip install -r requirements.txt
   "bytesize": 8,
   "parity": "N",
   "stopbits": 1,
-  "udp_host": "127.0.0.1",
+  "udp_host": "",
   "udp_port": 502,
   "timeout_ms": 500
 }
@@ -161,7 +181,7 @@ pip install -r requirements.txt
 
 ## OPC UA сервер
 - Конфиг сервера хранится в `data/config/opcua_config.json`; публикация включается/выключается кнопками «Запустить/Остановить» на `/settings/opcua` (флаг `enabled`), а отдельная галочка `autostart` задаёт запуск процесса при `python run_kvt.py start` / `--service all`.
-- Endpoint по умолчанию: `opc.tcp://0.0.0.0:4840/kvt/`; namespace URI: `urn:kvt:c:monitoring`.
+- Endpoint по умолчанию: `opc.tcp://0.0.0.0:4840/kvt/` (привязка ко всем интерфейсам); **клиентам объявляется endpoint с реальным IP машины** — `0.0.0.0` снаружи недостижим, поэтому в discovery/endpoint URL self-адреса заменяются на актуальный IP (при смене IP сервер перепубликует endpoint автоматически). Namespace URI: `urn:kvt:c:monitoring`.
 - Сервер запускается отдельным процессом через `python run_kvt.py start --service opcua`; при `--service all` — только если включён `autostart`. Флаг `enabled` процесс применяет вживую (~2 секунды), без перезапуска.
 - OPC UA публикует тот же нормализованный срез датчиков, что и `/api/current`: значения из `current.json`, fallback на последние временные снимки и архивные значения, плюс привязка к `poll_port_id`.
 - Адресное пространство: `KVT/System`, `KVT/PollPorts/<poll_port_id>`, `KVT/Sensors/Sensor_<id>`. NodeId датчиков стабильные: `KVT.Sensors.<id>.Temperature`, `Humidity`, `CombinedStatus`, `Timestamp`, `PollPortId`.
@@ -178,7 +198,7 @@ pip install -r requirements.txt
 - Настройки автозапуска, broker, username/password, TLS-пути, QoS, retain, interval и base topic доступны на `/settings/mqtt`; статус — через `/api/mqtt/status`.
 
 ## Импорт/экспорт конфигурации
-- Страница переноса настроек: `http://127.0.0.1:5000/settings/config-transfer`.
+- Страница переноса настроек: `http://<IP-сервера>:5000/settings/config-transfer`.
 - ZIP-архив содержит `manifest.json`, все верхнеуровневые JSON-конфиги из `data/config/` (включая `opcua_config.json` и `mqtt_config.json`), изображения планов из `visualizer/static/floorplans/` и диагностические снимки `current.json`, `availability_daily.json`, `modbus_log.json`, `events.json`, `opcua_status.json`, `mqtt_status.json`, `mqtt_inbound.json`.
 - При импорте восстанавливаются конфиги и изображения планов; диагностические файлы остаются только для анализа и обратно не накатываются.
 - Перед импортом текущая конфигурация автоматически сохраняется в `data/config/import_backups/`.
@@ -197,13 +217,14 @@ pip install -r requirements.txt
 > Примечание по эксплуатации: visualizer запускается без debug, поэтому шаблоны кэшируются. Включён `TEMPLATES_AUTO_RELOAD`, но процесс нужно один раз перезапустить (`python run_kvt.py restart --service visualizer`). Если правки не видны — проверьте, нет ли «забытого» процесса на порту 5000 (`Get-NetTCPConnection -LocalPort 5000`), который перехватывает запросы.
 
 ## Быстрый smoke-test
+`<IP-сервера>` — IP машины с системой (показывает `python run_kvt.py status`).
 1. `python run_kvt.py start`
-2. Открыть `http://127.0.0.1:5000/`
-3. Проверить `http://127.0.0.1:5001/api/poller/status`
-4. Проверить `http://127.0.0.1:5002/api/archive/status`
+2. Открыть `http://<IP-сервера>:5000/`
+3. Проверить `http://<IP-сервера>:5001/api/poller/status`
+4. Проверить `http://<IP-сервера>:5002/api/archive/status`
 5. Открыть `/settings/opcua`, при необходимости нажать «Запустить»
-6. Проверить `http://127.0.0.1:5000/api/opcua/status` и подключение к `opc.tcp://127.0.0.1:4840/kvt/`
-7. Открыть `/settings/mqtt`, при необходимости задать broker и проверить `http://127.0.0.1:5000/api/mqtt/status`
+6. Проверить `http://<IP-сервера>:5000/api/opcua/status` и подключение к `opc.tcp://<IP-сервера>:4840/kvt/`
+7. Открыть `/settings/mqtt`, при необходимости задать broker и проверить `http://<IP-сервера>:5000/api/mqtt/status`
 8. `python run_kvt.py stop`
 
 ## Замечания по проекту (актуальные)
@@ -211,6 +232,8 @@ pip install -r requirements.txt
 - Основной поддерживаемый сценарий запуска: `run_kvt.py`.
 
 ## Журнал документации
+- 2026-08-14: fixed Modbus polling per sensor: sensor `modbus_slave_id` is now used directly for TX requests and offline snapshots; port `device_slave_id` no longer overrides sensor address; added regression test `tests/test_poller_slave_id.py`.
+- 2026-07-15: пер-линейные параметры опроса (`poll_period_ms`/`retry_count`/`slow_poll_period_ms` у каждой линии) и «медленный цикл» — датчик без ответа опрашивается реже, но никогда не выпадает из опроса; опрос защищён от любых ошибок + watchdog (никогда не останавливается сам); журнал Modbus ограничен `log_max_entries` целиком; убран жёсткий `127.0.0.1` (динамическое определение своего IP, `shared/net.py`); OPC UA объявляет клиентам endpoint с реальным IP (исправлено «не подключается сторонняя система» при host 0.0.0.0), свежесть статуса считается на сервере по mtime (исправлен ложный «процесс не запущен» при расхождении часов); выбор COM-порта из доступных (`/dev/tty*` на Linux) с автодописыванием `/dev/`. Обновлены `Общее ТЗ` (3.2.2.2–3.2.2.3, 3.9, 6.1), `.kiro` requirements (2.16–2.19, 15.7), design, tasks.
 - 2026-07-03: добавлен двунаправленный MQTT bridge (`mqtt_bridge`, `data/config/mqtt_config.json`, `/settings/mqtt`, `/api/mqtt/*`, запуск через `run_kvt.py --service mqtt`) для публикации текущих данных и приёма входящих MQTT-сообщений.
 - 2026-07-03: для OPC UA и MQTT добавлена отдельная галочка `autostart`: `run_kvt.py start --service all` поднимает эти процессы только при включённом автозапуске, ручной `--service opcua|mqtt` остаётся доступен.
 - 2026-07-01: README переписан — добавлены описание оборудования Болид (С2000-ВТ → ДПЛС/С2000-КДЛ → С2000-ПП → Modbus RTU через USB-RS485 или С2000-Ethernet, настройка UProg) и диаграмма пути данных; на `/settings/opcua` добавлены кнопки «Запустить/Остановить».

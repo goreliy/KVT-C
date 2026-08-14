@@ -162,6 +162,20 @@ def _parse_hex_word(value, key, errors):
     return f"0x{parsed:04X}"
 
 
+def _normalize_com_port(value) -> str:
+    """Нормализация имени последовательного порта. На Linux tty-имена без пути
+    автоматически дополняются префиксом /dev/ (ttyUSB0 -> /dev/ttyUSB0);
+    Windows-имена COMx и уже полные пути остаются как есть."""
+    name = str(value or "").strip()
+    if not name:
+        return ""
+    if name.upper().startswith("COM") or name.startswith("/") or name.startswith("\\\\"):
+        return name
+    if name.lower().startswith("tty"):
+        return "/dev/" + name
+    return name
+
+
 def _validate_poll_port(port: Dict[str, Any], index: int, errors) -> Dict[str, Any]:
     item = {**DEFAULT_POLL_PORT, **(port or {})}
     prefix = f"poll_ports[{index}]"
@@ -195,7 +209,7 @@ def _validate_poll_port(port: Dict[str, Any], index: int, errors) -> Dict[str, A
     _as_int(item, "retry_count", errors, -1, 10)
 
     if transport == "serial":
-        item["com_port"] = str(item.get("com_port", "")).strip()
+        item["com_port"] = _normalize_com_port(item.get("com_port"))
         if not item["com_port"]:
             errors.append(f"{prefix}.com_port обязателен для serial")
         for key, min_value, max_value in (
