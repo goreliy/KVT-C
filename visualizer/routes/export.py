@@ -9,7 +9,9 @@ from shared.config_manager import get_sensors
 
 export_bp = Blueprint('export', __name__)
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
+from shared.paths import data_dir as _data_dir
+
+DATA_DIR = _data_dir()
 
 
 def _load_archive():

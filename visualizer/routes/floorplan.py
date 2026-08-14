@@ -10,8 +10,10 @@ from shared.config_manager import (
 
 floorplan_bp = Blueprint('floorplan', __name__)
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'data')
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static', 'floorplans')
+from shared.paths import app_root as _app_root, data_dir as _data_dir
+
+DATA_DIR = _data_dir()
+UPLOAD_DIR = os.path.join(_app_root(), 'visualizer', 'static', 'floorplans')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg'}
 
 

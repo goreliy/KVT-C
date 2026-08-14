@@ -1,4 +1,4 @@
-# KVT-C
+﻿# KVT-C
 
 Система мониторинга температуры и влажности для оборудования **Болид**: веб-интерфейс, архивирование, складской журнал учёта, OPC UA и MQTT для внешних SCADA/АСУ ТП. Данные собираются с адресных датчиков **С2000-ВТ** и читаются из преобразователя протокола **С2000-ПП** по Modbus RTU.
 
@@ -120,6 +120,26 @@ PID-файлы:
 - `.run/mqtt.pid`
 - `.run/visualizer.pid`
 
+
+## Win64 onefile EXE
+Готовый переносимый файл лежит в `win64/KVT-C.exe`. Его можно скопировать на Windows x64 ПК и запускать без установленного Python и без `pip install`. При запуске двойным кликом exe сам поднимает сервисы, ждёт Visualizer и открывает браузер со страницей визуализации.
+
+Команды те же, что у `run_kvt.py`:
+
+```powershell
+.\KVT-C.exe start
+.\KVT-C.exe status
+.\KVT-C.exe restart
+.\KVT-C.exe stop
+```
+
+При первом запуске рядом с exe автоматически создаются рабочие каталоги `data/`, `logs/` и `.run/`; стартовые JSON-конфиги зашиты внутрь exe и копируются только если файлов ещё нет. Если браузер не открылся автоматически, откройте вручную: `http://<IP-сервера>:5000/` или `http://127.0.0.1:5000/` на этой же машине. Консольное окно после двойного клика можно закрыть — сервисы продолжают работать в фоне; остановка: `KVT-C.exe stop`.
+
+Для пересборки из исходников:
+
+```powershell
+python -m PyInstaller --noconfirm --clean --distpath win64 --workpath build\win64 kvt_c_win64.spec
+```
 ## Установка
 ```bash
 python -m venv .venv
@@ -232,6 +252,8 @@ pip install -r requirements.txt
 - Основной поддерживаемый сценарий запуска: `run_kvt.py`.
 
 ## Журнал документации
+- 2026-08-14: улучшен UX onefile exe: запуск `KVT-C.exe` без аргументов теперь стартует сервисы, ждёт Visualizer, открывает браузер на веб-интерфейсе и оставляет понятное сообщение в консоли.
+- 2026-08-14: добавлена win64 onefile-сборка `win64/KVT-C.exe`: один исполняемый файл запускает все сервисы через внутренний режим `--internal-service`, сам разворачивает стартовые конфиги рядом с exe; документация дополнена командами запуска и пересборки.
 - 2026-08-14: fixed Modbus polling per sensor: sensor `modbus_slave_id` is now used directly for TX requests and offline snapshots; port `device_slave_id` no longer overrides sensor address; added regression test `tests/test_poller_slave_id.py`.
 - 2026-07-15: пер-линейные параметры опроса (`poll_period_ms`/`retry_count`/`slow_poll_period_ms` у каждой линии) и «медленный цикл» — датчик без ответа опрашивается реже, но никогда не выпадает из опроса; опрос защищён от любых ошибок + watchdog (никогда не останавливается сам); журнал Modbus ограничен `log_max_entries` целиком; убран жёсткий `127.0.0.1` (динамическое определение своего IP, `shared/net.py`); OPC UA объявляет клиентам endpoint с реальным IP (исправлено «не подключается сторонняя система» при host 0.0.0.0), свежесть статуса считается на сервере по mtime (исправлен ложный «процесс не запущен» при расхождении часов); выбор COM-порта из доступных (`/dev/tty*` на Linux) с автодописыванием `/dev/`. Обновлены `Общее ТЗ` (3.2.2.2–3.2.2.3, 3.9, 6.1), `.kiro` requirements (2.16–2.19, 15.7), design, tasks.
 - 2026-07-03: добавлен двунаправленный MQTT bridge (`mqtt_bridge`, `data/config/mqtt_config.json`, `/settings/mqtt`, `/api/mqtt/*`, запуск через `run_kvt.py --service mqtt`) для публикации текущих данных и приёма входящих MQTT-сообщений.
@@ -245,3 +267,5 @@ pip install -r requirements.txt
 - 2026-06-03: выполнен первый проход по ревью: добавлены atomic JSON helpers, tolerant runtime JSON reads, отложенное применение poller config, запрет scan во время polling, throttling записи `modbus_log.json`, generated Flask secret, MockServer stdout/stderr logs, валидация poller config и `.gitignore` для runtime/cache/secret артефактов.
 - 2026-06-03: дополнительно закрыты пункты ревью `P1 Кодировки`, `P1 Runtime logs`, `P2 Репозиторий/runtime`: добавлены `.editorconfig`/`.gitattributes`, `modbus_log.json` переведён на компактную atomic-запись, `.gitignore` расширен на runtime JSON и `data/config/backups/`.
 - 2026-06-03: закрыт пункт ревью про умножение timeout на группы регистров: при ошибке чтения `values` poller явно пропускает `statuses`, пишет `status="skipped"` в exchange log и считает `skipped_status_reads`.
+
+

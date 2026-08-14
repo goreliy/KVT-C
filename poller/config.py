@@ -59,8 +59,8 @@ DEFAULT_POLLER_CONFIG: Dict[str, Any] = {
 
 
 def data_dir() -> str:
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(root, "data")
+    from shared.paths import data_dir as _data_dir
+    return _data_dir()
 
 
 def _legacy_poll_port(config: Dict[str, Any]) -> Dict[str, Any]:

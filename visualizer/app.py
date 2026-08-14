@@ -14,9 +14,10 @@ patch_legacy_werkzeug_ast()
 
 from flask import Flask
 from shared.config_manager import load_theme_config
+from shared.paths import app_root, bundled_resource
 
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = app_root()
 SECRET_PATH = os.path.join(ROOT_DIR, 'data', 'config', 'flask_secret.key')
 
 
@@ -39,9 +40,11 @@ def _load_secret_key():
 
 
 def create_app():
-    app = Flask(__name__,
-                template_folder='templates',
-                static_folder='static')
+    app = Flask(
+        "visualizer",
+        template_folder=bundled_resource('visualizer', 'templates'),
+        static_folder=bundled_resource('visualizer', 'static'),
+    )
     app.secret_key = _load_secret_key()
     # Шаблоны и статику перечитывать без рестарта процесса (иначе правки index.html/style.css
     # не видны, пока visualizer запущен через run_kvt.py без debug).

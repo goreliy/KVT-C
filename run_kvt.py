@@ -1,15 +1,21 @@
-import argparse
+﻿import argparse
 import json
 import os
+import runpy
+import socket
 import subprocess
 import sys
 import time
+import urllib.request
+import webbrowser
 from pathlib import Path
 
+from shared.paths import app_root, logs_dir, run_dir, seed_default_configs
 
-ROOT = Path(__file__).resolve().parent
-LOG_DIR = ROOT / "logs"
-PID_DIR = ROOT / ".run"
+
+ROOT = Path(app_root())
+LOG_DIR = Path(logs_dir())
+PID_DIR = Path(run_dir())
 SYSTEM_CONFIG = ROOT / "data" / "config" / "system_config.json"
 OPCUA_CONFIG = ROOT / "data" / "config" / "opcua_config.json"
 MQTT_CONFIG = ROOT / "data" / "config" / "mqtt_config.json"
@@ -71,6 +77,27 @@ SERVICES = {
 def _ensure_dirs() -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     PID_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _bootstrap_runtime() -> None:
+    _ensure_dirs()
+    seed_default_configs()
+
+
+def _is_frozen() -> bool:
+    return bool(getattr(sys, "frozen", False))
+
+
+def _run_internal_service(module: str, argv: list[str]) -> None:
+    _bootstrap_runtime()
+    sys.argv = [module, *argv]
+    runpy.run_module(module, run_name="__main__")
+
+
+def _service_command(module: str) -> list[str]:
+    if _is_frozen():
+        return [sys.executable, "--internal-service", module]
+    return [sys.executable, "-m", module]
 
 
 def _is_windows() -> bool:
@@ -220,7 +247,7 @@ def start_service(name: str, honor_autostart: bool = False) -> None:
     if pid and not _pid_alive(pid):
         _remove_pid(cfg["pid_file"])
 
-    cmd = [sys.executable, "-m", cfg["module"]]
+    cmd = _service_command(cfg["module"])
     if cfg.get("pass_bind_args", True):
         cmd.extend(["--host", host, "--port", str(port)])
 
@@ -275,6 +302,77 @@ def status_services(targets=None) -> None:
             print(f"{name}: stopped (host={host}, port={port}{_autostart_label(name)})")
 
 
+def _browser_url() -> str:
+    host, port = _service_bind("visualizer")
+    if host in {"", "0.0.0.0", "::", "localhost"}:
+        host = "127.0.0.1"
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+    return f"http://{host}:{port}/"
+
+
+def _connect_host(host: str) -> str:
+    return "127.0.0.1" if host in {"", "0.0.0.0", "::", "localhost"} else host.strip("[]")
+
+
+def _wait_for_service_port(name: str, timeout_s: float = 60.0) -> bool:
+    host, port = _service_bind(name)
+    host = _connect_host(host)
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=2.0):
+                return True
+        except OSError:
+            time.sleep(0.5)
+    return False
+
+
+def _wait_for_visualizer(url: str, timeout_s: float = 30.0) -> bool:
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=2.0) as response:
+                if 200 <= response.status < 500:
+                    return True
+        except OSError:
+            time.sleep(0.5)
+    return False
+
+
+def desktop_start() -> int:
+    _bootstrap_runtime()
+    print("KVT-C: starting Visualizer...")
+    start_service("visualizer", honor_autostart=True)
+
+    url = _browser_url()
+    _wait_for_service_port("visualizer", timeout_s=120.0)
+
+    print("KVT-C: starting background services...")
+    for name in ["poller", "archiver", "opcua", "mqtt"]:
+        start_service(name, honor_autostart=True)
+        if name != "mqtt":
+            _wait_for_service_port(name, timeout_s=60.0)
+
+    print(f"KVT-C: opening visualizer {url}")
+    if _wait_for_visualizer(url, timeout_s=120.0):
+        print("KVT-C: visualizer is ready.")
+    else:
+        print("KVT-C: visualizer may still be warming up; refresh the page in a few seconds if needed.")
+    webbrowser.open(url)
+
+    print("")
+    status_services(selected_services("all"))
+    print("")
+    print("This window can be closed; services keep running in background.")
+    print("To stop: run KVT-C.exe stop")
+    try:
+        input("Press Enter to close this window...")
+    except EOFError:
+        pass
+    return 0
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="KVT single entrypoint launcher")
     parser.add_argument("command", choices=["start", "stop", "restart", "status"])
@@ -287,13 +385,21 @@ def selected_services(service: str):
 
 
 def main() -> int:
-    _ensure_dirs()
+    if len(sys.argv) >= 3 and sys.argv[1] == "--internal-service":
+        _run_internal_service(sys.argv[2], sys.argv[3:])
+        return 0
+    if len(sys.argv) == 1 and _is_frozen():
+        return desktop_start()
+
+    _bootstrap_runtime()
     args = parse_args()
     targets = selected_services(args.service)
 
     if args.command == "start":
         for name in targets:
             start_service(name, honor_autostart=args.service == "all")
+            if _is_frozen() and name != "mqtt":
+                _wait_for_service_port(name, timeout_s=60.0)
     elif args.command == "stop":
         for name in reversed(targets):
             stop_service(name)
@@ -305,6 +411,8 @@ def main() -> int:
         time.sleep(0.5)
         for name in targets:
             start_service(name, honor_autostart=args.service == "all")
+            if _is_frozen() and name != "mqtt":
+                _wait_for_service_port(name, timeout_s=60.0)
     else:
         status_services(targets)
     return 0
@@ -312,3 +420,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

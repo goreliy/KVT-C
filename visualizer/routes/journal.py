@@ -11,7 +11,9 @@ from shared.logbook import LogbookError, load_reports_config, print_context
 
 journal_bp = Blueprint("journal", __name__)
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data")
+from shared.paths import data_dir as _data_dir
+
+DATA_DIR = _data_dir()
 ARCHIVE_SERVICE = ArchiveService()
 
 
