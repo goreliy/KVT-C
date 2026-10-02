@@ -472,11 +472,13 @@ def mqtt_password_set():
 
 
 def load_notifications_config():
-    return load_json(NOTIFICATIONS_CONFIG_PATH)
+    from shared.notifications import load
+    return load()
 
 
 def save_notifications_config(config):
-    save_json(NOTIFICATIONS_CONFIG_PATH, config)
+    from shared.notifications import save
+    return save(config)
 
 
 def load_layout_config():

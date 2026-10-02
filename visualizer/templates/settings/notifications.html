@@ -1,63 +1,149 @@
 {% extends "base.html" %}
 {% block title %}Настройки уведомлений{% endblock %}
-
 {% block content %}
 <h1 class="page-title">Настройки уведомлений</h1>
-
 {% include "settings/_nav.html" %}
-
+<form id="notifications-form">
 <div class="form-section">
-  <div class="form-section__title">Email</div>
-  <div class="form-group">
-    <label><input type="checkbox" id="n-email-on" {{ 'checked' if notif.email.enabled }}> Включено</label>
+  <div class="form-section__title">Почта</div>
+  <label><input type="checkbox" id="email-enabled" {{ 'checked' if notif.email.enabled }}> Отправлять уведомления по почте</label>
+  <div class="form-row">
+    <div class="form-group"><label for="smtp_server">SMTP сервер</label><input id="smtp_server" value="{{ notif.email.smtp_server }}" placeholder="smtp.example.ru"></div>
+    <div class="form-group"><label for="smtp_port">Порт</label><input id="smtp_port" type="number" min="1" max="65535" value="{{ notif.email.smtp_port }}"></div>
+    <div class="form-group"><label for="security">Защита соединения</label><select id="security">
+      {% for value, title in [('none', 'Без шифрования (обычно 25)'), ('starttls', 'STARTTLS (обычно 587)'), ('tls', 'TLS сразу (обычно 465)')] %}
+      <option value="{{ value }}" {{ 'selected' if notif.email.security == value }}>{{ title }}</option>
+      {% endfor %}
+    </select></div>
+  </div>
+  <p class="text-muted">В режиме STARTTLS шифрование обязательно. Если сервер его не поддерживает, письмо не отправляется. Порт задаётся отдельно.</p>
+  <div class="form-row">
+    <div class="form-group"><label for="smtp_user">Пользователь (пусто — без авторизации)</label><input id="smtp_user" value="{{ notif.email.smtp_user }}" autocomplete="off"></div>
+    <div class="form-group"><label for="smtp_password">Пароль / пароль приложения</label><input id="smtp_password" type="password" autocomplete="new-password" placeholder="{{ 'Пароль сохранён; пусто — оставить' if notif.email.password_set else 'Пароль не задан' }}"><label><input type="checkbox" id="clear_password"> Удалить сохранённый пароль</label></div>
   </div>
   <div class="form-row">
-    <div class="form-group">
-      <label>SMTP сервер</label>
-      <input type="text" id="n-smtp-host" value="{{ notif.email.smtp_server }}">
+    <div class="form-group"><label for="from_address">Адрес отправителя</label><input id="from_address" type="email" value="{{ notif.email.from_address }}"></div>
+    <div class="form-group"><label for="recipients">Общие получатели (через запятую)</label><input id="recipients" value="{{ notif.email.recipients|join(', ') }}"></div>
+  </div>
+  <details><summary>Сертификаты и таймаут</summary>
+    <label><input id="verify_certificate" type="checkbox" {{ 'checked' if notif.email.verify_certificate }}> Проверять сертификат и имя сервера</label>
+    <p class="text-muted">Для внутреннего центра сертификации укажите CA-файл. Отключение проверки допускает подмену сервера. Пути относятся к компьютеру, где работает КВТ.</p>
+    <div class="form-group"><label for="ca_cert_path">CA сертификат (PEM, пусто — системные доверенные сертификаты)</label><input id="ca_cert_path" value="{{ notif.email.ca_cert_path }}"></div>
+    <div class="form-row">
+      <div class="form-group"><label for="client_cert_path">Клиентский сертификат (необязательно)</label><input id="client_cert_path" value="{{ notif.email.client_cert_path }}"></div>
+      <div class="form-group"><label for="client_key_path">Ключ клиентского сертификата</label><input id="client_key_path" value="{{ notif.email.client_key_path }}"></div>
+      <div class="form-group"><label for="timeout_seconds">Таймаут, секунды</label><input id="timeout_seconds" type="number" min="1" max="60" value="{{ notif.email.timeout_seconds }}"></div>
     </div>
-    <div class="form-group">
-      <label>Порт</label>
-      <input type="number" id="n-smtp-port" value="{{ notif.email.smtp_port }}">
-    </div>
+  </details>
+  <div class="form-row">
+    <label><input id="email-on_alarm" type="checkbox" {{ 'checked' if notif.email.on_alarm }}> Тревога</label>
+    <label><input id="email-on_warning" type="checkbox" {{ 'checked' if notif.email.on_warning }}> Предупреждение</label>
+    <label><input id="email-on_recovery" type="checkbox" {{ 'checked' if notif.email.on_recovery }}> Возврат в норму</label>
   </div>
   <div class="form-row">
-    <div class="form-group">
-      <label>Пользователь</label>
-      <input type="text" id="n-smtp-user" value="{{ notif.email.smtp_user }}">
-    </div>
-    <div class="form-group">
-      <label>Получатели (через запятую)</label>
-      <input type="text" id="n-smtp-rcpt" value="{{ notif.email.recipients|join(', ') }}">
-    </div>
+    <label><input id="daily_report" type="checkbox" {{ 'checked' if notif.email.daily_report }}> Ежедневная сводка текущих показаний</label>
+    <div class="form-group"><label for="daily_report_time">Время на компьютере КВТ</label><input id="daily_report_time" type="time" value="{{ notif.email.daily_report_time }}"></div>
   </div>
 </div>
-
 <div class="form-section">
   <div class="form-section__title">Telegram</div>
-  <div class="form-group">
-    <label><input type="checkbox" id="n-tg-on" {{ 'checked' if notif.telegram.enabled }}> Включено</label>
+  <label><input id="telegram-enabled" type="checkbox" {{ 'checked' if notif.telegram.enabled }}> Отправлять в Telegram</label>
+  <div class="form-row">
+    <div class="form-group"><label for="bot_token">Bot Token</label><input id="bot_token" type="password" autocomplete="new-password" placeholder="{{ 'Токен сохранён; пусто — оставить' if notif.telegram.token_set else 'Токен не задан' }}"><label><input id="clear_token" type="checkbox"> Удалить сохранённый токен</label></div>
+    <div class="form-group"><label for="chat_ids">Общие Chat IDs (через запятую)</label><input id="chat_ids" value="{{ notif.telegram.chat_ids|join(', ') }}"></div>
   </div>
   <div class="form-row">
-    <div class="form-group">
-      <label>Bot Token</label>
-      <input type="text" id="n-tg-token" value="{{ notif.telegram.bot_token }}">
-    </div>
-    <div class="form-group">
-      <label>Chat IDs (через запятую)</label>
-      <input type="text" id="n-tg-chats" value="{{ notif.telegram.chat_ids|join(', ') }}">
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group">
-      <label><input type="checkbox" id="n-tg-alarm" {{ 'checked' if notif.telegram.on_alarm }}> При тревоге</label>
-    </div>
-    <div class="form-group">
-      <label><input type="checkbox" id="n-tg-warn" {{ 'checked' if notif.telegram.on_warning }}> При предупреждении</label>
-    </div>
+    <label><input id="telegram-on_alarm" type="checkbox" {{ 'checked' if notif.telegram.on_alarm }}> Тревога</label>
+    <label><input id="telegram-on_warning" type="checkbox" {{ 'checked' if notif.telegram.on_warning }}> Предупреждение</label>
+    <label><input id="telegram-on_recovery" type="checkbox" {{ 'checked' if notif.telegram.on_recovery }}> Возврат в норму</label>
   </div>
 </div>
-
-<button class="btn btn-primary" onclick="saveNotif()">Сохранить</button>
-<p class="text-muted mt-2">Заглушка — полное сохранение будет реализовано с Notification Service.</p>
+<div class="form-section">
+  <div class="form-section__title">Получатели датчиков и групп</div>
+  <p class="text-muted">Свои адреса датчика заменяют адреса групп и общий список. Если датчик наследует настройки, используются адреса всех его групп без повторов; если группы не задают адреса — общий список. «Не отправлять» отключает выбранный канал для датчика. Пустой общий список позволяет отправлять только по отдельным назначениям.</p>
+  <div id="notification-routing"></div>
+</div>
+<div class="form-group">
+  <label for="test-sensor">Кому отправить тест</label>
+  <select id="test-sensor">
+    <option value="">Общий список получателей</option>
+    {% for sensor in sensors or [] %}
+    <option value="{{ sensor.id }}">{{ sensor.id }} — {{ sensor.name }}</option>
+    {% endfor %}
+  </select>
+  <p class="text-muted">При выборе датчика тест отправляется на его адреса с учётом групп и наследования.</p>
+</div>
+<button class="btn btn-primary" type="submit">Сохранить</button>
+<button class="btn" type="button" data-test="email">Сохранить и отправить тестовое письмо</button>
+<button class="btn" type="button" data-test="telegram">Сохранить и отправить тест в Telegram</button>
+</form>
+<p class="text-muted mt-2">Уведомления отправляются при смене состояния датчика под охраной. Работает в составе службы архиватора.</p>
+<p id="notification-status" role="status" aria-live="polite"></p>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/notification_routing.js') }}"></script>
+<script>
+const routing = new NotificationRouting(document.getElementById('notification-routing'),
+  {{ sensors|default([])|tojson }}, {{ notif.per_sensor|tojson }}, {{ notif.groups|tojson }});
+const form = document.getElementById('notifications-form');
+const value = id => document.getElementById(id).value.trim();
+const checked = id => document.getElementById(id).checked;
+const list = id => value(id).split(',').map(s => s.trim()).filter(Boolean);
+function notificationPayload() {
+  const email = {}, telegram = {};
+  for (const key of ['smtp_server', 'smtp_user', 'from_address', 'security', 'ca_cert_path', 'client_cert_path', 'client_key_path', 'daily_report_time']) email[key] = value(key);
+  email.smtp_password = document.getElementById('smtp_password').value;
+  email.clear_password = checked('clear_password');
+  email.smtp_port = Number(value('smtp_port'));
+  email.timeout_seconds = Number(value('timeout_seconds'));
+  email.recipients = list('recipients');
+  email.verify_certificate = checked('verify_certificate');
+  email.daily_report = checked('daily_report');
+  telegram.bot_token = document.getElementById('bot_token').value;
+  telegram.clear_token = checked('clear_token');
+  telegram.chat_ids = list('chat_ids');
+  for (const key of ['enabled', 'on_alarm', 'on_warning', 'on_recovery']) {
+    email[key] = checked('email-' + key);
+    telegram[key] = checked('telegram-' + key);
+  }
+  return {email, telegram, ...routing.payload(), replace_routing: true};
+}
+async function saveNotifications(channel) {
+  if (!form.reportValidity()) return;
+  const buttons = form.querySelectorAll('button');
+  buttons.forEach(b => b.disabled = true);
+  try {
+    const result = await apiFetch('/api/notifications', {method: 'POST', body: JSON.stringify(notificationPayload())});
+    for (const [id, exists] of [['smtp_password', result.email.password_set], ['bot_token', result.telegram.token_set]]) {
+      document.getElementById(id).value = '';
+      document.getElementById(id).placeholder = exists ? 'Сохранён; пусто — оставить' : 'Не задан';
+    }
+    document.getElementById('clear_password').checked = false;
+    document.getElementById('clear_token').checked = false;
+    showToast('Настройки сохранены');
+    if (channel) {
+      const sensorId = value('test-sensor');
+      const test = sensorId ? {channel, sensor_id: Number(sensorId)} : {channel};
+      const result = await apiFetch('/api/notifications/test', {method: 'POST', body: JSON.stringify(test)});
+      showToast(result.message);
+    }
+    await refreshNotificationStatus();
+  } catch (e) { document.getElementById('notification-status').textContent = e.message; }
+  finally { buttons.forEach(b => b.disabled = false); }
+}
+form.addEventListener('submit', e => {e.preventDefault(); saveNotifications();});
+form.querySelectorAll('[data-test]').forEach(button => button.addEventListener('click', () => saveNotifications(button.dataset.test)));
+async function refreshNotificationStatus() {
+  try {
+    const s = await apiFetch('/api/notifications/status');
+    const counts = s.counts || {};
+    document.getElementById('notification-status').textContent =
+      (s.running ? 'Служба работает.' : 'Служба не активна. Запустите архиватор.') +
+      ' В очереди: ' + (counts.pending || 0) + ', отправлено: ' + (counts.sent || 0) + ', ошибок: ' + (counts.failed || 0) +
+      (s.last_error ? '. ' + s.last_error : '') + (s.error ? '. ' + s.error : '');
+  } catch (e) { document.getElementById('notification-status').textContent = e.message; }
+}
+refreshNotificationStatus();
+setInterval(refreshNotificationStatus, 10000);
+</script>
 {% endblock %}

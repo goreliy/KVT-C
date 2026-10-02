@@ -3,21 +3,27 @@
     "enabled": false,
     "smtp_server": "",
     "smtp_port": 587,
+    "security": "starttls",
+    "verify_certificate": true,
+    "ca_cert_path": "",
+    "client_cert_path": "",
+    "client_key_path": "",
+    "timeout_seconds": 15,
     "smtp_user": "",
-    "smtp_password": "",
     "from_address": "",
     "recipients": [],
     "on_alarm": true,
     "on_warning": true,
+    "on_recovery": false,
     "daily_report": false,
     "daily_report_time": "08:00"
   },
   "telegram": {
     "enabled": false,
-    "bot_token": "",
     "chat_ids": [],
     "on_alarm": true,
     "on_warning": true,
+    "on_recovery": false,
     "on_violation_start": true,
     "on_violation_end": true,
     "include_chart_in_alert": true,
@@ -53,5 +59,6 @@
       "chart_period_hours": 24
     }
   },
-  "per_sensor": {}
+  "per_sensor": {},
+  "groups": []
 }

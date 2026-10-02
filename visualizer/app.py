@@ -70,6 +70,7 @@ def create_app():
     from visualizer.routes.floorplan import floorplan_bp
     from visualizer.routes.journal import journal_bp
     from visualizer.routes.export import export_bp
+    from visualizer.routes.notifications import notifications_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(settings_bp, url_prefix='/settings')
@@ -77,6 +78,7 @@ def create_app():
     app.register_blueprint(floorplan_bp, url_prefix='/floorplan')
     app.register_blueprint(journal_bp)
     app.register_blueprint(export_bp)
+    app.register_blueprint(notifications_bp, url_prefix='/api')
 
     return app
 

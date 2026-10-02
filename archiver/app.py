@@ -15,6 +15,7 @@ patch_legacy_werkzeug_ast()
 from flask import Flask, Response, jsonify, request, send_file
 
 from .archive_service import ArchiveService
+from shared.notification_service import SERVICE as NOTIFICATIONS
 
 
 app = Flask(__name__)
@@ -169,7 +170,11 @@ def main():
 
     if not args.no_auto_start:
         SERVICE.start()
-    app.run(host=args.host, port=args.port, debug=False, threaded=True)
+    NOTIFICATIONS.start()
+    try:
+        app.run(host=args.host, port=args.port, debug=False, threaded=True)
+    finally:
+        NOTIFICATIONS.stop()
 
 
 if __name__ == "__main__":

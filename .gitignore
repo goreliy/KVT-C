@@ -32,6 +32,10 @@ data/*.tmp
 # Local secrets and generated config backups.
 data/config/flask_secret.key
 data/config/mqtt_password.key
+data/config/notification_secrets.key
+data/notifications.db
+data/notifications.db-*
+data/notifications_status.json
 data/config/backups/
 data/config/import_backups/
 

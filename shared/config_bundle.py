@@ -155,7 +155,11 @@ def export_config_bundle(root_dir: Optional[str] = None, include_diagnostics: bo
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
         for name, path in config_files:
-            archive.write(path, f"config/{name}")
+            if name == 'notifications.json':
+                from shared.notifications import public_config
+                archive.writestr(f"config/{name}", json.dumps(public_config(load_json(path)), ensure_ascii=False, indent=2))
+            else:
+                archive.write(path, f"config/{name}")
         for name, path in floorplan_assets:
             archive.write(path, f"assets/floorplans/{name}")
         for name, path in diagnostics:

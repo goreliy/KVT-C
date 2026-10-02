@@ -63,8 +63,10 @@ def settings_reports():
 
 @settings_bp.route('/notifications')
 def settings_notifications():
-    notif = load_notifications_config()
-    return render_template('settings/notifications.html', notif=notif)
+    from shared.notifications import for_ui
+    notif = for_ui()
+    return render_template('settings/notifications.html', notif=notif,
+                           sensors=load_system_config().get('sensors', []))
 
 
 @settings_bp.route('/appearance')
