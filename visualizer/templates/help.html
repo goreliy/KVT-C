@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Справка{% endblock %}
+{% block content %}
+<h1 class="page-title">Справка КВТ</h1>
+<p>Порядок настройки и работа с системой. Для практики нажмите «Демо» в верхнем меню.</p>
+<div class="form-group"><label for="help-search">Найти в справке</label><input id="help-search" type="search" placeholder="Например: TLS, датчик, архив" autocomplete="off"></div>
+<nav aria-label="Разделы справки" style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0">
+{% for id, title, paragraphs in help_sections %}<a href="#{{ id }}">{{ title }}</a>{% endfor %}
+</nav>
+{% for id, title, paragraphs in help_sections %}
+<section class="form-section help-section" id="{{ id }}"><h2>{{ title }}</h2>
+{% for paragraph in paragraphs %}<p style="line-height:1.65">{{ paragraph }}</p>{% endfor %}
+</section>
+{% endfor %}
+<p id="help-empty" hidden>По этому запросу ничего не найдено.</p>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('help-search').addEventListener('input', event => {
+  const query = event.target.value.toLocaleLowerCase('ru').trim();
+  let count = 0;
+  document.querySelectorAll('.help-section').forEach(section => {
+    section.hidden = !section.textContent.toLocaleLowerCase('ru').includes(query);
+    if (!section.hidden) count++;
+  });
+  document.getElementById('help-empty').hidden = count > 0;
+});
+</script>
+{% endblock %}

@@ -32,6 +32,8 @@
       <a href="/floorplan" class="{{ 'active' if request.path.startswith('/floorplan') }}">План помещения</a>
       <a href="/settings" class="{{ 'active' if request.path.startswith('/settings') }}">Настройки</a>
       <a href="/events" class="{{ 'active' if request.path.startswith('/events') or request.path.startswith('/journal') or request.path.startswith('/logbook') or request.path.startswith('/export') }}">Журнал</a>
+      <button class="kvt-demo-start" type="button" onclick="startKvtDemo(this)">Демо</button>
+      <a href="/help" class="{{ 'active' if request.path == '/help' }}">Справка</a>
     </div>
     <div class="navbar__right">
       <button class="theme-toggle" onclick="toggleTheme()" title="Переключить тему" aria-label="Переключить тему">
@@ -77,6 +79,9 @@
       } catch(e) { showToast('Ошибка смены темы', 'error'); }
     }
   </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/demo.css') }}">
+  <script>window.KVT_DEMO = {{ {'active': demo_mode|default(false), 'prefix': demo_prefix|default(''), 'state': demo_state|default(none)}|tojson }};</script>
+  <script src="{{ url_for('static', filename='js/demo.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

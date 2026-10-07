@@ -91,7 +91,7 @@ async function refreshBundleSummary() {
 }
 
 function downloadBundle() {
-  window.location.href = '/api/config/bundle/export';
+  window.location.href = window.kvtPath('/api/config/bundle/export');
 }
 
 async function importBundle() {

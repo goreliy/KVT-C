@@ -1,0 +1,26 @@
+.kvt-demo-start {background:transparent;color:var(--text-secondary);border:1px solid var(--color-guarded);border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
+.kvt-demo-start:hover,.kvt-demo-start:focus-visible {color:var(--text-primary);background:var(--bg-input)}
+.demo-banner {padding:10px 20px;background:var(--bg-input);border-bottom:2px solid var(--color-guarded);color:var(--text-primary);font-size:14px}
+.demo-panel {position:fixed;bottom:0;left:0;right:0;z-index:2100;background:var(--bg-card);border-top:2px solid var(--color-guarded);padding:12px 20px;box-shadow:0 -6px 20px #0005;color:var(--text-primary)}
+.demo-panel__heading,.demo-panel__actions {display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.demo-panel__heading {justify-content:space-between}
+.demo-panel__heading label {display:flex;align-items:center;gap:8px}
+.demo-panel select {max-width:min(430px,80vw);background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:5px;border-radius:5px}
+.demo-panel__text {line-height:1.5;margin:8px 0;max-height:18vh;overflow:auto}
+.demo-panel progress {display:block;width:100%;height:9px;margin:8px 0;accent-color:var(--color-guarded)}
+.demo-panel__status {font-size:13px;color:var(--text-secondary);margin-left:auto}
+.demo-focus {outline:3px solid var(--color-warning)!important;outline-offset:4px;scroll-margin-top:100px;scroll-margin-bottom:300px}
+.demo-panel .btn {padding:6px 12px}
+body.kvt-demo #toast {bottom:var(--demo-panel-height,240px);z-index:3000;pointer-events:none}
+body.kvt-demo .modal-overlay {bottom:var(--demo-panel-height,240px);height:auto}
+body.kvt-demo .modal {max-height:calc(100dvh - var(--demo-panel-height,240px) - 32px);overflow-y:auto}
+@media(max-width:900px) {
+  .navbar {height:auto;min-height:56px;flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .navbar__links {order:3;flex:1 0 100%;flex-wrap:wrap;gap:6px}
+  .navbar__links a {padding:6px 8px}
+}
+@media(max-width:700px) {
+  .demo-panel {padding:8px 12px}.demo-panel__heading {font-size:14px}.demo-panel__status {margin-left:0}.demo-panel__text {font-size:13px;max-height:15vh}
+  body.kvt-demo .form-row {flex-wrap:wrap}
+  body.kvt-demo .form-row .form-group {flex-basis:100%}
+}

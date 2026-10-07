@@ -1,6 +1,26 @@
 ﻿# -*- mode: python ; coding: utf-8 -*-
 
 from PyInstaller.utils.hooks import collect_submodules
+import json
+import os
+import shutil
+import sys
+import tempfile
+
+sys.path.insert(0, SPECPATH)
+from shared.paths import SEEDED_CONFIGS
+from shared.notifications import defaults as notification_defaults
+
+# Only seed JSON files belong in the portable executable, never local keys or backups.
+default_configs = tempfile.TemporaryDirectory(prefix="kvt-build-defaults-")
+for filename in SEEDED_CONFIGS:
+    source = os.path.join(SPECPATH, "data", "config", filename)
+    destination = os.path.join(default_configs.name, filename)
+    if filename == "notifications.json":
+        with open(destination, "w", encoding="utf-8") as handle:
+            json.dump(notification_defaults(), handle, ensure_ascii=False, indent=2)
+    elif os.path.isfile(source):
+        shutil.copyfile(source, destination)
 
 block_cipher = None
 
@@ -11,6 +31,7 @@ service_packages = [
     "poller",
     "shared",
     "visualizer",
+    "MocTestServer.server",
 ]
 
 hiddenimports = []
@@ -23,7 +44,7 @@ a = Analysis(
     pathex=["."],
     binaries=[],
     datas=[
-        ("data/config", "default_config"),
+        (default_configs.name, "default_config"),
         ("visualizer/templates", "visualizer/templates"),
         ("visualizer/static", "visualizer/static"),
         ("MocTestServer/server/templates", "MocTestServer/server/templates"),
@@ -61,4 +82,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+default_configs.cleanup()
 

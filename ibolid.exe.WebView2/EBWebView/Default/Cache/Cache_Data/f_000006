@@ -1,0 +1,2427 @@
+// Редактор мнемосхем (ТЗ 13.7) и мастер привязок SVG (13.4.13, FR-773).
+//
+// Редактор правит **тот же документ**, который читает просмотрщик, и рисует
+// его тем же отрисовщиком. Второй путь отрисовки означал бы, что схема в
+// редакторе и схема на посту выглядят по-разному, а расхождение обнаружится
+// на объекте.
+
+import { api, hasRole } from './api.js';
+import {
+  RenderContext, renderDocument, sanitizeSvg, svgElementTree, elementName,
+  registerComposite,
+} from './widgets.js';
+
+const h = (tag, attrs = {}, children = []) => {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === undefined || v === null) continue;
+    if (k === 'class') node.className = v;
+    else if (k === 'text') node.textContent = v;
+    else if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  }
+  for (const c of [].concat(children)) if (c !== null && c !== undefined) node.append(c);
+  return node;
+};
+
+/**
+ * Типы, у которых нет слота величины.
+ *
+ * Поле «тег», которое никуда не идёт, сбивает с толку сильнее, чем его
+ * отсутствие: его заполняют и ждут, что что-то произойдёт.
+ */
+const NO_VALUE_SLOT = new Set(['core.event_list', 'core.alarm_banner', 'core.button']);
+
+/** Поле с подписью и объяснением. Своё: инспектор живёт отдельно от настройки. */
+function field(label, control, hint) {
+  return h('label', { class: 'cfg-field', title: hint || '' }, [
+    h('span', { text: label }),
+    control,
+  ]);
+}
+
+/**
+ * Палитра: типы, для которых есть отрисовщик.
+ *
+ * Разделена по назначению. Виджеты опроса — не служебные и не «для
+ * диагностики»: состояние линии на мнемосхеме нужно оператору не меньше
+ * измеряемой величины. Прибор, переставший отвечать, объясняет застывшее
+ * значение рядом, и держать это на отдельном экране — значит заставлять
+ * оператора догадываться.
+ */
+const PALETTE = [
+  { group: 'Индикация' },
+  { type: 'core.value', name: 'Значение', w: 120, h: 32 },
+  { type: 'core.indicator', name: 'Индикатор', w: 24, h: 24 },
+  { type: 'core.bar', name: 'Полоса', w: 160, h: 22 },
+  { type: 'core.gauge', name: 'Стрелочный указатель', w: 140, h: 110 },
+  { type: 'core.traffic_light', name: 'Светофор', w: 30, h: 88 },
+
+  { group: 'Графики' },
+  // График на схеме отвечает на вопрос, на который мгновенное значение не
+  // отвечает никогда: «так было всегда или стало только что».
+  { type: 'core.trend', name: 'Исторический тренд', w: 560, h: 280, slot: 'series' },
+  { type: 'core.sparkline', name: 'Мини-график', w: 220, h: 64 },
+
+  { group: 'Управление' },
+  { type: 'core.toggle', name: 'Переключатель', w: 52, h: 26 },
+  { type: 'core.button', name: 'Кнопка', w: 110, h: 32 },
+  { type: 'core.input', name: 'Поле ввода', w: 150, h: 28 },
+  { type: 'core.select', name: 'Выбор из списка', w: 160, h: 28 },
+
+  { group: 'Опрос и приборы' },
+  // Высота с запасом под строку опроса: 70 хватало на состояние и счётчики,
+  // но заданный и фактический периоды в них уже не помещались.
+  { type: 'core.device_card', name: 'Карточка прибора', w: 260, h: 88 },
+  { type: 'core.table', name: 'Таблица регистров', w: 420, h: 160 },
+  { type: 'core.event_list', name: 'Список событий', w: 320, h: 140 },
+  { type: 'core.alarm_banner', name: 'Полоса тревог', w: 420, h: 30 },
+
+  { group: 'Оформление' },
+  { type: 'core.label', name: 'Надпись', w: 140, h: 22 },
+  { type: 'core.shape', name: 'Фигура', w: 120, h: 80 },
+  { type: 'core.svg', name: 'Векторная схема', w: 480, h: 320 },
+];
+
+function blankDocument(id) {
+  return {
+    schema_version: 1,
+    id,
+    name: id,
+    canvas: { w: 1280, h: 720, grid: 10, fit: 'contain' },
+    layers: [{ id: 'main', name: 'Основной', visible: true }],
+    widgets: [],
+    // Содержимое ресурсов хранится рядом с документом: схема обязана
+    // открываться на другом посту без сопровождающих файлов.
+    resource_data: {},
+  };
+}
+
+export async function openEditor({ host, args, live, toast, reportError }, store) {
+  if (!hasRole('engineer')) {
+    host.append(h('p', { class: 'empty', text: 'правка схем доступна роли «инженер» и выше' }));
+    return;
+  }
+
+  const id = args[0] || 'схема-' + new Date().toISOString().slice(0, 10);
+  let doc = blankDocument(id);
+  let storedLocally = false;
+  if (args[0]) {
+    try {
+      const loaded = await store.get(id);
+      doc = loaded.doc;
+      storedLocally = loaded.local;
+    } catch {
+      // Новой схемы на сервере ещё нет — правится пустая заготовка.
+    }
+  }
+  let selected = null;
+  // Виджеты, добавленные к выделению через Ctrl. Главный хранится отдельно:
+  // инспектор правит один виджет, а группа нужна составному типу.
+  const alsoSelected = new Set();
+
+  // Имя тега — адрес (`линия-1.4даdev1.r128`), название — то, что читает
+  // человек («Вход 1»). В подстановке нужны оба: по имени тег однозначен, а
+  // ищут его по названию — в машинном имени искать нечего.
+  const tagList = live
+    .all()
+    .map((t) => ({ name: t.name, title: t.title || '' }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  const tagNames = tagList.map((t) => t.name);
+  const tagTitles = new Map(tagList.map((t) => [t.name, t.title]));
+  /** Тег вместе с названием: «линия-1.dev1.r128 — Вход 1». */
+  const tagLabel = (name) => {
+    const title = tagTitles.get(name);
+    return title ? `${name} — ${title}` : name;
+  };
+  // Сведения об объекте нужны виджетам опроса: карточка привязывается к
+  // прибору, а не к тегу, и предпросмотр обязан показывать настоящее
+  // состояние, а не заглушку.
+  const [devices, channels, violations, events] = await Promise.all([
+    api.devices().catch(() => []),
+    api.channels().catch(() => []),
+    api.activeViolations().catch(() => []),
+    api.events(20).catch(() => []),
+  ]);
+  const devicePaths = devices.map((d) => d.path).sort();
+
+  // ── Разметка ──────────────────────────────────────────────────────
+  const palette = h('div', { class: 'palette' });
+  const canvasWrap = h('div', { class: 'canvas-wrap' });
+  const props = h('div', { class: 'props' });
+  // Полоса состояния объявляется здесь, вместе с остальными частями разметки:
+  // ниже места сборки `const` попадает в мёртвую зону, и экран не строится
+  // вовсе — «Cannot access 'status' before initialization» вместо редактора.
+  const status = h('span', { class: 'muted' });
+  const undoButton = h('button', { text: '↶', onclick: () => undo() });
+  const redoButton = h('button', { text: '↷', onclick: () => redo() });
+
+  host.append(
+    h('div', { class: 'toolbar' }, [
+      h('strong', { text: 'Редактор: ' }),
+      h('input', {
+        value: doc.name || id, style: 'width:220px',
+        oninput: (e) => { doc.name = e.target.value; },
+      }),
+      h('button', { class: 'primary', text: 'сохранить', onclick: save }),
+      h('button', { text: 'проверить', onclick: check }),
+      h('button', { text: 'выгрузить файл', onclick: download }),
+      h('button', { text: 'открыть просмотр', onclick: () => location.hash = '#/mnemo/' + encodeURIComponent(id) }),
+      h('button', { class: 'primary', text: '+ График трендов',
+        title: 'Вставить исторический график на схему; ряды и период настраиваются в свойствах',
+        disabled: hasRole('engineer') ? null : '', onclick: () => addWidget(PALETTE.find((item) => item.type === 'core.trend')) }),
+      // Узел из нескольких виджетов ставят на схему десятки раз. Собранный
+      // типом, он правится один раз, а не в каждом месте по отдельности.
+      h('button', { text: 'выделенное → свой тип', onclick: saveSelectionAsType }),
+      h('span', { class: 'spacer' }),
+      h('span', { class: 'muted', text: 'перетащите файл SVG на холст для импорта' }),
+    ]),
+    h('div', { class: 'toolbar' }, [
+      undoButton, redoButton,
+      h('span', { class: 'sep' }),
+      h('button', { text: 'копировать', title: 'Ctrl+C', onclick: () => copySelection() }),
+      h('button', { text: 'вставить', title: 'Ctrl+V — со смещением; повтор продолжает ряд',
+        onclick: () => paste() }),
+      h('button', { text: 'дублировать', title: 'Ctrl+D', onclick: () => duplicateSelection() }),
+      h('button', { class: 'danger', text: 'удалить', title: 'Delete',
+        onclick: () => deleteSelection() }),
+      h('span', { class: 'sep' }),
+      // Выравнивание идёт к **главному** выделенному — тому, что выделен
+      // первым. Инженер ставит его на место, а остальные подтягивает к нему.
+      h('span', { class: 'muted', text: 'выровнять по первому:' }),
+      ...[['left', '⟨', 'по левым краям'], ['center-x', '⟷', 'по центрам, горизонтально'],
+        ['right', '⟩', 'по правым краям'], ['top', '⌃', 'по верхним краям'],
+        ['center-y', '⇕', 'по центрам, вертикально'], ['bottom', '⌄', 'по нижним краям']]
+        .map(([how, mark, hint]) => h('button', {
+          text: mark, title: `выровнять ${hint}`, onclick: () => align(how),
+        })),
+      h('button', { text: '⇹', title: 'равные промежутки по горизонтали',
+        onclick: () => distribute('x') }),
+      h('button', { text: '⇳', title: 'равные промежутки по вертикали',
+        onclick: () => distribute('y') }),
+      h('button', { text: '▭', title: 'одинаковый размер по первому выделенному',
+        onclick: () => sameSize('both') }),
+      h('span', { class: 'spacer' }),
+      h('span', { class: 'muted', text:
+        'рамкой по пустому месту — выделить несколько; стрелки двигают, Shift — по пикселю' }),
+    ]),
+    h('div', { class: 'toolbar' }, status),
+    h('div', { class: 'editor' }, [palette, canvasWrap, props]),
+  );
+
+  // ── Свои типы виджетов ────────────────────────────────────────────
+  // Отрисовщики уже зарегистрированы оболочкой: схема с составным типом
+  // обязана открываться и на посту оператора, не только в редакторе. Здесь
+  // нужен лишь перечень для палитры.
+  let ownTypes = [];
+  try {
+    ownTypes = (await api.widgetTypes()).items || [];
+  } catch {
+    ownTypes = [];
+  }
+
+  // ── Палитра ───────────────────────────────────────────────────────
+  // Перестраивается целиком: свой тип, сохранённый только что, обязан
+  // появиться в ней сразу. Иначе инженер собрал тип и не находит его — то
+  // есть решает, что сохранение не сработало.
+  function fillPalette() {
+    palette.replaceChildren();
+    for (const item of PALETTE) {
+      if (item.group) {
+        palette.append(h('h3', { text: item.group }));
+        continue;
+      }
+      palette.append(draggableItem(item, item.name, item.type));
+    }
+    if (ownTypes.length) {
+      palette.append(h('h3', { text: 'Свои типы' }));
+      for (const view of ownTypes) {
+        palette.append(h('span', { class: 'palette-own' }, [
+          draggableItem(
+            { type: view.id, w: view.w || 160, h: view.h || 60 },
+            view.name,
+            `${view.id}: виджетов ${view.children}`
+              + (view.params.length ? `, параметры: ${view.params.join(', ')}` : ''),
+          ),
+          h('button', {
+            text: '×', class: 'palette-drop', title: 'удалить свой тип',
+            onclick: () => removeOwnType(view),
+          }),
+        ]));
+      }
+    }
+
+    palette.append(h('h3', { text: 'Холст' }));
+    palette.append(h('label', {}, ['ширина ', numberInput(doc.canvas.w, (v) => { doc.canvas.w = v; redraw(); })]));
+    palette.append(h('label', {}, ['высота ', numberInput(doc.canvas.h, (v) => { doc.canvas.h = v; redraw(); })]));
+
+    // Готовые размеры: угадывать их наизусть незачем, а промахнуться на
+    // сотню пикселей — значит рисовать схему под экран, которого нет.
+    palette.append(h('div', { class: 'toolbar' }, [
+      h('button', { class: 'small', text: 'щит', title: '1920 × 1080',
+        onclick: () => { doc.canvas.w = 1920; doc.canvas.h = 1080; redraw(); fillPalette(); } }),
+      h('button', { class: 'small', text: 'планшет', title: '1024 × 768',
+        onclick: () => { doc.canvas.w = 1024; doc.canvas.h = 768; redraw(); fillPalette(); } }),
+      h('button', { class: 'small', text: 'телефон', title: '390 × 844',
+        onclick: () => { doc.canvas.w = 390; doc.canvas.h = 844; redraw(); fillPalette(); } }),
+    ]));
+
+    // Связь вариантов одной схемы (ТЗ FR-713).
+    //
+    // Схема щита на телефоне читается лупой, а уменьшенная втрое не
+    // становится схемой для телефона — она становится нечитаемой. Поэтому
+    // вариант рисуется отдельно, а система выбирает подходящий по ширине окна.
+    doc.responsive = doc.responsive || { group: '', min_width: 0 };
+    palette.append(h('h3', { text: 'Вариант экрана' }));
+    const groupInput = h('input', {
+      type: 'text', style: 'width:100%',
+      value: doc.responsive.group || '',
+      placeholder: 'имя группы, например «цех-1»',
+      title: 'схемы с одинаковым именем группы — варианты одного экрана '
+           + 'под разную ширину',
+    });
+    groupInput.addEventListener('input', () => {
+      doc.responsive.group = groupInput.value.trim();
+    });
+    palette.append(groupInput);
+    palette.append(h('label', {}, ['с ширины ', numberInput(doc.responsive.min_width || 0, (v) => {
+      doc.responsive.min_width = v;
+    }), ' пикселей']));
+    palette.append(h('p', { class: 'muted', style: 'font-size:11px', text:
+      'Показывается вариант с наибольшим порогом, не превышающим ширину окна. '
+      + 'Один из вариантов группы обязан иметь порог 0 — иначе на узком экране '
+      + 'показывать нечего.' }));
+  }
+  fillPalette();
+
+  /** Удаление своего типа. Занятый схемой тип служба удалить не даст. */
+  async function removeOwnType(view) {
+    const confirmed = await modalPicker(`Удалить тип «${view.id}»?`, h('div', {}, [
+      h('p', { class: 'muted', text:
+        'Тип, поставленный на схему, служба удалить не даст: схема перестала бы '
+        + 'отрисовываться, и обнаружилось бы это на посту оператора.' }),
+    ]));
+    if (!confirmed) return;
+    try {
+      await api.deleteWidgetType(view.id);
+    } catch (e) {
+      reportError(e);
+      return;
+    }
+    ownTypes = ownTypes.filter((t) => t.id !== view.id);
+    fillPalette();
+    toast(`тип «${view.id}» удалён`, 'ok');
+  }
+
+  // ── Холст ─────────────────────────────────────────────────────────
+  /**
+   * Кнопка палитры: перетаскивается на схему и добавляется щелчком.
+   *
+   * Перетаскивание — основной способ: инженер кладёт виджет туда, где ему
+   * место, одним движением. Щелчок оставлен вторым: с сенсорного экрана и с
+   * клавиатуры перетащить нельзя, а класть виджеты оттуда надо.
+   */
+  function draggableItem(item, name, title) {
+    const button = h('button', {
+      text: name,
+      title: `${title}\nперетащите на схему либо щёлкните`,
+      draggable: true,
+      onclick: () => addWidget(item),
+    });
+    button.addEventListener('dragstart', (e) => {
+      dragged = item;
+      e.dataTransfer.effectAllowed = 'copy';
+      // Своё имя вида, а не `text/plain`: чужое перетаскивание — текст из
+      // соседнего окна, файл — не должно превращаться в виджет.
+      e.dataTransfer.setData('application/x-ibolid-widget', item.type);
+    });
+    button.addEventListener('dragend', () => { dragged = null; });
+    return button;
+  }
+
+  /// Что несут из палитры прямо сейчас.
+  let dragged = null;
+
+  document.addEventListener('mousedown', (e) => {
+    if (contextMenu && !e.target.closest('.ctx-menu')) closeContextMenu();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeContextMenu();
+  });
+
+  canvasWrap.addEventListener('dragover', (e) => {
+    // Отменять умолчание надо всегда: без этого «уронить» на холст нельзя
+    // вовсе, и перетаскивание выглядит неработающим.
+    e.preventDefault();
+    if (dragged) e.dataTransfer.dropEffect = 'copy';
+  });
+  canvasWrap.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    // Виджет из палитры — первым: он и есть обычный случай.
+    if (dragged) {
+      const item = dragged;
+      dragged = null;
+      addWidget(item, canvasPoint(e, item));
+      return;
+    }
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    if (!/\.svg$/i.test(file.name) && file.type !== 'image/svg+xml') {
+      toast('перетащить можно файл SVG', 'err');
+      return;
+    }
+    await importSvg(file);
+  });
+
+  let built = null;
+
+  function redraw() {
+    // Приборы, каналы и события передаются и здесь: предпросмотр обязан
+    // совпадать с просмотром. Редактор, показывающий «нет такого прибора»
+    // о существующем приборе, заставляет проверять схему на посту.
+    const ctx = new RenderContext({
+      live,
+      violations,
+      devices,
+      channels,
+      events,
+      resources: doc.resource_data || {},
+      interactive: false,
+      // График в редакторе показывает настоящую историю: предпросмотр с
+      // заглушкой не отвечает на вопрос, влезет ли ряд в отведённое место.
+      history: (tags, from, to, resolution, maxPoints) =>
+        api.history(tags, from, to, resolution, maxPoints),
+    });
+    // Прежняя сборка освобождается: редактор перерисовывает холст на каждое
+    // действие, и таймеры графиков копились бы до предела браузера.
+    if (built && built.dispose) built.dispose();
+    built = renderDocument(doc, ctx);
+    canvasWrap.replaceChildren(built.node);
+
+    // Выбор виджета нажатием и перетаскивание мышью.
+    for (const g of built.node.querySelectorAll('[data-widget]')) {
+      const wid = g.getAttribute('data-widget');
+      g.style.cursor = 'move';
+      g.addEventListener('mousedown', (e) => startDrag(e, wid, g));
+      g.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Ctrl либо Shift добавляет к выделению: составной тип собирают из
+        // нескольких виджетов, и выделять их по одному нечем.
+        if (e.ctrlKey || e.metaKey || e.shiftKey) toggleInSelection(wid);
+        else select(wid);
+      });
+      g.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Правая кнопка не сбрасывает выделение из нескольких: перенести на
+        // слой десяток виджетов разом — обычное дело, и требовать по одному
+        // значило бы заставлять повторять одно действие десять раз.
+        if (!alsoSelected.has(wid) && wid !== selected) select(wid);
+        showContextMenu(e.clientX, e.clientY, wid);
+      });
+      if (selected === wid || alsoSelected.has(wid)) g.classList.add('selected');
+    }
+    // Нажатие по пустому месту тянет рамку выделения; простое нажатие без
+    // движения по-прежнему снимает выделение.
+    built.node.addEventListener('mousedown', (e) => {
+      if (e.target.closest('[data-widget]')) return;
+      startBand(e);
+    });
+    if (built.update) built.update();
+  }
+
+  function startDrag(event, wid, node) {
+    event.preventDefault();
+    if (lockedLayers().has((doc.widgets.find((w) => w.id === wid) || {}).layer)) {
+      toast('слой закрыт от правки', 'warn');
+      return;
+    }
+    // Снимок берётся один раз на всё перетаскивание, а не на каждое движение
+    // мыши: иначе одно перемещение съедало бы всю глубину истории.
+    beginChange('перемещение');
+    if (!alsoSelected.has(wid) && wid !== selected) select(wid);
+    const instance = doc.widgets.find((w) => w.id === wid);
+    if (!instance) return;
+    const rect = built.node.getBoundingClientRect();
+    const scale = doc.canvas.w / rect.width;
+    const startX = event.clientX, startY = event.clientY;
+    const originX = instance.geometry.x, originY = instance.geometry.y;
+
+    const move = (e) => {
+      const grid = doc.canvas.grid || 1;
+      const nx = originX + (e.clientX - startX) * scale;
+      const ny = originY + (e.clientY - startY) * scale;
+      instance.geometry.x = Math.round(nx / grid) * grid;
+      instance.geometry.y = Math.round(ny / grid) * grid;
+      node.setAttribute('transform', `translate(${instance.geometry.x} ${instance.geometry.y})`);
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+      endChange();
+      showProps();
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  }
+
+  /**
+   * Добавляет виджет на схему.
+   *
+   * `at` — место в координатах холста. Без него виджет ложится в свободное
+   * место левого верхнего угла: щелчок по палитре не говорит, куда класть, и
+   * складывать всё в одну точку значило бы заставлять растаскивать вручную.
+   */
+  function addWidget(item, at) {
+    if (!item || !item.type || !Number.isFinite(item.w) || !Number.isFinite(item.h)) {
+      toast('не удалось добавить виджет: тип или размер не заданы', 'err');
+      return;
+    }
+    remember('добавление виджета');
+    const place = at || freeSpot(item);
+    const instance = {
+      id: 'w-' + (doc.widgets.length + 1) + '-' + Math.random().toString(36).slice(2, 6),
+      type: item.type,
+      layer: 'main',
+      z: doc.widgets.length,
+      geometry: { x: place.x, y: place.y, w: item.w, h: item.h },
+      bindings: item.type === 'core.trend' ? { series: { kind: 'tag_set', tags: [] } } : {},
+      properties: {},
+    };
+    doc.widgets.push(instance);
+    selected = instance.id;
+    redraw();
+    showProps();
+  }
+
+  /**
+   * Свободное место для виджета, добавленного без указания места.
+   *
+   * Ступеньками вниз-вправо: десять виджетов, положенных один на другой в
+   * точке (40, 40), выглядят как один, и первое, что делает инженер, —
+   * растаскивает их мышью.
+   */
+  function freeSpot(item) {
+    const grid = doc.canvas.grid || 10;
+    const step = Math.max(grid, 24);
+    for (let n = 0; n < 200; n += 1) {
+      const x = 40 + (n % 12) * step;
+      const y = 40 + Math.floor(n / 12) * step;
+      const taken = doc.widgets.some(
+        (w) => Math.abs(w.geometry.x - x) < 1 && Math.abs(w.geometry.y - y) < 1,
+      );
+      if (!taken) return { x, y };
+    }
+    return { x: 40, y: 40 };
+  }
+
+  /**
+   * Точка холста под указателем.
+   *
+   * Холст масштабируется под окно, поэтому экранные точки переводятся в
+   * координаты схемы: положи мы виджет по экранным, он оказался бы не там,
+   * куда его принесли, — и тем дальше, чем сильнее сжат холст.
+   */
+  function canvasPoint(event, item) {
+    if (!built || !built.node) return { x: 40, y: 40 };
+    const rect = built.node.getBoundingClientRect();
+    if (!rect.width || !rect.height) return { x: 40, y: 40 };
+    const scale = doc.canvas.w / rect.width;
+    const grid = doc.canvas.grid || 1;
+    // Виджет кладётся центром под указатель: человек целится в место, где
+    // виджет должен оказаться, а не в его левый верхний угол.
+    let x = (event.clientX - rect.left) * scale - (item.w || 0) / 2;
+    let y = (event.clientY - rect.top) * scale - (item.h || 0) / 2;
+    x = Math.round(x / grid) * grid;
+    y = Math.round(y / grid) * grid;
+    // За края холста не выпускаем: виджет, положенный мимо, не виден и
+    // выглядит пропавшим.
+    x = Math.max(0, Math.min(x, doc.canvas.w - (item.w || 0)));
+    y = Math.max(0, Math.min(y, doc.canvas.h - (item.h || 0)));
+    return { x, y };
+  }
+
+  /// Открытое меню правой кнопки, если открыто.
+  let contextMenu = null;
+
+  function closeContextMenu() {
+    if (contextMenu) {
+      contextMenu.remove();
+      contextMenu = null;
+    }
+  }
+
+  /**
+   * Меню правой кнопки на виджете: слой и порядок отрисовки.
+   *
+   * Слой меняли только в инспекторе, по одному виджету за раз. На схеме цеха
+   * поверх технологии лежат пояснительный слой и слой кабельных трасс, и
+   * перекладывать между ними приходится десятками — правая кнопка на месте
+   * дешевле похода в боковую панель.
+   */
+  function showContextMenu(x, y, wid) {
+    closeContextMenu();
+    const targets = new Set([...alsoSelected, wid]);
+    if (selected) targets.add(selected);
+    const many = targets.size > 1;
+    const instance = doc.widgets.find((w) => w.id === wid);
+    if (!instance) return;
+    const current = instance.layer || 'main';
+
+    const apply = (fn, note) => {
+      remember(note);
+      for (const id of targets) {
+        const w = doc.widgets.find((x) => x.id === id);
+        if (w) fn(w);
+      }
+      closeContextMenu();
+      redraw();
+      showProps();
+    };
+
+    const items = [];
+    items.push(h('div', { class: 'menu-head', text: many ? `виджетов: ${targets.size}` : instance.type }));
+
+    items.push(h('div', { class: 'menu-head', text: 'Слой' }));
+    for (const layer of doc.layers || []) {
+      const here = layer.id === current && !many;
+      items.push(h('button', {
+        text: (here ? '• ' : '\u00a0\u00a0') + (layer.name || layer.id)
+          + (layer.locked ? ' (закрыт)' : ''),
+        // Закрытый слой не выбирается: положить виджет туда, где его нельзя
+        // будет тронуть, — это потерять его до снятия замка.
+        disabled: layer.locked || here,
+        title: layer.locked ? 'слой закрыт от правки' : 'перенести на этот слой',
+        onclick: () => apply((w) => { w.layer = layer.id; }, 'перенос на слой'),
+      }));
+    }
+
+    items.push(h('div', { class: 'menu-head', text: 'Порядок' }));
+    const maxZ = doc.widgets.reduce((m, w) => Math.max(m, w.z || 0), 0);
+    const minZ = doc.widgets.reduce((m, w) => Math.min(m, w.z || 0), 0);
+    items.push(h('button', { text: 'на передний план',
+      onclick: () => apply((w) => { w.z = maxZ + 1; }, 'на передний план') }));
+    items.push(h('button', { text: 'выше',
+      onclick: () => apply((w) => { w.z = (w.z || 0) + 1; }, 'выше') }));
+    items.push(h('button', { text: 'ниже',
+      onclick: () => apply((w) => { w.z = (w.z || 0) - 1; }, 'ниже') }));
+    items.push(h('button', { text: 'на задний план',
+      onclick: () => apply((w) => { w.z = minZ - 1; }, 'на задний план') }));
+
+    contextMenu = h('div', { class: 'ctx-menu' }, items);
+    document.body.append(contextMenu);
+    // Меню не должно уезжать за край окна: у нижнего края экрана оно
+    // открывалось бы наполовину за ним.
+    const rect = contextMenu.getBoundingClientRect();
+    const left = Math.min(x, window.innerWidth - rect.width - 8);
+    const top = Math.min(y, window.innerHeight - rect.height - 8);
+    contextMenu.style.left = Math.max(4, left) + 'px';
+    contextMenu.style.top = Math.max(4, top) + 'px';
+  }
+
+  function select(wid) {
+    selected = wid;
+    alsoSelected.clear();
+    paintSelection();
+    showProps();
+  }
+
+  /** Добавляет виджет к выделению либо убирает из него. */
+  function toggleInSelection(wid) {
+    if (!selected) {
+      select(wid);
+      return;
+    }
+    if (wid === selected) {
+      // Снятие главного выделения передаёт роль первому из добавленных:
+      // выделение без «главного» нечем показать в инспекторе.
+      const next = alsoSelected.values().next();
+      alsoSelected.delete(wid);
+      selected = next.done ? null : next.value;
+      if (!next.done) alsoSelected.delete(next.value);
+    } else if (alsoSelected.has(wid)) {
+      alsoSelected.delete(wid);
+    } else {
+      alsoSelected.add(wid);
+    }
+    paintSelection();
+    showProps();
+  }
+
+  function paintSelection() {
+    for (const g of canvasWrap.querySelectorAll('[data-widget]')) {
+      const wid = g.getAttribute('data-widget');
+      g.classList.toggle('selected', wid === selected || alsoSelected.has(wid));
+    }
+  }
+
+  /** Все выделенные виджеты: главный и добавленные. */
+  function selectionIds() {
+    const ids = [];
+    if (selected) ids.push(selected);
+    for (const wid of alsoSelected) if (wid !== selected) ids.push(wid);
+    return ids;
+  }
+
+  // ── История правок (13.7.12) ──────────────────────────────────────
+  //
+  // Отмена — не удобство, а условие пользования: одно неверное перетаскивание
+  // без неё означает восстановление вручную, а на схеме из полусотни виджетов
+  // «как было» уже не помнят. История хранит **снимки документа**, а не
+  // обратные действия: снимок нельзя применить наполовину, а обратное
+  // действие, написанное с ошибкой, портит документ тише, чем сама правка.
+  //
+  // Снимок берётся перед изменением, а не после: отменять надо в состояние
+  // «до», и хранение «после» смещало бы историю на шаг.
+
+  const HISTORY_LIMIT = 60;
+  let past = [];
+  let future = [];
+  let snapshotPending = null;
+
+  /**
+   * Запоминает состояние перед правкой.
+   *
+   * `label` попадает в подпись кнопки отмены: «отменить перемещение» говорит
+   * больше, чем «отменить».
+   */
+  function remember(label) {
+    past.push({ label, doc: JSON.stringify(doc), selected, also: [...alsoSelected] });
+    if (past.length > HISTORY_LIMIT) past.shift();
+    future = [];
+    drawHistoryButtons();
+  }
+
+  /**
+   * Снимок для длящегося действия: перетаскивание запоминается один раз,
+   * а не на каждое движение мыши.
+   */
+  function beginChange(label) {
+    snapshotPending = { label, doc: JSON.stringify(doc), selected, also: [...alsoSelected] };
+  }
+
+  /** Заканчивает длящееся действие. Без изменений история не растёт. */
+  function endChange() {
+    if (!snapshotPending) return;
+    const changed = snapshotPending.doc !== JSON.stringify(doc);
+    if (changed) {
+      past.push(snapshotPending);
+      if (past.length > HISTORY_LIMIT) past.shift();
+      future = [];
+      drawHistoryButtons();
+    }
+    snapshotPending = null;
+  }
+
+  function applySnapshot(snapshot) {
+    doc = JSON.parse(snapshot.doc);
+    selected = snapshot.selected;
+    alsoSelected.clear();
+    for (const wid of snapshot.also) alsoSelected.add(wid);
+    // Выделение могло указывать на виджет, которого в этом состоянии нет.
+    if (selected && !doc.widgets.some((w) => w.id === selected)) selected = null;
+    for (const wid of [...alsoSelected]) {
+      if (!doc.widgets.some((w) => w.id === wid)) alsoSelected.delete(wid);
+    }
+    redraw();
+    showProps();
+    drawHistoryButtons();
+  }
+
+  function undo() {
+    if (!past.length) return;
+    const snapshot = past.pop();
+    future.push({ label: snapshot.label, doc: JSON.stringify(doc), selected, also: [...alsoSelected] });
+    applySnapshot(snapshot);
+    toast(`отменено: ${snapshot.label}`, 'ok');
+  }
+
+  function redo() {
+    if (!future.length) return;
+    const snapshot = future.pop();
+    past.push({ label: snapshot.label, doc: JSON.stringify(doc), selected, also: [...alsoSelected] });
+    applySnapshot(snapshot);
+  }
+
+  function drawHistoryButtons() {
+    undoButton.disabled = !past.length;
+    redoButton.disabled = !future.length;
+    undoButton.title = past.length
+      ? `отменить: ${past[past.length - 1].label} (Ctrl+Z)`
+      : 'отменять нечего';
+    redoButton.title = future.length
+      ? `вернуть: ${future[future.length - 1].label} (Ctrl+Y)`
+      : 'возвращать нечего';
+  }
+
+  // ── Буфер обмена и размножение ────────────────────────────────────
+
+  let clipboard = [];
+  /** Смещение последней вставки: повтор продолжает ряд (FR-701.13). */
+  let lastStep = { x: 20, y: 20 };
+
+  function copySelection() {
+    const ids = selectionIds();
+    if (!ids.length) return;
+    clipboard = ids
+      .map((wid) => doc.widgets.find((w) => w.id === wid))
+      .filter(Boolean)
+      .map((w) => JSON.parse(JSON.stringify(w)));
+    toast(`скопировано виджетов: ${clipboard.length}`, 'ok');
+  }
+
+  /**
+   * Вставка со смещением.
+   *
+   * Идентификаторы выдаются новые: два виджета с одним именем — это схема,
+   * которая не сохранится, а отказ назовёт повтор идентификатора, а не
+   * вставку.
+   */
+  function paste(dx = lastStep.x, dy = lastStep.y) {
+    if (!clipboard.length) return;
+    remember('вставку');
+    const added = [];
+    for (const source of clipboard) {
+      const copy = JSON.parse(JSON.stringify(source));
+      copy.id = freshId(copy.type);
+      copy.geometry.x += dx;
+      copy.geometry.y += dy;
+      copy.z = doc.widgets.length;
+      doc.widgets.push(copy);
+      added.push(copy.id);
+    }
+    selected = added[0] || null;
+    alsoSelected.clear();
+    for (const wid of added.slice(1)) alsoSelected.add(wid);
+    // Следующая вставка продолжит ряд с тем же шагом.
+    clipboard = added
+      .map((wid) => doc.widgets.find((w) => w.id === wid))
+      .map((w) => JSON.parse(JSON.stringify(w)));
+    redraw();
+    showProps();
+  }
+
+  /** Дублирование выделенного: копия рядом, без буфера обмена. */
+  function duplicateSelection() {
+    const ids = selectionIds();
+    if (!ids.length) return;
+    const saved = clipboard;
+    copySelection();
+    paste(lastStep.x, lastStep.y);
+    clipboard = saved.length ? saved : clipboard;
+  }
+
+  function freshId(type) {
+    const base = 'w-' + (type || 'w').split('.').pop();
+    let n = doc.widgets.length + 1;
+    let id = `${base}-${n}`;
+    while (doc.widgets.some((w) => w.id === id)) {
+      n += 1;
+      id = `${base}-${n}`;
+    }
+    return id;
+  }
+
+  function deleteSelection() {
+    const ids = selectionIds();
+    if (!ids.length) return;
+    remember(ids.length > 1 ? `удаление ${ids.length} виджетов` : 'удаление виджета');
+    doc.widgets = doc.widgets.filter((w) => !ids.includes(w.id));
+    selected = null;
+    alsoSelected.clear();
+    redraw();
+    showProps();
+  }
+
+  // ── Выравнивание и распределение (FR-703.2) ───────────────────────
+
+  /**
+   * Выравнивание идёт по **главному** выделенному, а не по краю холста.
+   *
+   * Главный виджет — тот, что выделен первым: инженер ставит его на место, а
+   * остальные подтягивает к нему. Выравнивание по краю холста двигало бы и
+   * образец тоже.
+   */
+  function align(how) {
+    const ids = selectionIds();
+    if (ids.length < 2) {
+      toast('выделите хотя бы два виджета: выравнивать нужно к чему-то', 'warn');
+      return;
+    }
+    const items = ids.map((wid) => doc.widgets.find((w) => w.id === wid)).filter(Boolean);
+    const anchor = items[0].geometry;
+    remember('выравнивание');
+    for (const item of items.slice(1)) {
+      const g = item.geometry;
+      switch (how) {
+        case 'left': g.x = anchor.x; break;
+        case 'right': g.x = anchor.x + anchor.w - g.w; break;
+        case 'top': g.y = anchor.y; break;
+        case 'bottom': g.y = anchor.y + anchor.h - g.h; break;
+        case 'center-x': g.x = Math.round(anchor.x + (anchor.w - g.w) / 2); break;
+        case 'center-y': g.y = Math.round(anchor.y + (anchor.h - g.h) / 2); break;
+        default: break;
+      }
+    }
+    redraw();
+    showProps();
+  }
+
+  /** Равные промежутки между крайними: середина расставляется поровну. */
+  function distribute(axis) {
+    const ids = selectionIds();
+    if (ids.length < 3) {
+      toast('выделите хотя бы три виджета: между двумя распределять нечего', 'warn');
+      return;
+    }
+    const items = ids
+      .map((wid) => doc.widgets.find((w) => w.id === wid))
+      .filter(Boolean)
+      .sort((a, b) => (axis === 'x' ? a.geometry.x - b.geometry.x : a.geometry.y - b.geometry.y));
+    const first = items[0].geometry;
+    const last = items[items.length - 1].geometry;
+    remember('распределение');
+    const span = axis === 'x'
+      ? (last.x + last.w) - first.x
+      : (last.y + last.h) - first.y;
+    const used = items.reduce((sum, i) => sum + (axis === 'x' ? i.geometry.w : i.geometry.h), 0);
+    const gap = (span - used) / (items.length - 1);
+    let cursor = axis === 'x' ? first.x : first.y;
+    for (const item of items) {
+      if (axis === 'x') {
+        item.geometry.x = Math.round(cursor);
+        cursor += item.geometry.w + gap;
+      } else {
+        item.geometry.y = Math.round(cursor);
+        cursor += item.geometry.h + gap;
+      }
+    }
+    redraw();
+    showProps();
+  }
+
+  /** Одинаковый размер по образцу — главному выделенному. */
+  function sameSize(what) {
+    const ids = selectionIds();
+    if (ids.length < 2) {
+      toast('выделите хотя бы два виджета', 'warn');
+      return;
+    }
+    const items = ids.map((wid) => doc.widgets.find((w) => w.id === wid)).filter(Boolean);
+    const anchor = items[0].geometry;
+    remember('выравнивание размера');
+    for (const item of items.slice(1)) {
+      if (what !== 'h') item.geometry.w = anchor.w;
+      if (what !== 'w') item.geometry.h = anchor.h;
+    }
+    redraw();
+    showProps();
+  }
+
+  /** Сдвиг выделенного стрелками. */
+  function nudge(dx, dy) {
+    const ids = selectionIds();
+    if (!ids.length) return;
+    remember('перемещение');
+    for (const wid of ids) {
+      const item = doc.widgets.find((w) => w.id === wid);
+      if (!item) continue;
+      item.geometry.x = Math.max(0, item.geometry.x + dx);
+      item.geometry.y = Math.max(0, item.geometry.y + dy);
+    }
+    redraw();
+    showProps();
+  }
+
+  // ── Рамка выделения (FR-703.2) ────────────────────────────────────
+  //
+  // Выделять по одному с зажатым Ctrl годится для двух виджетов, а составной
+  // тип собирают из десятка: рамка — единственный работающий способ.
+  //
+  // Рамка тянется по **пустому месту** холста. Начало на виджете означает
+  // перетаскивание — иначе взять виджет мышью стало бы нельзя.
+
+  function startBand(event) {
+    if (event.button !== 0) return;
+    const rect = built.node.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      // Холст нулевого размера — это схлопнувшаяся раскладка, а не «нечего
+      // выделять». Молчать нельзя: инженер тянет рамку и не понимает, почему
+      // ничего не происходит.
+      toast('холст сжат до нуля: расширьте окно либо уменьшите боковые панели', 'warn');
+      return;
+    }
+    const scale = doc.canvas.w / rect.width;
+    const from = {
+      x: (event.clientX - rect.left) * scale,
+      y: (event.clientY - rect.top) * scale,
+    };
+
+    const band = h('div', { class: 'select-band' });
+    canvasWrap.append(band);
+    let moved = false;
+
+    const place = (e) => {
+      const to = {
+        x: (e.clientX - rect.left) * scale,
+        y: (e.clientY - rect.top) * scale,
+      };
+      const box = {
+        x: Math.min(from.x, to.x),
+        y: Math.min(from.y, to.y),
+        w: Math.abs(to.x - from.x),
+        h: Math.abs(to.y - from.y),
+      };
+      // Рамка рисуется в пикселях страницы, а холст живёт в своих единицах.
+      const k = rect.width / doc.canvas.w;
+      band.style.left = `${box.x * k}px`;
+      band.style.top = `${box.y * k}px`;
+      band.style.width = `${box.w * k}px`;
+      band.style.height = `${box.h * k}px`;
+      return box;
+    };
+
+    const move = (e) => {
+      moved = true;
+      place(e);
+    };
+
+    const up = (e) => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+      const box = place(e);
+      band.remove();
+      // Меньше пяти единиц — это нажатие мимо виджета, а не рамка: снимаем
+      // выделение, как делали всегда.
+      if (!moved || (box.w < 5 && box.h < 5)) {
+        select(null);
+        return;
+      }
+      const caught = doc.widgets.filter((w) => {
+        const g = w.geometry;
+        // Целиком внутри рамки: частичное пересечение ловит соседей, которых
+        // не хотели, и выделение приходится разбирать руками.
+        return g.x >= box.x && g.y >= box.y
+          && g.x + g.w <= box.x + box.w && g.y + g.h <= box.y + box.h
+          && !lockedLayers().has(w.layer);
+      });
+      if (!caught.length) {
+        select(null);
+        return;
+      }
+      selected = caught[0].id;
+      alsoSelected.clear();
+      for (const w of caught.slice(1)) alsoSelected.add(w.id);
+      paintSelection();
+      showProps();
+      toast(`выделено виджетов: ${caught.length}`, 'ok');
+    };
+
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  }
+
+  /** Слои, закрытые от правки (FR-703.1). */
+  function lockedLayers() {
+    return new Set((doc.layers || []).filter((l) => l.locked).map((l) => l.id));
+  }
+
+  // ── Выделение по признаку (FR-703.8) ──────────────────────────────
+
+  function selectBy(kind, value) {
+    const caught = doc.widgets.filter((w) => {
+      if (lockedLayers().has(w.layer)) return false;
+      switch (kind) {
+        case 'type': return w.type === value;
+        case 'layer': return (w.layer || 'main') === value;
+        case 'device': {
+          const text = JSON.stringify(w.bindings || {});
+          return text.includes(value);
+        }
+        default: return false;
+      }
+    });
+    if (!caught.length) {
+      toast('под этот признак ничего не подошло', 'warn');
+      return;
+    }
+    selected = caught[0].id;
+    alsoSelected.clear();
+    for (const w of caught.slice(1)) alsoSelected.add(w.id);
+    paintSelection();
+    showProps();
+    toast(`выделено виджетов: ${caught.length}`, 'ok');
+  }
+
+  // ── Клавиатура редактора (13.7.12) ────────────────────────────────
+  //
+  // Обработчик на документе: у SVG нет фокуса по умолчанию, и требовать
+  // щелчка по холсту перед каждой стрелкой значит сделать клавиатуру
+  // бесполезной. Ввод в поля не перехватывается — иначе в имени схемы нельзя
+  // было бы набрать букву «в».
+
+  const onEditorKey = (e) => {
+    const inField = e.target instanceof HTMLElement
+      && (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)
+        || e.target.isContentEditable);
+    if (inField) return;
+
+    const ctrl = e.ctrlKey || e.metaKey;
+    const grid = doc.canvas.grid || 1;
+    // Модификатор отключает привязку к сетке (FR-701.12): подвинуть на
+    // пиксель нужно ровно тогда, когда сетка мешает.
+    const step = e.shiftKey ? 1 : grid;
+
+    if (ctrl) {
+      switch (e.key.toLowerCase()) {
+        case 'z': e.shiftKey ? redo() : undo(); break;
+        case 'y': redo(); break;
+        case 'c': copySelection(); break;
+        case 'v': paste(); break;
+        case 'd': duplicateSelection(); break;
+        case 'a': selectAll(); break;
+        default: return;
+      }
+      e.preventDefault();
+      return;
+    }
+
+    switch (e.key) {
+      case 'Delete': case 'Backspace': deleteSelection(); break;
+      case 'ArrowLeft': nudge(-step, 0); break;
+      case 'ArrowRight': nudge(step, 0); break;
+      case 'ArrowUp': nudge(0, -step); break;
+      case 'ArrowDown': nudge(0, step); break;
+      case 'Escape': select(null); break;
+      default: return;
+    }
+    e.preventDefault();
+  };
+
+  function selectAll() {
+    const locked = lockedLayers();
+    const caught = doc.widgets.filter((w) => !locked.has(w.layer));
+    if (!caught.length) return;
+    selected = caught[0].id;
+    alsoSelected.clear();
+    for (const w of caught.slice(1)) alsoSelected.add(w.id);
+    paintSelection();
+    showProps();
+  }
+
+  document.addEventListener('keydown', onEditorKey);
+
+  // ── Слои (13.7.6) ─────────────────────────────────────────────────
+  //
+  // Слой — не украшение: на схеме цеха поверх технологии лежат пояснительный
+  // слой для наладчика и слой кабельных трасс, и смотреть их вместе нельзя.
+  // Закрытый слой защищает готовое от случайного перетаскивания — на плотной
+  // схеме промахнуться мимо виджета проще, чем попасть.
+
+  function layersBlock() {
+    const layers = doc.layers && doc.layers.length
+      ? doc.layers
+      : [{ id: 'main', name: 'Основной', visible: true }];
+    doc.layers = layers;
+
+    const rows = layers.map((layer, index) => {
+      const used = doc.widgets.filter((w) => (w.layer || 'main') === layer.id).length;
+
+      const visible = h('input', { type: 'checkbox', title: 'показывать слой' });
+      visible.checked = layer.visible !== false;
+      visible.addEventListener('change', () => {
+        remember('видимость слоя');
+        layer.visible = visible.checked;
+        redraw();
+        showProps();
+      });
+
+      const locked = h('input', { type: 'checkbox', title: 'закрыть от правки' });
+      locked.checked = !!layer.locked;
+      locked.addEventListener('change', () => {
+        remember('блокировку слоя');
+        layer.locked = locked.checked || undefined;
+        // Выделенное на закрытом слое снимается: иначе стрелки двигали бы
+        // то, что только что защитили.
+        if (locked.checked) {
+          for (const wid of selectionIds()) {
+            const w = doc.widgets.find((x) => x.id === wid);
+            if (w && (w.layer || 'main') === layer.id) {
+              alsoSelected.delete(wid);
+              if (selected === wid) selected = null;
+            }
+          }
+        }
+        redraw();
+        showProps();
+      });
+
+      const name = h('input', {
+        value: layer.name || layer.id, style: 'width:120px',
+        title: 'название слоя; идентификатор не меняется — на него ссылаются виджеты',
+      });
+      name.addEventListener('input', () => { layer.name = name.value; });
+
+      return h('tr', {}, [
+        h('td', {}, visible),
+        h('td', {}, locked),
+        h('td', {}, name),
+        h('td', { class: 'num muted', text: String(used) }),
+        h('td', {}, h('button', {
+          class: 'small', text: '↑', title: 'выше в порядке отрисовки',
+          disabled: index === 0 ? 'disabled' : undefined,
+          onclick: () => moveLayer(index, -1),
+        })),
+        h('td', {}, h('button', {
+          class: 'small', text: '↓', title: 'ниже в порядке отрисовки',
+          disabled: index === layers.length - 1 ? 'disabled' : undefined,
+          onclick: () => moveLayer(index, 1),
+        })),
+        h('td', {}, h('button', {
+          class: 'small', text: '⇱', title: 'перенести выделенное на этот слой',
+          onclick: () => moveSelectionToLayer(layer.id),
+        })),
+        h('td', {}, h('button', {
+          class: 'small', text: '◎', title: 'выделить всё на этом слое',
+          onclick: () => selectBy('layer', layer.id),
+        })),
+        h('td', {}, h('button', {
+          class: 'danger small', text: '×', title: 'удалить слой',
+          disabled: layers.length === 1 ? 'disabled' : undefined,
+          onclick: () => removeLayer(layer, used),
+        })),
+      ]);
+    });
+
+    return h('div', {}, [
+      h('h3', { text: 'Слои' }),
+      h('table', { class: 'cfg-regs' }, [
+        h('thead', {}, h('tr', {}, ['Видно', 'Закрыт', 'Название', 'Виджетов', '', '', '', '', '']
+          .map((t) => h('th', { text: t })))),
+        h('tbody', {}, rows),
+      ]),
+      h('div', { class: 'toolbar' }, [
+        h('button', { text: 'добавить слой', onclick: addLayer }),
+      ]),
+      h('p', { class: 'muted', style: 'font-size:11px', text:
+        'Порядок в таблице — порядок отрисовки: верхние рисуются первыми и '
+        + 'оказываются под нижними. Скрытый слой не создаёт подписок. '
+        + 'Закрытый нельзя выделить и подвинуть.' }),
+    ]);
+  }
+
+  function moveLayer(index, delta) {
+    const to = index + delta;
+    if (to < 0 || to >= doc.layers.length) return;
+    remember('порядок слоёв');
+    const [layer] = doc.layers.splice(index, 1);
+    doc.layers.splice(to, 0, layer);
+    redraw();
+    showProps();
+  }
+
+  function addLayer() {
+    remember('добавление слоя');
+    let n = doc.layers.length + 1;
+    let id = `слой-${n}`;
+    while (doc.layers.some((l) => l.id === id)) {
+      n += 1;
+      id = `слой-${n}`;
+    }
+    doc.layers.push({ id, name: `Слой ${n}`, visible: true });
+    showProps();
+  }
+
+  function removeLayer(layer, used) {
+    if (used > 0) {
+      // Виджеты не удаляются вместе со слоем молча: они переносятся на
+      // первый оставшийся. Удалить слой и потерять десяток виджетов —
+      // потеря, которую замечают не сразу.
+      const target = doc.layers.find((l) => l.id !== layer.id);
+      if (!window.confirm(
+        `На слое «${layer.name || layer.id}» ${used} виджетов. `
+        + `Они будут перенесены на «${target.name || target.id}». Удалить слой?`,
+      )) return;
+      remember('удаление слоя');
+      for (const w of doc.widgets) {
+        if ((w.layer || 'main') === layer.id) w.layer = target.id;
+      }
+    } else {
+      remember('удаление слоя');
+    }
+    doc.layers = doc.layers.filter((l) => l.id !== layer.id);
+    redraw();
+    showProps();
+  }
+
+  function moveSelectionToLayer(id) {
+    const ids = selectionIds();
+    if (!ids.length) {
+      toast('сначала выделите виджеты', 'warn');
+      return;
+    }
+    remember('перенос на слой');
+    for (const wid of ids) {
+      const w = doc.widgets.find((x) => x.id === wid);
+      if (w) w.layer = id;
+    }
+    redraw();
+    showProps();
+    toast(`перенесено виджетов: ${ids.length}`, 'ok');
+  }
+
+  // ── Инспектор ─────────────────────────────────────────────────────
+  function showProps() {
+    props.replaceChildren();
+    const instance = doc.widgets.find((w) => w.id === selected);
+    if (!instance) {
+      props.append(h('h3', { text: 'Свойства' }));
+      props.append(h('p', { class: 'muted', text: 'выберите виджет на холсте' }));
+      // Слои показываются, когда не выбран виджет: инспектор свободен, а
+      // отдельный экран ради пяти строк заводить незачем.
+      props.append(layersBlock());
+      return;
+    }
+
+    props.append(h('h3', { text: instance.type }));
+    props.append(h('div', { class: 'muted mono', text: instance.id }));
+
+    props.append(h('label', {}, ['слой', (() => {
+      const pick = h('select', {}, (doc.layers || []).map((l) => h('option', {
+        value: l.id, text: (l.name || l.id) + (l.locked ? ' (закрыт)' : ''),
+      })));
+      pick.value = instance.layer || 'main';
+      pick.addEventListener('change', () => {
+        remember('перенос на слой');
+        instance.layer = pick.value;
+        redraw();
+        showProps();
+      });
+      return pick;
+    })()]));
+
+    props.append(h('h3', { text: 'Геометрия' }));
+    for (const key of ['x', 'y', 'w', 'h']) {
+      props.append(h('label', {}, [key, numberInput(instance.geometry[key], (v) => {
+        instance.geometry[key] = v;
+        redraw();
+      })]));
+    }
+
+    // Привязка зависит от типа: карточке прибора нужен прибор, таблице —
+    // набор тегов, остальным — один тег. Предлагать поле «тег» карточке
+    // прибора значило бы предлагать заведомо нерабочую настройку.
+    props.append(h('h3', { text: 'Привязка' }));
+    if (instance.type === 'core.device_card') {
+      props.append(h('label', {}, ['прибор', devicePicker(
+        (instance.bindings.device || {}).device || '',
+        (value) => {
+          if (value) instance.bindings.device = { kind: 'device', device: value };
+          else delete instance.bindings.device;
+          redraw();
+        },
+      )]));
+    } else if (instance.type === 'core.trend') {
+      // У графика ряды, а не один тег: смысл графика на схеме — совмещение.
+      props.append(seriesBlock(instance));
+    } else if (instance.type === 'core.table') {
+      const current = (instance.bindings.rows || {}).pattern || '';
+      props.append(h('label', {}, ['шаблон имени тегов', h('input', {
+        value: current,
+        placeholder: 'line1.dev16.*',
+        oninput: (e) => {
+          const pattern = e.target.value.trim();
+          if (pattern) instance.bindings.rows = { kind: 'tag_set', pattern };
+          else delete instance.bindings.rows;
+          redraw();
+        },
+      })]));
+      props.append(h('p', { class: 'muted', style: 'font-size:11px;margin:0 0 8px' }, [
+        'Звёздочка заменяет любую часть имени. ',
+        h('button', {
+          text: 'взять у прибора',
+          style: 'padding:2px 6px;font-size:11px',
+          onclick: async () => {
+            const path = await pickDevice();
+            if (!path) return;
+            instance.bindings.rows = { kind: 'tag_set', pattern: path + '.*' };
+            redraw();
+            showProps();
+          },
+        }),
+      ]));
+    } else if (NO_VALUE_SLOT.has(instance.type)) {
+      // У кнопки нет величины: её содержимое — действие. Поле «тег», которое
+      // никуда не идёт, сбивает с толку сильнее, чем отсутствие поля: его
+      // заполняют и ждут, что что-то произойдёт.
+      props.append(h('p', { class: 'muted', style: 'font-size:11px' }, [
+        instance.type === 'core.button'
+          ? 'Кнопке величина не нужна: что она делает, задаётся ниже, в «Действии по нажатию».'
+          : 'Источник задавать не нужно: виджет показывает события и нарушения объекта целиком.',
+      ]));
+    } else {
+      props.append(h('label', {}, ['тег', tagPicker(
+        (instance.bindings.value || {}).tag || '',
+        (value) => {
+          if (value) instance.bindings.value = { kind: 'tag', tag: value, mode: 'read' };
+          else delete instance.bindings.value;
+          redraw();
+        },
+      )]));
+    }
+
+    // Свойства типа: набор зависит от типа, поэтому строится по описанию.
+    const known = TYPE_PROPS[instance.type] || [];
+    if (known.length) props.append(h('h3', { text: 'Свойства' }));
+    for (const spec of known) {
+      props.append(h('label', {}, [spec.name, propInput(instance, spec, redraw)]));
+    }
+
+    if (instance.type === 'core.svg') {
+      props.append(h('h3', { text: 'Привязки элементов' }));
+      props.append(h('button', {
+        text: 'мастер привязок',
+        onclick: () => openBindingWizard(instance),
+      }));
+      const list = instance.properties.element_bindings || [];
+      props.append(h('div', { class: 'muted', text: `привязок: ${list.length}` }));
+    }
+
+    props.append(h('h3', { text: 'Действие по нажатию' }));
+    // Перерисовывается **инспектор**, а не холст: набор полей действия
+    // зависит от того, что уже выбрано, а вид виджета от нажатия не
+    // меняется. `redraw` трогает только холст, и поля не появлялись.
+    props.append(actionBlock(instance, showProps));
+
+    props.append(h('hr'));
+    props.append(h('button', {
+      text: 'удалить виджет',
+      onclick: () => {
+        remember('удаление виджета');
+        doc.widgets = doc.widgets.filter((w) => w.id !== instance.id);
+        selected = null;
+        redraw();
+        showProps();
+      },
+    }));
+  }
+
+  function numberInput(value, onchange) {
+    return h('input', {
+      type: 'number', value: String(value ?? 0),
+      oninput: (e) => onchange(Number(e.target.value) || 0),
+    });
+  }
+
+  function tagPicker(value, onchange) {
+    const input = h('input', {
+      list: 'tag-list', value, placeholder: 'имя или название тега',
+      // Значением остаётся имя: по нему тег и находится. Название — подпись
+      // в списке, и подставлять его в схему нельзя, иначе привязка
+      // разорвётся при первом переименовании.
+      onchange: (e) => onchange(e.target.value.trim()),
+    });
+    ensureTagList();
+    return input;
+  }
+
+  /**
+   * Список подстановки строится заново при каждом открытии редактора.
+   *
+   * Названия правят на экране настройки, и список, собранный однажды, показал
+   * бы прежние — то есть ровно те, которых на объекте уже нет.
+   */
+  function ensureTagList() {
+    document.getElementById('tag-list')?.remove();
+    const list = h('datalist', { id: 'tag-list' }, tagList.slice(0, 2000).map((t) => {
+      // `label` — то, по чему браузер ищет наравне со значением: набрав
+      // «Вход», инженер находит `r128`, чего по машинному имени не сделать.
+      const option = h('option', { value: t.name });
+      if (t.title) option.setAttribute('label', t.title);
+      return option;
+    }));
+    document.body.append(list);
+  }
+
+  /**
+   * Действие по нажатию на виджет.
+   *
+   * Прежде здесь задавался только тег, а записываемое значение было намертво
+   * единицей: нажатие на реле всегда включало его и никогда не выключало.
+   * Что именно уйдёт в прибор, должно быть видно **до** нажатия — команда
+   * двигает оборудование, и «а что туда запишется?» не тот вопрос, который
+   * выясняют опытом на работающем объекте.
+   */
+  function actionBlock(instance, refresh) {
+    const spec = instance.on_click || {};
+    const params = spec.params || {};
+    const box = h('div', {});
+
+    const tag = tagPicker(params.tag || '', (value) => {
+      if (!value) { delete instance.on_click; refresh(); return; }
+      instance.on_click = {
+        // Имя действия — из формата, а не своё. Прежде здесь писалось
+        // «write_tag», которого формат не знает, и схема с таким нажатием не
+        // разбиралась **целиком**: сохранить её было нельзя, а отказ касался
+        // всего документа, не одного виджета.
+        action: spec.action === 'toggle' ? 'toggle' : 'write',
+        params: { source: 'const', value: 1, ...params, tag: value },
+        confirm: spec.confirm || {},
+      };
+      refresh();
+    });
+
+    box.append(h('label', {}, ['записать в тег', tag]));
+    if (!params.tag) {
+      box.append(h('p', { class: 'muted', style: 'font-size:11px', text:
+        'без тега нажатие ничего не делает' }));
+      return box;
+    }
+
+    // Источник значения — на действии, а не на типе виджета (FR-723.18).
+    // Поэтому уставку задаёт и кнопка, и фигура на векторной схеме: способ
+    // один, а к чему он привязан — дело схемы.
+    const source = currentSource(instance.on_click);
+    const sourcePick = h('select', {}, VALUE_SOURCES.map(([id, text]) =>
+      h('option', { value: id, text })));
+    sourcePick.value = source;
+    sourcePick.addEventListener('change', () => {
+      applySource(instance.on_click, sourcePick.value);
+      refresh();
+    });
+    box.append(field('что записывать', sourcePick, SOURCE_HINTS[source] || ''));
+
+    if (source === 'const') {
+      const value = h('input', {
+        type: 'number', step: 'any', style: 'width:120px',
+        value: String(params.value ?? 1),
+      });
+      value.addEventListener('input', () => {
+        instance.on_click.params.value = value.value === '' ? 0 : Number(value.value);
+      });
+      box.append(field('значение', value, 'уйдёт в прибор ровно это число'));
+    }
+
+    if (source === 'prompt') {
+      const min = numberOrEmpty(params.min, 'не меньше');
+      const max = numberOrEmpty(params.max, 'не больше');
+      min.addEventListener('input', () => {
+        instance.on_click.params.min = min.value === '' ? undefined : Number(min.value);
+      });
+      max.addEventListener('input', () => {
+        instance.on_click.params.max = max.value === '' ? undefined : Number(max.value);
+      });
+      const step = numberOrEmpty(params.step, 'шаг');
+      step.addEventListener('input', () => {
+        instance.on_click.params.step = step.value === '' ? undefined : Number(step.value);
+      });
+      box.append(h('div', { class: 'toolbar' }, [
+        field('не меньше', min, 'граница поверх заданной у регистра; пусто — как у регистра'),
+        field('не больше', max, 'граница поверх заданной у регистра; пусто — как у регистра'),
+        field('шаг', step, 'шаг стрелок в поле ввода'),
+      ]));
+      box.append(h('p', { class: 'muted', style: 'font-size:11px', text:
+        'Диалог откроется заполненным текущим значением: уставку чаще '
+        + 'подправляют, чем задают с нуля, а ноль в поле уставки — готовая '
+        + 'авария по невнимательности.' }));
+    }
+
+    if (source === 'list') {
+      box.append(valueListBlock(instance.on_click.params, refresh));
+    }
+
+    if (source === 'toggle') {
+      const on = numberOrEmpty(params.on_value, 'включено');
+      const off = numberOrEmpty(params.off_value, 'выключено');
+      on.addEventListener('input', () => {
+        instance.on_click.params.on_value = on.value === '' ? undefined : Number(on.value);
+      });
+      off.addEventListener('input', () => {
+        instance.on_click.params.off_value = off.value === '' ? undefined : Number(off.value);
+      });
+      box.append(h('div', { class: 'toolbar' }, [
+        field('включено', on, 'что записать для включения; пусто — 1'),
+        field('выключено', off, 'что записать для выключения; пусто — 0'),
+      ]));
+      box.append(h('p', { class: 'muted', style: 'font-size:11px', text:
+        'Переключение читает текущее значение. По недостоверному оно не '
+        + 'работает: вычислить обратное не из чего, и записанное было бы '
+        + 'догадкой.' }));
+    }
+
+    if (source === 'step') {
+      const step = numberOrEmpty(params.step ?? 1, 'шаг');
+      step.addEventListener('input', () => {
+        instance.on_click.params.step = step.value === '' ? 1 : Number(step.value);
+      });
+      const min = numberOrEmpty(params.min, 'не меньше');
+      const max = numberOrEmpty(params.max, 'не больше');
+      min.addEventListener('input', () => {
+        instance.on_click.params.min = min.value === '' ? undefined : Number(min.value);
+      });
+      max.addEventListener('input', () => {
+        instance.on_click.params.max = max.value === '' ? undefined : Number(max.value);
+      });
+      box.append(h('div', { class: 'toolbar' }, [
+        field('шаг', step, 'прибавится к текущему значению; отрицательный — убавит'),
+        field('не меньше', min, 'ниже этого не опустится'),
+        field('не больше', max, 'выше этого не поднимется'),
+      ]));
+    }
+
+    // Подтверждение — по решению автора схемы, а не всегда (FR-723.28).
+    //
+    // Умолчание — **не спрашивать**: кнопка на щите нажимается для того, чтобы
+    // что-то произошло, и вопрос на каждое нажатие превращает переключение
+    // реле в двухтактную операцию. Спрашивают там, где ошибка дорога, и это
+    // решают при сборке схемы, а не за автора.
+    //
+    // Выбор из списка и ввод значения спрашивают **собой**: оператор видит,
+    // что именно выбирает, и второй вопрос поверх диалога — лишний.
+    const asksItself = source === 'prompt' || source === 'list';
+
+    if (asksItself) {
+      box.append(h('p', { class: 'muted', style: 'font-size:11px', text:
+        source === 'prompt'
+          ? 'Отдельный вопрос не нужен: оператор видит и правит значение в диалоге ввода.'
+          : 'Отдельный вопрос не нужен: оператор выбирает значение из списка. '
+            + 'Значение, помеченное опасным, спрашивается дополнительно.' }));
+      return box;
+    }
+
+    const wantsConfirm = !!(spec.confirm && spec.confirm.text !== undefined
+      && spec.confirm.text !== null);
+    const ask = h('input', { type: 'checkbox' });
+    ask.checked = wantsConfirm;
+    ask.addEventListener('change', () => {
+      instance.on_click.confirm = ask.checked ? { text: '' } : {};
+      refresh();
+    });
+    box.append(field('подтверждать', ask,
+      'спрашивать перед записью. По умолчанию выключено: кнопку нажимают, '
+      + 'чтобы что-то произошло, и вопрос на каждое нажатие мешает работе'));
+
+    if (wantsConfirm) {
+      // Текст правится: «Записать в line1.dev1.r4096?» ничего не говорит
+      // оператору, а «Включить насос 1?» — говорит.
+      const confirm = h('input', {
+        style: 'width:100%',
+        placeholder: defaultConfirm(instance.on_click),
+        value: (spec.confirm || {}).text || '',
+      });
+      confirm.addEventListener('input', () => {
+        instance.on_click.confirm = { text: confirm.value.trim() };
+      });
+      box.append(h('label', {}, ['текст вопроса', confirm]));
+      box.append(h('p', { class: 'muted', style: 'font-size:11px', text:
+        'Пусто — спросим этими же словами.' }));
+    }
+
+    return box;
+  }
+
+  /** Источники записываемого значения (13.4.21 ТЗ). */
+  const VALUE_SOURCES = [
+    ['const', 'заданное значение'],
+    ['prompt', 'спросить у оператора'],
+    ['list', 'выбрать из списка'],
+    ['toggle', 'переключить'],
+    ['step', 'прибавить шаг'],
+  ];
+
+  const SOURCE_HINTS = {
+    const: 'команда с одним исходом: сброс, пуск, стоп',
+    prompt: 'уставка, задаваемая по месту: откроется поле ввода с текущим значением',
+    list: 'режим, ступень, программа: оператор выбирает из объявленного перечня',
+    toggle: 'одна кнопка включает и выключает: пишется обратное текущему',
+    step: 'подстройка уставки: к текущему значению прибавляется шаг',
+  };
+
+  /** Источник, записанный в действии. Умолчание — постоянное значение. */
+  function currentSource(spec) {
+    if (!spec) return 'const';
+    if (spec.action === 'toggle') return 'toggle';
+    const declared = (spec.params || {}).source;
+    return VALUE_SOURCES.some(([id]) => id === declared) ? declared : 'const';
+  }
+
+  /**
+   * Переводит действие на выбранный источник.
+   *
+   * `toggle` — отдельное действие формата, прочие источники — разновидности
+   * `write`. Смешивать их нельзя: формат знает `toggle` как самостоятельный
+   * вид действия, и записать его признаком в параметрах значило бы завести
+   * второе место, где хранится одно и то же.
+   */
+  function applySource(spec, source) {
+    spec.params = spec.params || {};
+    spec.action = source === 'toggle' ? 'toggle' : 'write';
+    spec.params.source = source;
+    if (source === 'list' && !spec.params.items) spec.params.items = [];
+    if (source === 'step' && spec.params.step === undefined) spec.params.step = 1;
+    if (source !== 'const') delete spec.params.value;
+    else if (spec.params.value === undefined) spec.params.value = 1;
+  }
+
+  function numberOrEmpty(value, placeholder) {
+    return h('input', {
+      type: 'number', step: 'any', style: 'width:100px', placeholder,
+      value: value === undefined || value === null ? '' : String(value),
+    });
+  }
+
+  /** Вопрос по умолчанию — теми же словами, что задаст интерфейс. */
+  function defaultConfirm(spec) {
+    const params = (spec || {}).params || {};
+    const target = tagLabel(params.tag || 'тег');
+    switch (currentSource(spec)) {
+      case 'toggle': return `Переключить «${target}»?`;
+      case 'prompt': return `Задать значение «${target}»`;
+      case 'list': return `Установить «${target}»?`;
+      case 'step': return `Изменить «${target}» на ${params.step ?? 1}?`;
+      default: return `Записать ${params.value ?? 1} в «${target}»?`;
+    }
+  }
+
+  /**
+   * Набор рядов графика.
+   *
+   * Задаётся перечнем тегов либо шаблоном имени. Перечень — обычный случай:
+   * на схеме совмещают три-четыре величины, которые смотрят вместе. Шаблон
+   * нужен для повторителей, где прибор заранее неизвестен.
+   */
+  function seriesBlock(instance) {
+    const binding = instance.bindings.series || { kind: 'tag_set', tags: [] };
+    const list = binding.tags || [];
+    const box = h('div', {});
+
+    box.append(h('label', {}, ['добавить ряд', tagPicker('', (value) => {
+      if (!value) return;
+      if (list.includes(value)) return;
+      instance.bindings.series = { kind: 'tag_set', tags: [...list, value] };
+      redraw();
+      showProps();
+    })]));
+
+    if (binding.pattern) {
+      box.append(h('p', { class: 'muted', style: 'font-size:11px', text:
+        `ряды берутся по шаблону «${binding.pattern}»` }));
+    }
+
+    box.append(h('div', { class: 'trend-legend' }, list.map((tag) => h('span', {
+      class: 'trend-legend-pair',
+    }, [
+      h('button', { class: 'trend-legend-item', text: tagLabel(tag), title: tag }),
+      h('button', {
+        class: 'trend-legend-drop', text: '×', title: 'убрать ряд',
+        onclick: () => {
+          instance.bindings.series = {
+            kind: 'tag_set', tags: list.filter((t) => t !== tag),
+          };
+          redraw();
+          showProps();
+        },
+      }),
+    ]))));
+
+    if (!list.length && !binding.pattern) {
+      box.append(h('p', { class: 'muted', style: 'font-size:11px', text:
+        'рядов нет — график покажет «ряды не заданы»' }));
+    }
+    return box;
+  }
+
+  /**
+   * Перечень значений для выбора из списка (FR-723.21).
+   *
+   * Режим, ступень, программа — там, где значений несколько, горсть кнопок
+   * заменяется одним списком, и оператор видит все возможности разом.
+   */
+  function valueListBlock(target, redrawAfter) {
+    const items = target.items || [];
+    const box = h('div', {});
+
+    box.append(h('div', { class: 'cfg-regs-wrap' }, h('table', { class: 'cfg-regs' }, [
+      h('thead', {}, h('tr', {}, ['Значение', 'Подпись', 'Опасное', '']
+        .map((t) => h('th', { text: t })))),
+      h('tbody', {}, items.map((item, index) => h('tr', {}, [
+        h('td', {}, h('input', {
+          type: 'number', step: 'any', style: 'width:80px', value: String(item.value ?? 0),
+          oninput: (e) => { items[index].value = Number(e.target.value); },
+        })),
+        h('td', {}, h('input', {
+          style: 'width:150px', value: item.label || '', placeholder: 'что это означает',
+          oninput: (e) => { items[index].label = e.target.value; },
+        })),
+        h('td', {}, (() => {
+          const check = h('input', { type: 'checkbox', title: 'спросить подтверждение особо' });
+          check.checked = !!item.dangerous;
+          check.addEventListener('change', () => { items[index].dangerous = check.checked || undefined; });
+          return check;
+        })()),
+        h('td', {}, h('button', {
+          class: 'danger', text: '×', title: 'убрать',
+          onclick: () => {
+            target.items = items.filter((_, i) => i !== index);
+            redrawAfter();
+          },
+        })),
+      ]))),
+    ])));
+
+    box.append(h('button', {
+      text: 'добавить значение',
+      onclick: () => {
+        target.items = [...items, { value: items.length, label: '' }];
+        redrawAfter();
+      },
+    }));
+    if (!items.length) {
+      box.append(h('p', { class: 'muted', style: 'font-size:11px', text:
+        'список пуст — выбирать будет не из чего' }));
+    }
+    return box;
+  }
+
+  function devicePicker(value, onchange) {
+    const select = h('select', {}, [
+      h('option', { value: '', text: '— не задан —' }),
+      ...devicePaths.map((p) => h('option', { value: p, text: p })),
+    ]);
+    // Прибор выбирается из перечня, а не вводится строкой: набор известен из
+    // конфигурации, и опечатка дала бы карточку «нет такого прибора».
+    select.value = value;
+    select.addEventListener('change', () => onchange(select.value));
+    return select;
+  }
+
+  async function pickDevice() {
+    const select = h('select', {}, devicePaths.map((p) => h('option', { value: p, text: p })));
+    const done = await modalPicker('Выбор прибора', select);
+    return done ? select.value : null;
+  }
+
+  // ── Импорт SVG и мастер привязок ──────────────────────────────────
+
+  async function importSvg(file) {
+    // Предел размера задан явно: файл на десятки мегабайт превратит схему в
+    // неработающую страницу, и узнать об этом надо при импорте (FR-773.5).
+    const MAX_BYTES = 4 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      toast(`файл ${(file.size / 1048576).toFixed(1)} МБ — предел 4 МБ`, 'err');
+      return;
+    }
+    const text = await file.text();
+    let root;
+    try {
+      root = sanitizeSvg(text);
+    } catch (e) {
+      toast('файл не разбирается как SVG: ' + e.message, 'err');
+      return;
+    }
+    const elements = svgElementTree(root);
+    const MAX_ELEMENTS = 20000;
+    if (elements.length > MAX_ELEMENTS) {
+      toast(`элементов ${elements.length} — предел ${MAX_ELEMENTS}`, 'err');
+      return;
+    }
+
+    const resourceId = 'svg:' + file.name;
+    doc.resource_data = doc.resource_data || {};
+    doc.resource_data[resourceId] = new XMLSerializer().serializeToString(root);
+
+    const box = root.getAttribute('viewBox');
+    const [, , vw, vh] = box ? box.split(/[\s,]+/).map(Number) : [0, 0, 480, 320];
+
+    const instance = {
+      id: 'svg-' + Math.random().toString(36).slice(2, 8),
+      type: 'core.svg',
+      layer: 'main',
+      z: doc.widgets.length,
+      geometry: { x: 20, y: 20, w: vw || 480, h: vh || 320 },
+      bindings: {},
+      properties: { source: resourceId, fit: 'contain', element_bindings: [], interactive_elements: [] },
+    };
+    doc.widgets.push(instance);
+    selected = instance.id;
+    redraw();
+    showProps();
+    toast(`импортировано элементов: ${elements.length}`, 'ok');
+    openBindingWizard(instance);
+  }
+
+  /**
+   * Мастер привязок по именам элементов (FR-773.12).
+   *
+   * Предположения показываются таблицей и применяются только после
+   * подтверждения. Молчаливая привязка запрещена: неверно угаданный тег на
+   * схеме опаснее непривязанного элемента — он выглядит рабочим.
+   */
+  function openBindingWizard(instance) {
+    const source = (instance.properties || {}).source;
+    const text = (doc.resource_data || {})[source];
+    if (!text) { toast('ресурс изображения не найден', 'err'); return; }
+
+    let root;
+    try { root = sanitizeSvg(text); } catch { toast('ресурс повреждён', 'err'); return; }
+    const elements = svgElementTree(root).filter((e) => e.id || e.name);
+
+    const dialog = h('dialog', { style: 'width:min(880px,92vw);max-height:86vh;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text)' });
+    const body = h('div', { style: 'padding:14px;overflow:auto;max-height:70vh' });
+    const rows = [];
+
+    ensureTagList();
+    const guessed = elements.map((e) => ({ element: e, guess: guessTag(e, tagNames, tagTitles) }));
+    const matchedCount = guessed.filter((g) => g.guess).length;
+
+    body.append(h('p', { class: 'muted', text:
+      `элементов с именем: ${elements.length}, предположений: ${matchedCount}. ` +
+      'Отмеченные строки будут привязаны; проверьте каждую.' }));
+
+    const table = h('table');
+    table.append(h('thead', {}, h('tr', {}, ['', 'Элемент', 'Имя', 'Тег', 'Характеристика'].map((t) => h('th', { text: t })))));
+    const tbody = h('tbody');
+    for (const g of guessed) {
+      const check = h('input', { type: 'checkbox' });
+      if (g.guess) check.checked = true;
+      const tagInput = h('input', {
+        list: 'tag-list', value: g.guess || '', style: 'width:200px',
+        title: g.guess ? tagLabel(g.guess) : 'имя или название тега',
+      });
+      const attr = h('select', {}, BINDABLE.map((a) => h('option', { value: a.id, text: a.name })));
+      attr.value = guessAttribute(g.element);
+      tbody.append(h('tr', {}, [
+        h('td', {}, check),
+        h('td', { class: 'mono', text: g.element.tag }),
+        h('td', { text: g.element.name || g.element.id }),
+        h('td', {}, tagInput),
+        h('td', {}, attr),
+      ]));
+      rows.push({ element: g.element, check, tagInput, attr });
+    }
+    table.append(tbody);
+    body.append(table);
+
+    // Оба списка нужны при вводе объекта: они показывают, что забыто (FR-773.13).
+    const unmatched = guessed.filter((g) => !g.guess).map((g) => g.element.name || g.element.id);
+    const usedTags = new Set(guessed.filter((g) => g.guess).map((g) => g.guess));
+    const orphanTags = tagNames.filter((t) => !usedTags.has(t));
+    body.append(h('h3', { text: 'Не сопоставлены' }));
+    body.append(h('p', { class: 'muted', text: unmatched.length ? unmatched.join(', ') : 'таких элементов нет' }));
+    body.append(h('h3', { text: 'Теги без элемента' }));
+    // С названиями: перечень машинных имён не отвечает на вопрос «что именно
+    // забыли поставить на схему».
+    body.append(h('p', { class: 'muted', text: orphanTags.length
+      ? `${orphanTags.length} шт.: ` + orphanTags.slice(0, 40).map(tagLabel).join(', ')
+        + (orphanTags.length > 40 ? ' …' : '')
+      : 'таких тегов нет' }));
+
+    dialog.append(
+      h('div', { style: 'padding:12px 14px;border-bottom:1px solid var(--line)' },
+        h('strong', { text: 'Мастер привязок элементов SVG' })),
+      body,
+      h('div', { style: 'padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:8px' }, [
+        h('button', { class: 'primary', text: 'принять отмеченные', onclick: apply }),
+        h('button', { text: 'отметить все с предположением', onclick: () => {
+          for (const r of rows) if (r.tagInput.value) r.check.checked = true;
+        } }),
+        h('span', { class: 'spacer', style: 'flex:1' }),
+        h('button', { text: 'закрыть', onclick: () => dialog.close() }),
+      ]),
+    );
+
+    function apply() {
+      const list = [];
+      for (const r of rows) {
+        if (!r.check.checked) continue;
+        const tag = r.tagInput.value.trim();
+        if (!tag) continue;
+        const binding = { attribute: r.attr.value, tag };
+        if (r.element.id) binding.id = r.element.id;
+        else binding.name = r.element.name;
+        // Обязательный вариант для недостоверного состояния (FR-773.10).
+        if (binding.attribute === 'fill' || binding.attribute === 'stroke') {
+          binding.map = { true: 'var(--ok)', false: 'var(--panel-2)', other: 'var(--muted)' };
+          binding.bad = 'var(--stale)';
+        }
+        list.push(binding);
+      }
+      instance.properties.element_bindings = list;
+      dialog.close();
+      redraw();
+      showProps();
+      toast(`привязок принято: ${list.length}`, 'ok');
+    }
+
+    document.body.append(dialog);
+    dialog.addEventListener('close', () => dialog.remove());
+    dialog.showModal();
+  }
+
+  /**
+   * Сохранение выделенных виджетов своим типом (ТЗ 13.4.10).
+   *
+   * Главное здесь — **параметры**. Тип, внутри которого зашиты конкретные теги,
+   * годится одному месту схемы и потому бесполезен: смысл в том, чтобы узел
+   * «насос» поставить сорок раз, каждый раз указав свой прибор. Поэтому все
+   * встреченные теги и приборы предлагаются параметрами, а не остаются как есть.
+   */
+  async function saveSelectionAsType() {
+    const ids = selectionIds();
+    if (ids.length < 2) {
+      toast('выделите несколько виджетов: Ctrl и нажатие добавляют к выделению', 'info');
+      return;
+    }
+    const chosen = doc.widgets.filter((w) => ids.includes(w.id));
+
+    // Смещение к нулю: тип живёт в своих координатах, а поставлен может быть
+    // в любое место схемы.
+    const originX = Math.min(...chosen.map((w) => w.geometry.x));
+    const originY = Math.min(...chosen.map((w) => w.geometry.y));
+
+    // Что внутри выделения ссылается на данные объекта.
+    const tags = new Set();
+    const devices = new Set();
+    for (const w of chosen) {
+      for (const b of Object.values(w.bindings || {})) {
+        if (b.kind === 'tag' && b.tag) tags.add(b.tag);
+        if (b.kind === 'device' && b.device) devices.add(b.device);
+        for (const t of b.tags || []) tags.add(t);
+      }
+    }
+
+    const idInput = h('input', { value: 'свой.' + (doc.name || id).toLowerCase().replace(/[^a-zа-я0-9-]+/gi, '-') });
+    const nameInput = h('input', { value: 'Узел из ' + chosen.length + ' виджетов' });
+    const categoryInput = h('input', { value: 'Свои типы' });
+
+    // Каждому тегу и прибору — своя отметка «сделать параметром». По умолчанию
+    // включена: тип с зашитым тегом применим к одному месту.
+    const paramRows = [];
+    const paramOf = (value, kind) => {
+      const suggested = kind === 'device'
+        ? 'прибор'
+        : value.split('.').slice(-1)[0].replace(/[^a-zа-я0-9_]+/gi, '_');
+      const use = h('input', { type: 'checkbox' });
+      use.checked = true;
+      const nameField = h('input', { value: suggested, style: 'width:130px' });
+      paramRows.push({ value, kind, use, nameField });
+      return h('tr', {}, [
+        h('td', {}, use),
+        h('td', { text: kind === 'device' ? 'прибор' : 'тег' }),
+        h('td', { class: 'mono', text: value }),
+        h('td', {}, nameField),
+      ]);
+    };
+
+    const rows = [
+      ...[...devices].map((d) => paramOf(d, 'device')),
+      ...[...tags].map((t) => paramOf(t, 'tag')),
+    ];
+
+    const body = h('div', {}, [
+      h('p', { class: 'muted', text:
+        `В тип войдёт ${chosen.length} виджетов. Тип остаётся одним целым: правка `
+        + 'его вида подействует на все места, где он поставлен, — в этом и смысл.' }),
+      h('label', {}, ['идентификатор', idInput]),
+      h('label', {}, ['название', nameInput]),
+      h('label', {}, ['раздел палитры', categoryInput]),
+      rows.length
+        ? h('div', {}, [
+          h('h3', { text: 'Параметры' }),
+          h('p', { class: 'muted', text:
+            'Тег, оставленный без параметра, будет зашит в тип: такой тип применим '
+            + 'к одному месту схемы. Параметр указывают при установке.' }),
+          h('table', { class: 'cfg-regs' }, [
+            h('thead', {}, h('tr', {}, ['Параметр', 'Что', 'Значение', 'Имя']
+              .map((t) => h('th', { text: t })))),
+            h('tbody', {}, rows),
+          ]),
+        ])
+        : h('p', { class: 'muted', text:
+          'Привязок к данным внутри нет — тип получится чисто оформительским.' }),
+    ]);
+
+    if (!(await modalPicker('Сохранить выделенное своим типом', body))) return;
+
+    let saved;
+    let typeDocument;
+    try {
+      {
+        const typeId = idInput.value.trim();
+        if (!typeId) throw new Error('идентификатор типа не может быть пустым');
+
+        // Соответствие «значение → имя параметра» для подстановки в привязки.
+        const byValue = new Map();
+        const parameters = [];
+        for (const row of paramRows) {
+          if (!row.use.checked) continue;
+          let name = row.nameField.value.trim();
+          if (!name) throw new Error(`не задано имя параметра для «${row.value}»`);
+          // Столкновение имён: два тега с одинаковым последним словом дали бы
+          // один параметр, и второй тег молча получил бы значение первого.
+          while (parameters.some((p) => p.id === name)) name += '2';
+          byValue.set(row.value, name);
+          parameters.push({
+            id: name,
+            name,
+            kind: row.kind === 'device' ? 'device' : 'tag',
+            required: true,
+          });
+        }
+
+        const substitute = (value) => {
+          const param = byValue.get(value);
+          return param ? '$' + param : value;
+        };
+
+        const children = chosen.map((w) => {
+          const child = JSON.parse(JSON.stringify(w));
+          child.geometry = {
+            ...child.geometry,
+            x: child.geometry.x - originX,
+            y: child.geometry.y - originY,
+          };
+          for (const b of Object.values(child.bindings || {})) {
+            if (b.kind === 'tag' && b.tag) b.tag = substitute(b.tag);
+            if (b.kind === 'device' && b.device) b.device = substitute(b.device);
+            if (Array.isArray(b.tags)) b.tags = b.tags.map(substitute);
+          }
+          return child;
+        });
+
+        const document_ = {
+          id: typeId,
+          version: '1.0.0',
+          name: nameInput.value.trim() || typeId,
+          category: categoryInput.value.trim() || 'Свои типы',
+          kind: 'composite',
+          parameters,
+          children,
+        };
+        typeDocument = document_;
+        saved = await api.saveWidgetType({
+          id: typeId,
+          name: document_.name,
+          category: document_.category,
+          document: JSON.stringify(document_, null, 2),
+        });
+      }
+    } catch (e) {
+      reportError(e);
+      return;
+    }
+
+    // Тип регистрируется сразу: перезагружать страницу нельзя — на схеме могут
+    // быть несохранённые правки, и потерять их из-за сохранения типа недопустимо.
+    registerComposite(typeDocument);
+    ownTypes = [...ownTypes.filter((t) => t.id !== saved.id), saved]
+      .sort((a, b) => a.name.localeCompare(b.name));
+    fillPalette();
+
+    toast(`тип «${saved.name}» сохранён: виджетов ${saved.children}`
+      + (saved.params.length ? `, параметров ${saved.params.length}` : ''), 'ok');
+
+    // Предложение заменить выделенное этим типом: иначе на схеме останутся и
+    // тип, и его дословная копия, и расходиться они начнут с первой правки.
+    const replace = await modalPicker('Заменить выделенное новым типом?', h('div', {}, [
+      h('p', {}, [
+        'Выделенные виджеты можно заменить одним экземпляром типа ',
+        h('span', { class: 'mono', text: saved.id }),
+        '. Тогда правка типа подействует и здесь.',
+      ]),
+      saved.params.length
+        ? h('p', { class: 'muted', text:
+          'Параметры подставятся теми значениями, что были в выделенном.' })
+        : null,
+      h('p', { class: 'muted', text:
+        'Если оставить как есть, на схеме будут и тип в палитре, и его копия здесь.' }),
+    ]));
+    if (!replace) {
+      // Тип уже в палитре: перерисовка нужна, чтобы он был доступен сразу.
+      redraw();
+      return;
+    }
+
+    // Значения параметров берутся из того, что было в выделенном: замена не
+    // должна менять смысл схемы.
+    const parameters = {};
+    for (const row of paramRows) {
+      if (row.use.checked) parameters[row.nameField.value.trim()] = row.value;
+    }
+    doc.widgets = doc.widgets.filter((w) => !ids.includes(w.id));
+    doc.widgets.push({
+      id: 'w-' + Math.random().toString(36).slice(2, 8),
+      type: saved.id,
+      layer: 'main',
+      z: doc.widgets.length,
+      geometry: { x: originX, y: originY, w: saved.w || 160, h: saved.h || 60 },
+      bindings: {},
+      properties: {},
+      parameters,
+    });
+    select(null);
+    redraw();
+    showProps();
+    toast('выделенное заменено экземпляром типа', 'ok');
+  }
+
+  // ── Сохранение ────────────────────────────────────────────────────
+
+  async function save() {
+    try {
+      const r = await store.save(id, doc);
+      storedLocally = r.local;
+      if (r.local) {
+        toast(`схема «${doc.name || id}» сохранена только на этом посту`, 'info');
+      } else {
+        toast(`схема «${doc.name || id}» сохранена на сервере`, 'ok');
+      }
+      showStatus(r.check);
+    } catch (e) {
+      // Отказ проверки — не сбой сети: схему надо чинить, а не повторять
+      // сохранение, и причина обязана быть на экране целиком.
+      reportError(e);
+      showStatus(null);
+    }
+  }
+
+  /// Проверка без сохранения: то же, что делает сервер при записи.
+  async function check() {
+    try {
+      const r = await api.mnemoCheck(JSON.stringify(doc, null, 2));
+      showStatus(r);
+      toast(r.ok ? 'схема годна' : 'схема содержит ошибки', r.ok ? 'ok' : 'err');
+    } catch (e) { reportError(e); }
+  }
+
+  function showStatus(check) {
+    status.replaceChildren();
+    if (storedLocally) {
+      status.append(h('span', { class: 'sim-tag', text: 'ТОЛЬКО НА ЭТОМ ПОСТУ' }));
+    }
+    if (!check) return;
+    if (check.ok) {
+      status.append(h('span', { class: 'state-online', text: ` виджетов ${check.widgets}, ошибок нет` }));
+    } else {
+      status.append(h('span', { class: 'error', text: ' ' + check.errors.join('; ') }));
+    }
+    for (const w of check.warnings || []) {
+      status.append(h('div', { class: 'muted', text: 'замечание: ' + w }));
+    }
+  }
+
+  function download() {
+    const text = JSON.stringify(doc, null, 2);
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const link = h('a', { href: url, download: (doc.id || id) + '.json' });
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  redraw();
+  showProps();
+  showStatus(null);
+  drawHistoryButtons();
+  return {
+    dispose: () => {
+      // Обработчик висит на документе: оставленный при уходе с экрана, он
+      // перехватывал бы Delete и стрелки на всех остальных.
+      document.removeEventListener('keydown', onEditorKey);
+      if (built && built.dispose) built.dispose();
+    },
+  };
+}
+
+/** Небольшое окно выбора: подтверждение либо отказ. */
+function modalPicker(title, control) {
+  return new Promise((resolve) => {
+    const dialog = h('dialog', { class: 'modal' });
+    dialog.append(
+      h('div', { class: 'modal-head' }, h('strong', { text: title })),
+      h('div', { class: 'modal-body' }, control),
+      h('div', { class: 'modal-foot' }, [
+        h('button', { text: 'Отмена', onclick: () => { dialog.close(); resolve(false); } }),
+        h('span', { class: 'spacer', style: 'flex:1' }),
+        h('button', { class: 'primary', text: 'Выбрать', onclick: () => { dialog.close(); resolve(true); } }),
+      ]),
+    );
+    dialog.addEventListener('close', () => dialog.remove());
+    document.body.append(dialog);
+    dialog.showModal();
+  });
+}
+
+/** Характеристики элемента, доступные привязке (FR-773.8). */
+const BINDABLE = [
+  { id: 'fill', name: 'заливка' },
+  { id: 'stroke', name: 'обводка' },
+  { id: 'stroke-width', name: 'толщина обводки' },
+  { id: 'stroke-dasharray', name: 'штриховка' },
+  { id: 'opacity', name: 'прозрачность' },
+  { id: 'visibility', name: 'видимость' },
+  { id: 'text', name: 'текст' },
+  { id: 'rotate', name: 'поворот' },
+  { id: 'translate', name: 'смещение' },
+  { id: 'scale', name: 'масштаб' },
+  { id: 'class', name: 'класс' },
+  { id: 'tooltip', name: 'подсказка' },
+  { id: 'state', name: 'состояние' },
+];
+
+/** Разумное умолчание характеристики по типу элемента. */
+function guessAttribute(element) {
+  if (element.tag === 'text' || element.tag === 'tspan') return 'text';
+  return 'fill';
+}
+
+/**
+ * Предположение тега по имени элемента (FR-773.11).
+ *
+ * Сравнение по нормализованному имени: разделители, регистр и пробелы в
+ * чертежах произвольны, а имя тега строго. Совпадение по хвосту имени тега —
+ * самый частый случай: элемент называют `насос-1`, а тег `line1.dev5.насос-1`.
+ */
+export function guessTag(element, tagNames, tagTitles) {
+  const key = normalize(element.name || element.id);
+  if (!key) return '';
+  let exact = null;
+  let suffix = null;
+  let byTitle = null;
+  for (const tag of tagNames) {
+    const n = normalize(tag);
+    if (n === key) { exact = tag; break; }
+    if (!suffix && n.endsWith('.' + key)) suffix = tag;
+    if (!suffix && normalize(tag.split('.').pop()) === key) suffix = tag;
+    // Совпадение по названию — последняя попытка: элементы чертежа называют
+    // по-человечески («Насос 1»), и у импортированных профилей имя тега
+    // машинное, так что искать в нём нечего.
+    if (!byTitle && tagTitles) {
+      const title = tagTitles.get ? tagTitles.get(tag) : tagTitles[tag];
+      if (title && normalize(title) === key) byTitle = tag;
+    }
+  }
+  return exact || suffix || byTitle || '';
+}
+
+const normalize = (s) => String(s || '').trim().toLowerCase().replace(/[\s_]+/g, '-');
+
+/** Описания свойств для инспектора: только те, что понимает отрисовщик. */
+const TYPE_PROPS = {
+  'core.value': [
+    { id: 'decimals', name: 'знаков после запятой', kind: 'number' },
+    { id: 'units', name: 'единицы', kind: 'text' },
+    { id: 'align', name: 'выравнивание', kind: 'enum', values: ['left', 'center', 'right'] },
+  ],
+  'core.indicator': [
+    { id: 'shape', name: 'форма', kind: 'enum', values: ['circle', 'square', 'rounded', 'diamond', 'triangle'] },
+  ],
+  'core.bar': [
+    { id: 'min', name: 'минимум', kind: 'number' },
+    { id: 'max', name: 'максимум', kind: 'number' },
+  ],
+  'core.gauge': [
+    { id: 'min', name: 'минимум', kind: 'number' },
+    { id: 'max', name: 'максимум', kind: 'number' },
+  ],
+  'core.label': [
+    { id: 'text', name: 'текст', kind: 'text' },
+  ],
+  'core.button': [
+    { id: 'text', name: 'надпись', kind: 'text' },
+  ],
+  'core.shape': [
+    { id: 'shape', name: 'фигура', kind: 'enum', values: ['rect', 'ellipse', 'line'] },
+    { id: 'fill', name: 'заливка', kind: 'text' },
+    { id: 'stroke', name: 'обводка', kind: 'text' },
+    { id: 'stroke_width', name: 'толщина', kind: 'number' },
+  ],
+  'core.svg': [
+    { id: 'fit', name: 'вписывание', kind: 'enum', values: ['contain', 'cover', 'stretch', 'actual'] },
+  ],
+  'core.device_card': [
+    { id: 'title', name: 'подпись', kind: 'text' },
+  ],
+  'core.table': [
+    { id: 'title', name: 'заголовок', kind: 'text' },
+    { id: 'row_height', name: 'высота строки', kind: 'number' },
+    { id: 'show_quality', name: 'столбец качества', kind: 'enum', values: ['true', 'false'] },
+  ],
+  'core.trend': [
+    { id: 'title', name: 'заголовок графика', kind: 'text' },
+    { id: 'period', name: 'показывать за', kind: 'duration', default: 3600, min: 60,
+      presets: [[300, '5 минут'], [900, '15 минут'], [3600, '1 час'], [21600, '6 часов'], [86400, '24 часа'], [604800, '7 дней']] },
+    { id: 'resolution', name: 'разрешение', kind: 'enum', values: ['auto', 'raw', 'minute', 'hour', 'day'] },
+    { id: 'refresh_sec', name: 'обновлять каждые', kind: 'duration', default: 30, min: 5,
+      presets: [[5, '5 секунд'], [15, '15 секунд'], [30, '30 секунд'], [60, '1 минута'], [300, '5 минут']] },
+    { id: 'show_legend', name: 'легенда', kind: 'boolean' },
+    { id: 'show_min_max_band', name: 'полоса min–max', kind: 'boolean' },
+    { id: 'show_thresholds', name: 'пороги тега', kind: 'boolean' },
+  ],
+  'core.sparkline': [
+    { id: 'period', name: 'показывать за', kind: 'duration', default: 3600, min: 60,
+      presets: [[300, '5 минут'], [900, '15 минут'], [3600, '1 час'], [21600, '6 часов'], [86400, '24 часа'], [604800, '7 дней']] },
+    { id: 'refresh_sec', name: 'обновлять каждые', kind: 'duration', default: 60, min: 10,
+      presets: [[10, '10 секунд'], [30, '30 секунд'], [60, '1 минута'], [300, '5 минут']] },
+    { id: 'show_last', name: 'текущее значение', kind: 'boolean' },
+    { id: 'decimals', name: 'знаков после запятой', kind: 'number' },
+  ],
+};
+
+function propInput(instance, spec, onchange) {
+  const current = (instance.properties || {})[spec.id];
+  const commit = (value) => {
+    instance.properties = instance.properties || {};
+    if (value === '' || value === undefined) delete instance.properties[spec.id];
+    else instance.properties[spec.id] = value;
+    onchange();
+  };
+  if (spec.kind === 'enum') {
+    const select = h('select', {}, [h('option', { value: '', text: '—' }),
+      ...spec.values.map((v) => h('option', { value: v, text: v }))]);
+    select.value = current ?? '';
+    select.addEventListener('change', (e) => commit(e.target.value));
+    return select;
+  }
+  if (spec.kind === 'boolean') {
+    const check = h('input', { type: 'checkbox' });
+    check.checked = current !== false;
+    check.addEventListener('change', (e) => commit(e.target.checked));
+    return check;
+  }
+  if (spec.kind === 'duration') {
+    const fallback = spec.default || spec.min || 0;
+    const selected = current === undefined || current === null ? fallback : Number(current);
+    const hasPreset = spec.presets.some(([seconds]) => seconds === selected);
+    const pick = h('select', {}, [
+      ...spec.presets.map(([seconds, label]) => h('option', { value: String(seconds), text: label })),
+      h('option', { value: 'custom', text: 'свой интервал…' }),
+    ]);
+    pick.value = hasPreset ? String(selected) : 'custom';
+    const custom = h('input', {
+      type: 'number', min: String(spec.min || 1), step: '1',
+      value: String(Math.max(spec.min || 1, hasPreset ? fallback : selected)),
+      title: 'значение в секундах', placeholder: 'секунд',
+    });
+    custom.hidden = pick.value !== 'custom';
+    custom.addEventListener('change', () => {
+      const value = Math.max(spec.min || 1, Number(custom.value) || fallback);
+      custom.value = String(value);
+      commit(value);
+    });
+    pick.addEventListener('change', () => {
+      custom.hidden = pick.value !== 'custom';
+      if (pick.value !== 'custom') commit(Number(pick.value));
+      else custom.focus();
+    });
+    return h('div', { class: 'trend-duration-control' }, [pick, custom]);
+  }
+  if (spec.kind === 'number') {
+    return h('input', {
+      type: 'number', value: current ?? '',
+      oninput: (e) => commit(e.target.value === '' ? '' : Number(e.target.value)),
+    });
+  }
+  return h('input', { value: current ?? '', oninput: (e) => commit(e.target.value) });
+}

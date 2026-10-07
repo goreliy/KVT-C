@@ -59,6 +59,12 @@ flowchart LR
 
 ## Документация
 
+Пользователю: [руководство по настройке и эксплуатации](docs/USER_GUIDE.md).
+В интерфейсе пункт **«Справка»** открывает справку с поиском. Кнопка **«Демо»** справа от «Журнала»
+создаёт отдельный учебный проект: 16 шагов на настоящих формах, подсказки, прогресс внизу,
+возврат и повтор упражнений. Оборудование и отправка сообщений в демо имитируются;
+изменения сохраняются только в `data/demo_projects/`. Для включения новых маршрутов перезапустите Visualizer.
+
 Вся документация — в каталоге **[docs/](docs/)**, начните с [индекса `docs/README.md`](docs/README.md)
 (там же — сводная таблица состояния реализации подсистем).
 
@@ -138,8 +144,15 @@ PID-файлы:
 Для пересборки из исходников:
 
 ```powershell
-python -m PyInstaller --noconfirm --clean --distpath win64 --workpath build\win64 kvt_c_win64.spec
+python -m venv build\win64-venv
+.\build\win64-venv\Scripts\python.exe -m pip install -r requirements.txt pyinstaller==5.13.0
+.\build\win64-venv\Scripts\python.exe -m PyInstaller --noconfirm --clean --distpath win64 --workpath build\win64 kvt_c_win64.spec
 ```
+
+Сборка выполняется на Windows x64 с Python 3.10. В EXE включаются только стартовые
+JSON-конфиги; локальные файлы ключей и резервные копии не упаковываются.
+Уведомления в стартовой конфигурации выключены, получатели и пароли задаются
+после запуска. Существующие конфиги рядом с EXE при обновлении сохраняются.
 ## Установка
 ```bash
 python -m venv .venv

@@ -1,0 +1,498 @@
+// Клиент REST и подписки I-Bolid (ТЗ 14).
+//
+// Слой знает про сеть и ничего не знает про разметку. Два свойства, ради
+// которых он вынесен отдельно:
+//
+//  * Токен хранится в одном месте и подставляется в каждый запрос. Забытый
+//    заголовок означал бы «не авторизован» вместо данных.
+//  * Состояние связи с сервером — наблюдаемая величина. Интерфейс обязан
+//    отличать «величина не менялась» от «сервера нет» (ТЗ 13.3.6), и решать
+//    это на глаз по времени последнего обновления нельзя.
+
+export const API = '/api/v1';
+
+const TOKEN_KEY = 'ibolid.token';
+
+/** Ошибка запроса с машиночитаемым кодом сервера. */
+export class ApiError extends Error {
+  constructor(status, code, message) {
+    super(message || code || `HTTP ${status}`);
+    this.status = status;
+    this.code = code || 'HTTP_' + status;
+  }
+}
+
+export const session = {
+  get token() { return sessionStorage.getItem(TOKEN_KEY) || ''; },
+  set token(v) { v ? sessionStorage.setItem(TOKEN_KEY, v) : sessionStorage.removeItem(TOKEN_KEY); },
+  login: '',
+  role: '',
+  /// Учётных записей ещё нет: система работает открыто (FR-903.12).
+  unclaimed: false,
+};
+
+/** Есть ли доступ к данным: либо сеанс, либо открытый режим первого запуска. */
+export function authorized() {
+  return session.unclaimed || !!session.token;
+}
+
+/** Роли по возрастанию прав — тот же порядок, что на сервере. */
+const ROLE_ORDER = ['viewer', 'operator', 'engineer', 'admin'];
+
+/**
+ * Хватает ли роли сеанса.
+ *
+ * Это подсказка интерфейсу, а не охрана: право всё равно проверяет сервер.
+ * Нужна, чтобы не показывать кнопку, которая заведомо ответит отказом.
+ */
+export function hasRole(minimum) {
+  const have = ROLE_ORDER.indexOf(session.role);
+  const need = ROLE_ORDER.indexOf(minimum);
+  return have >= 0 && need >= 0 && have >= need;
+}
+
+async function request(method, path, {
+  body, query, auth = true, headers: suppliedHeaders = {},
+} = {}) {
+  const url = new URL(API + path, location.origin);
+  if (query) {
+    for (const [k, v] of Object.entries(query)) {
+      if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
+    }
+  }
+  const headers = { ...suppliedHeaders };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (auth && session.token) headers['Authorization'] = 'Bearer ' + session.token;
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (e) {
+    // Сеть недоступна — это не ошибка приложения, и путать её с отказом
+    // сервера нельзя: причины разные, и действия оператора тоже.
+    throw new ApiError(0, 'NETWORK', 'сервер недоступен');
+  }
+
+  if (response.status === 204) return null;
+
+  let payload = null;
+  const text = await response.text();
+  if (text) {
+    try { payload = JSON.parse(text); } catch { payload = null; }
+  }
+
+  if (!response.ok) {
+    const code = payload && payload.code;
+    const message = payload && payload.message;
+    if (response.status === 401) session.token = '';
+    throw new ApiError(response.status, code, message);
+  }
+  return payload;
+}
+
+export const api = {
+  async health() {
+    const r = await request('GET', '/health', { auth: false });
+    // Открытый режим — свойство сервера, а не выбор клиента: запоминается
+    // при каждом обращении, чтобы создание первой учётной записи закрывало
+    // доступ немедленно, без перезагрузки страницы.
+    session.unclaimed = !!r.unclaimed;
+    return r;
+  },
+  roles: () => request('GET', '/roles', { auth: false }),
+  setup: (login, password) => request('POST', '/setup', { body: { login, password }, auth: false }),
+
+  async login(login, password) {
+    const r = await request('POST', '/login', { body: { login, password }, auth: false });
+    session.token = r.token;
+    session.login = r.login;
+    session.role = r.role;
+    return r;
+  },
+
+  async logout() {
+    try { await request('POST', '/logout', { body: {} }); } finally { session.token = ''; }
+  },
+
+  async me() {
+    const r = await request('GET', '/me');
+    session.login = r.login;
+    session.role = r.role;
+    session.unclaimed = !!r.anonymous;
+    return r;
+  },
+
+  snapshot: (pattern) => request('GET', '/snapshot', { query: { pattern } }),
+  changes: (since) => request('GET', '/changes', { query: { since } }),
+  tag: (name) => request('GET', '/tags/' + encodeURIComponent(name)),
+  write: (tag, value) => request('POST', '/tags/write', { body: { tag, value } }),
+  channels: () => request('GET', '/channels'),
+  devices: () => request('GET', '/devices'),
+  events: (limit) => request('GET', '/events', { query: { limit } }),
+  activeViolations: () => request('GET', '/events/active'),
+  acknowledge: (tag, comment) => request('POST', '/events/ack', { body: { tag, comment } }),
+  history: (tags, from, to, resolution, maxPoints) =>
+    request('GET', '/history', {
+      query: { tags: tags.join(','), from, to, resolution, max_points: maxPoints },
+    }),
+  historyDaily: (tag, from, to) =>
+    request('GET', '/history/daily', { query: { tag, from, to } }),
+  historyTags: () => request('GET', '/history/tags'),
+  /// Состояние хранилищ архива: связь, буфер, потери (ТЗ 12.8).
+  archiveHealth: () => request('GET', '/archive/health'),
+  /// Состояние моста MQTT (ТЗ 14.5).
+  mqttStatus: () => request('GET', '/mqtt'),
+
+  /// Аудит и журналы с диска (разделы 11.7, 11.9).
+  audit: (filter) => request('GET', '/audit', { query: filter }),
+  journalEvents: (filter) => request('GET', '/journal/events', { query: filter }),
+  journalViolations: () => request('GET', '/journal/violations'),
+  /// Выгрузка в CSV: токен живёт в заголовке, поэтому не переход по ссылке.
+  exportCsv: async (path, filter) => {
+    const url = new URL(API + path, location.origin);
+    for (const [k, v] of Object.entries(filter || {})) {
+      if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
+    }
+    const r = await fetch(url, { headers: { Authorization: 'Bearer ' + session.token } });
+    if (!r.ok) throw new ApiError(r.status, 'EXPORT', 'выгрузка не удалась');
+    return r.text();
+  },
+
+  /// Состояние службы и её перезапуск (ТЗ 13.14).
+  service: () => request('GET', '/service'),
+  restartService: () => request('POST', '/service/restart', { body: {} }),
+
+  /// Суточная сводка по ряду: по ней видно, в какие сутки запись шла.
+  historyDaily: (tag, from, to) => request('GET', '/history/daily?'
+    + new URLSearchParams({ tag, from: String(from), to: String(to) })),
+
+  /// Именованные виды трендов: набор рядов с периодом (FR-709.63).
+  trendViews: () => request('GET', '/trend-views'),
+  saveTrendView: (body) => request('POST', '/trend-views', { body }),
+  deleteTrendView: (id) => request('DELETE', '/trend-views/' + encodeURIComponent(id)),
+
+  /// Уведомления: состояние, журнал отправок, проверка, секреты (раздел 14.6).
+  notifyStatus: () => request('GET', '/notify'),
+  notifyLog: (limit) => request('GET', '/notify/log?limit=' + encodeURIComponent(limit || 100)),
+  notifyProbe: (channel, address) =>
+    request('POST', '/notify/probe', { body: { channel, address } }),
+  notifySecrets: () => request('GET', '/notify/secrets'),
+  setNotifySecret: (name, value) =>
+    request('POST', '/notify/secrets', { body: { name, value } }),
+  deleteNotifySecret: (name) =>
+    request('DELETE', '/notify/secrets/' + encodeURIComponent(name)),
+
+  /// Пуск и остановка канала без перезапуска (ТЗ 9.11).
+  ///
+  /// Остановка освобождает порт. Действует до перезапуска: постоянным это
+  /// делает признак «опрашивать» в настройке.
+  setChannelRunning: (channel, running) =>
+    request('POST', '/channels/' + encodeURIComponent(channel) + '/running', { body: { running } }),
+
+  /// Свои типы виджетов — шаблоны схем (ТЗ 13.4.10).
+  widgetTypes: () => request('GET', '/widget-types'),
+  widgetTypeDocument: (id) => request('GET', '/widget-types/' + encodeURIComponent(id) + '/document'),
+  saveWidgetType: (body) => request('POST', '/widget-types', { body }),
+  deleteWidgetType: (id) => request('DELETE', '/widget-types/' + encodeURIComponent(id)),
+
+  /// Последовательные порты машины (ТЗ 13.14.1).
+  ports: () => request('GET', '/ports'),
+
+  /// Группы опроса: заданные и действующие периоды.
+  pollGroups: () => request('GET', '/poll-groups'),
+
+  /// Смена периода группы опроса на ходу (раздел 9.5.1).
+  ///
+  /// Действует до перезапуска: постоянным изменение делает запись в
+  /// конфигурацию. Ответ содержит `note` с этим предупреждением.
+  setPollPeriod: (group, periodMs, channel = '') =>
+    request('POST', '/poll-period', { body: { channel, group, period_ms: periodMs } }),
+
+  /// Профили приборов и поиск на линии (разделы 7.3, 8.2).
+  profiles: () => request('GET', '/profiles'),
+  profileRegisters: (id) => request('GET', '/profiles/' + encodeURIComponent(id) + '/registers'),
+  saveProfile: (body) => request('POST', '/profiles', { body }),
+  deleteProfile: (id) => request('DELETE', '/profiles/' + encodeURIComponent(id)),
+  discover: (channel, from, to, probeAddress) =>
+    request('POST', '/discovery', {
+      body: { channel, from, to, probe_address: probeAddress },
+    }),
+
+  /// Мнемосхемы на сервере (ТЗ 13.7).
+  mnemoList: () => request('GET', '/mnemo'),
+  mnemoGet: (id) => request('GET', '/mnemo/' + encodeURIComponent(id)),
+  mnemoCheck: (text) => request('POST', '/mnemo/check', { body: { text } }),
+  mnemoSave: (id, text) => request('PUT', '/mnemo/' + encodeURIComponent(id), { body: { text } }),
+  mnemoDelete: (id) => request('DELETE', '/mnemo/' + encodeURIComponent(id)),
+
+  /// Декларативная технологическая модель проекта (объекты/переменные/bindings).
+  objectModel: () => request('GET', '/object-model'),
+  checkObjectModel: (expectedRevision, text) => request('POST', '/object-model/check', {
+    body: { expected_revision: expectedRevision, text },
+  }),
+  saveObjectModel: (expectedRevision, text) => request('PUT', '/object-model', {
+    body: { expected_revision: expectedRevision, text },
+    headers: { 'If-Match': `"${expectedRevision}"` },
+  }),
+
+  /// IEC 61131-3 program sources with optimistic revision preconditions.
+  programs: () => request('GET', '/programs'),
+  program: (id) => request('GET', '/programs/' + encodeURIComponent(id)),
+  createProgram: (text) => request('POST', '/programs', { body: { text } }),
+  checkProgram: (id, text) => request(
+    'POST', '/programs/' + encodeURIComponent(id) + '/check', { body: { text } },
+  ),
+  layoutProgram: (id, text) => request(
+    'POST', '/programs/' + encodeURIComponent(id) + '/layout', { body: { text } },
+  ),
+  saveProgram: (id, revision, text) => request(
+    'PUT', '/programs/' + encodeURIComponent(id), {
+      body: { text },
+      headers: { 'If-Match': `"${revision}"` },
+    },
+  ),
+  deleteProgram: (id, revision) => request(
+    'DELETE', '/programs/' + encodeURIComponent(id), {
+      headers: { 'If-Match': `"${revision}"` },
+    },
+  ),
+  programRuntime: (id) => request('GET', '/programs/' + encodeURIComponent(id) + '/runtime'),
+  forceProgramVariable: (id, pou, symbol, value) => request(
+    'POST', '/programs/' + encodeURIComponent(id) + '/runtime/variables/' + encodeURIComponent(pou) + '/' + encodeURIComponent(symbol) + '/force', { body: { value } },
+  ),
+  clearProgramVariableForce: (id, pou, symbol) => request(
+    'DELETE', '/programs/' + encodeURIComponent(id) + '/runtime/variables/' + encodeURIComponent(pou) + '/' + encodeURIComponent(symbol) + '/force',
+  ),
+  startProgramRuntime: (id, mode = 'simulation', physicalOutputsConfirmed = false) => request(
+    'POST', '/programs/' + encodeURIComponent(id) + '/runtime/start', { body: { mode, physical_outputs_confirmed: physicalOutputsConfirmed } },
+  ),
+  stopProgramRuntime: (id) => request(
+    'POST', '/programs/' + encodeURIComponent(id) + '/runtime/stop', { body: {} },
+  ),
+  restartProgramRuntime: (id, mode = 'simulation', physicalOutputsConfirmed = false) => request(
+    'POST', '/programs/' + encodeURIComponent(id) + '/runtime/restart', { body: { mode, physical_outputs_confirmed: physicalOutputsConfirmed } },
+  ),
+  setProgramAutostart: (id, revision, enabled) => request(
+    'PUT', '/programs/' + encodeURIComponent(id) + '/runtime/autostart', {
+      body: { enabled },
+      headers: { 'If-Match': `"${revision}"` },
+    },
+  ),
+
+  /// Конфигурация объекта: каналы, приборы, регистры.
+  config: () => request('GET', '/config'),
+  checkConfig: (text) => request('POST', '/config/check', { body: { text } }),
+  saveConfig: (text) => request('PUT', '/config', { body: { text } }),
+  configHistory: () => request('GET', '/config/history'),
+  configRevision: (id) => request('GET', '/config/history/' + encodeURIComponent(id)),
+  configRestore: (id) =>
+    request('POST', '/config/history/' + encodeURIComponent(id) + '/restore', { body: {} }),
+  configImport: (text, onConflict) =>
+    request('POST', '/config/import', { body: { text, on_conflict: onConflict } }),
+  /// Выгрузка отдаётся файлом, а не разбираемым телом: адрес открывают ссылкой.
+  /// Автозапуск клиента визуализации при входе в систему.
+  autostart: () => request('GET', '/autostart'),
+  /// Начисления по счётчикам и времени работы (ТЗ 11.12–11.14).
+  billingSetup: () => request('GET', '/billing'),
+  billingSave: (setup) => request('POST', '/billing', { body: setup }),
+  billingInvoice: (subscriber, fromUs, toUs) =>
+    request('GET', `/billing/${encodeURIComponent(subscriber)}/invoice`
+      + `?from_us=${fromUs}&to_us=${toUs}`),
+
+  /// Журналы учёта (ТЗ 11.10).
+  reports: () => request('GET', '/reports'),
+  reportOperators: () => request('GET', '/report-operators'),
+  reportMonth: (id, year, month) =>
+    request('GET', `/reports/${encodeURIComponent(id)}?year=${year}&month=${month}`),
+  reportSign: (id, date, operator, batch) =>
+    request('POST', `/reports/${encodeURIComponent(id)}/sign`,
+      { body: { date, operator, batch } }),
+  reportSave: (journal) => request('POST', '/reports', { body: journal }),
+  reportRemove: (id) => request('DELETE', `/reports/${encodeURIComponent(id)}`),
+
+  /// Готовая настройка подключения ассистента (ТЗ 14.9).
+  mcpSetup: () => request('GET', '/mcp'),
+  setAutostart: (enabled) => request('POST', '/autostart', { body: { enabled } }),
+
+  /// Хранилище проекта: версии, история, удалённые (ТЗ 16.7).
+  gitStatus: () => request('GET', '/git/status'),
+  gitInit: () => request('POST', '/git/init', { body: {} }),
+  gitCommit: (message) => request('POST', '/git/commit', { body: { message } }),
+  gitLog: (limit = 30) => request('GET', '/git/log?limit=' + limit),
+  gitRemote: (url) => request('POST', '/git/remote', { body: { url } }),
+  gitToken: (token) => request('POST', '/git/token', { body: { token } }),
+  gitPush: () => request('POST', '/git/push', { body: {} }),
+  gitPull: () => request('POST', '/git/pull', { body: {} }),
+
+  /// Проекты — папки объектов (ТЗ 16.6).
+  projects: () => request('GET', '/projects'),
+  openProject: (dir) => request('POST', '/projects/open', { body: { dir } }),
+  createProject: (dir, name) => request('POST', '/projects/new', { body: { dir, name } }),
+
+  /// Пустое имя линии означает весь опрос объекта.
+  configExportUrl: (channel, device) => {
+    const query = new URLSearchParams({ channel: channel || '' });
+    if (device) query.set('device', device);
+    return '/config/export?' + query.toString();
+  },
+
+  /// Администрирование учётных записей (раздел 15.1).
+  users: () => request('GET', '/users'),
+  createUser: (login, password, role) => request('POST', '/users', { body: { login, password, role } }),
+  deleteUser: (login) => request('DELETE', '/users/' + encodeURIComponent(login)),
+  setUserRole: (login, role) => request('POST', '/users/' + encodeURIComponent(login) + '/role', { body: { role } }),
+  resetPassword: (login, password) => request('POST', '/users/' + encodeURIComponent(login) + '/password', { body: { password } }),
+  unlockUser: (login) => request('POST', '/users/' + encodeURIComponent(login) + '/unlock', { body: {} }),
+  changeOwnPassword: (current, next) => request('POST', '/password', { body: { current, next } }),
+
+  /// Журнал обменов Modbus (ТЗ 11.8).
+  exchanges: (filter, limit) => request('GET', '/exchanges', { query: { ...filter, limit } }),
+  exchangesExportUrl: (filter, limit) => {
+    const url = new URL(API + '/exchanges/export', location.origin);
+    for (const [k, v] of Object.entries({ ...filter, limit })) {
+      if (v !== undefined && v !== null && v !== '' && v !== false) url.searchParams.set(k, v);
+    }
+    return url.toString();
+  },
+  exchangesExport: async (filter, limit) => {
+    // Выгрузка идёт обычным запросом, а не переходом по ссылке: токен живёт
+    // в заголовке, и ссылка без него получила бы отказ.
+    const url = api.exchangesExportUrl(filter, limit);
+    const r = await fetch(url, { headers: { Authorization: 'Bearer ' + session.token } });
+    if (!r.ok) throw new ApiError(r.status, 'EXPORT', 'выгрузка не удалась');
+    return r.text();
+  },
+};
+
+/**
+ * Живой срез значений.
+ *
+ * Подписка ведётся по WebSocket, а при его недоступности — опросом ресурса
+ * изменений. Второй путь не «запасной для старых браузеров»: в закрытом
+ * контуре между постом и сервером нередко стоит посредник, не пропускающий
+ * обновление протокола, и без опроса интерфейс там просто не работал бы.
+ */
+export class LiveTags extends EventTarget {
+  constructor() {
+    super();
+    this.tags = new Map();
+    this.revision = 0;
+    this.state = 'connecting';
+    this.socket = null;
+    this.timer = null;
+    this.pollTimer = null;
+    this.stopped = false;
+    this.retryDelay = 1000;
+  }
+
+  /** Состояние связи: `live`, `connecting`, `lost`. */
+  setState(state) {
+    if (this.state === state) return;
+    this.state = state;
+    this.dispatchEvent(new CustomEvent('state', { detail: state }));
+  }
+
+  start() {
+    this.stopped = false;
+    this.openSocket();
+  }
+
+  stop() {
+    this.stopped = true;
+    if (this.socket) { this.socket.onclose = null; this.socket.close(); this.socket = null; }
+    clearTimeout(this.timer);
+    clearInterval(this.pollTimer);
+    this.pollTimer = null;
+  }
+
+  openSocket() {
+    if (this.stopped) return;
+    const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${scheme}//${location.host}${API}/ws?token=${encodeURIComponent(session.token)}&pattern=*`;
+    let socket;
+    try {
+      socket = new WebSocket(url);
+    } catch {
+      this.fallbackToPolling();
+      return;
+    }
+    this.socket = socket;
+    this.setState('connecting');
+
+    socket.onopen = () => {
+      this.retryDelay = 1000;
+      this.stopPolling();
+      this.setState('live');
+    };
+    socket.onmessage = (e) => {
+      let update;
+      try { update = JSON.parse(e.data); } catch { return; }
+      if (!update || !Array.isArray(update.tags)) return;
+      if (update.type === 'snapshot') this.tags.clear();
+      this.apply(update.tags);
+    };
+    socket.onerror = () => { /* обработается в onclose */ };
+    socket.onclose = () => {
+      this.socket = null;
+      if (this.stopped) return;
+      this.setState('lost');
+      // Пока соединение поднимается заново, значения берутся опросом:
+      // экран не должен замирать на неопределённое время.
+      this.fallbackToPolling();
+      this.timer = setTimeout(() => this.openSocket(), this.retryDelay);
+      this.retryDelay = Math.min(this.retryDelay * 2, 15000);
+    };
+  }
+
+  fallbackToPolling() {
+    if (this.pollTimer || this.stopped) return;
+    this.pollTimer = setInterval(() => this.pollOnce(), 2000);
+    this.pollOnce();
+  }
+
+  stopPolling() {
+    clearInterval(this.pollTimer);
+    this.pollTimer = null;
+  }
+
+  async pollOnce() {
+    try {
+      const r = await api.changes(this.revision);
+      if (r.truncated) {
+        // Клиент отстал: накопленной очереди не хватило, и достраивать срез
+        // по обрывкам нельзя — берётся полный снимок (FR-813.4).
+        await this.loadSnapshot();
+        return;
+      }
+      this.revision = r.revision;
+      this.apply(r.tags);
+      this.setState('live');
+    } catch (e) {
+      this.setState('lost');
+    }
+  }
+
+  async loadSnapshot() {
+    try {
+      const r = await api.snapshot();
+      this.revision = r.revision;
+      this.tags.clear();
+      this.apply(r.tags);
+      this.setState('live');
+    } catch {
+      this.setState('lost');
+    }
+  }
+
+  apply(views) {
+    for (const view of views) this.tags.set(view.name, view);
+    if (views.length) this.dispatchEvent(new CustomEvent('tags', { detail: views }));
+  }
+
+  get(name) { return this.tags.get(name); }
+  all() { return [...this.tags.values()]; }
+}

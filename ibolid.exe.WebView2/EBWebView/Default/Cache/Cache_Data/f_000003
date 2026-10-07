@@ -1,0 +1,1771 @@
+// Отрисовка виджетов мнемосхемы (ТЗ 13.4, 13.6, 13.7).
+//
+// Холст — один элемент SVG в логических единицах документа. Это не «так проще
+// рисовать»: масштабирование при изменении окна обязано сохранять пропорции и
+// точки привязки (FR-722.10, FR-722.11), а в SVG это делает `viewBox`, тогда
+// как раскладка в пикселях требовала бы пересчёта на каждый кадр.
+//
+// Главное правило раздела 13.3: **вид соответствует действительности**.
+// Поэтому состояние достоверности вычисляется до отрисовки и влияет на неё
+// раньше, чем любое оформление, заданное автором схемы.
+
+// Отрисовщик графика берётся из `chart.js`, который сам берёт отсюда `svg`.
+// Взаимная ссылка модулей допустима: обращение идёт из тела функции, к
+// моменту вызова оба модуля разобраны целиком.
+import { renderChart } from './chart.js';
+
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+export function svg(tag, attrs = {}, children = []) {
+  const node = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === undefined || v === null) continue;
+    node.setAttribute(k, String(v));
+  }
+  for (const c of [].concat(children)) if (c) node.append(c);
+  return node;
+}
+
+// ── Достоверность и состояние ───────────────────────────────────────
+
+/**
+ * Состояние виджета по срезу значения.
+ *
+ * Порядок проверок соответствует 13.6: недостоверность важнее тревоги.
+ * Показать «тревога» по значению, которое уже неизвестно, — худший из
+ * возможных обманов: оператор примет решение по несуществующим данным.
+ */
+export function widgetState(view, violation) {
+  if (!view || view.value === null || view.value === undefined) {
+    if (!view || view.quality === undefined) return 'nodata';
+  }
+  if (view && view.good === false) {
+    return view.updated_at_us ? 'nocomm' : 'nodata';
+  }
+  if (violation) {
+    const p = violation.priority || '';
+    if (p.includes('крит')) return 'critical';
+    if (p.includes('трев') || p === 'alarm') return 'alarm';
+    if (p.includes('предупр') || p === 'warning') return 'warning';
+  }
+  return 'normal';
+}
+
+const STATE_COLOR = {
+  nodata: 'var(--stale)',
+  nocomm: 'var(--alarm)',
+  stale: 'var(--stale)',
+  warning: 'var(--warn)',
+  alarm: 'var(--alarm)',
+  critical: 'var(--critical)',
+  normal: 'var(--ok)',
+};
+
+export const stateColor = (s) => STATE_COLOR[s] || 'var(--muted)';
+
+/** Короткая пометка причины недостоверности — она обязана быть видна текстом. */
+export function qualityMark(state) {
+  return { nodata: 'нет данных', nocomm: 'нет связи', stale: 'устарело' }[state] || '';
+}
+
+/**
+ * Пометка «имитация» рядом со значением.
+ *
+ * Величина, порождённая встроенным имитатором, обязана отличаться от
+ * измеренной **на каждом экране**, где она показана. Отметка только в списке
+ * каналов бесполезна: оператор смотрит на мнемосхему, а не на список.
+ */
+export function simulatedMark(view) {
+  return view && view.simulated ? 'ИМИТАЦИЯ' : '';
+}
+
+/** Форматирование величины по свойствам виджета. */
+export function formatValue(view, props = {}) {
+  if (!view || view.value === null || view.value === undefined) return '—';
+  let text;
+  if (typeof view.value === 'number') {
+    const decimals = Number.isInteger(props.decimals) ? props.decimals : 2;
+    text = view.value.toFixed(decimals);
+    if (props.thousands_separator !== false) {
+      const [whole, frac] = text.split('.');
+      text = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f') + (frac ? '.' + frac : '');
+    }
+  } else {
+    text = String(view.value);
+  }
+  const units = props.units !== undefined ? props.units : view.units;
+  if (props.show_units !== false && units) text += ' ' + units;
+  return (props.prefix || '') + text + (props.suffix || '');
+}
+
+/** Число человеческим видом — для подписей внутри виджетов. */
+function fmtNumber(value, decimals = 2) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  return value.toLocaleString('ru-RU', { maximumFractionDigits: decimals });
+}
+
+// ── Контекст отрисовки ──────────────────────────────────────────────
+
+/**
+ * Общий контекст: живые значения, активные нарушения, ресурсы документа
+ * и обработчик действий.
+ */
+export class RenderContext {
+  constructor({
+    live, violations = [], resources = {}, onAction = null, interactive = true,
+    devices = [], channels = [], events = [], history = null, onTrendOpen = null,
+  }) {
+    this.historySource = history;
+    this.onTrendOpen = onTrendOpen;
+    this.historyCache = new Map();
+    this.live = live;
+    this.violations = new Map(violations.map((v) => [v.tag, v]));
+    this.resources = resources;
+    this.onAction = onAction;
+    this.interactive = interactive;
+    // Сведения об опросе: состояние приборов и каналов. Нужны виджетам,
+    // показывающим саму линию, а не измеряемую ею величину.
+    this.devices = new Map(devices.map((d) => [d.path, d]));
+    this.channels = new Map(channels.map((c) => [c.id, c]));
+    this.events = events;
+  }
+
+  view(tag) { return this.live ? this.live.get(tag) : undefined; }
+
+  /**
+   * Запрос истории для графиков на схеме.
+   *
+   * Через контекст, а не прямым обращением к API из отрисовщика: отрисовщики
+   * должны работать и в редакторе, и в предпросмотре, и в проверке, где
+   * настоящей истории нет, — а подставить туда заглушку можно только здесь.
+   */
+  history(tags, from, to, resolution, maxPoints) {
+    if (!this.historySource) {
+      return Promise.reject(new Error('архив недоступен в этом режиме'));
+    }
+    // Виджеты одной схемы часто спрашивают одинаковый интервал в один такт.
+    // Округление только границ к секунде объединяет стартовые запросы, а
+    // короткий TTL не превращает архивную выборку в «текущее» значение.
+    const second = 1_000_000;
+    const start = Math.floor(from / second) * second;
+    const end = Math.floor(to / second) * second;
+    const normalizedTags = [...new Set(tags)];
+    const key = JSON.stringify([
+      normalizedTags, start, end, resolution || 'auto', maxPoints || 0,
+    ]);
+    const now = Date.now();
+    const cached = this.historyCache.get(key);
+    if (cached && now - cached.at < 2500) return cached.promise;
+    const promise = Promise.resolve(this.historySource(normalizedTags, start, end, resolution, maxPoints));
+    this.historyCache.set(key, { at: now, promise });
+    while (this.historyCache.size > 96) this.historyCache.delete(this.historyCache.keys().next().value);
+    promise.catch(() => {
+      if (this.historyCache.get(key)?.promise === promise) this.historyCache.delete(key);
+    });
+    return promise;
+  }
+
+  openTrend(tags, from, to) {
+    if (this.interactive && this.onTrendOpen) this.onTrendOpen(tags, from, to);
+  }
+  violation(tag) { return this.violations.get(tag); }
+  device(path) { return this.devices.get(path); }
+  channel(id) { return this.channels.get(id); }
+
+  /** Теги прибора: всё, что начинается с его пути и точки. */
+  deviceTags(path) {
+    if (!this.live) return [];
+    const prefix = path + '.';
+    return this.live.all().filter((t) => t.name.startsWith(prefix));
+  }
+
+  /** Теги по перечню либо шаблону имени. */
+  tagsOf(binding) {
+    if (!this.live || !binding) return [];
+    if (Array.isArray(binding.tags) && binding.tags.length) {
+      return binding.tags.map((t) => this.view(t)).filter(Boolean);
+    }
+    if (binding.pattern) {
+      const rx = new RegExp('^' + binding.pattern.split('*').map(escapeRx).join('.*') + '$');
+      return this.live.all().filter((t) => rx.test(t.name));
+    }
+    return [];
+  }
+
+  /** Значение слота: привязка к тегу либо постоянная величина. */
+  slot(instance, name) {
+    const binding = (instance.bindings || {})[name];
+    if (!binding) return { tag: null, view: undefined };
+    if (binding.kind === 'tag') {
+      return { tag: binding.tag, view: this.view(binding.tag), mode: binding.mode };
+    }
+    if (binding.kind === 'tag_set') {
+      const tags = binding.tags || [];
+      return { tags, views: tags.map((t) => this.view(t)) };
+    }
+    return { tag: null, view: undefined, binding };
+  }
+}
+
+// ── Отрисовщики типов ───────────────────────────────────────────────
+
+const RENDERERS = {};
+
+const escapeRx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Регистрация отрисовщика типа. Так добавляются и пользовательские типы. */
+export function registerRenderer(typeId, fn) { RENDERERS[typeId] = fn; }
+
+function prop(instance, name, fallback) {
+  const v = (instance.properties || {})[name];
+  return v === undefined ? fallback : v;
+}
+
+/**
+ * Период опроса словами.
+ *
+ * «2500 мс» читается хуже, чем «2,5 с», а именно эту величину сравнивают
+ * глазами с заданной. Единица подписана всегда: число без единицы на щите
+ * прочтут как секунды ровно там, где это миллисекунды.
+ */
+export function cadenceText(ms) {
+  const value = Number(ms);
+  if (!Number.isFinite(value) || value <= 0) return '—';
+  if (value < 1000) return `${Math.round(value)} мс`;
+  const seconds = value / 1000;
+  return `${seconds < 10 ? seconds.toFixed(1).replace('.', ',') : Math.round(seconds)} с`;
+}
+
+registerRenderer('core.value', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const align = prop(instance, 'align', 'right');
+  const x = align === 'left' ? 2 : align === 'center' ? w / 2 : w - 2;
+  const anchor = align === 'left' ? 'start' : align === 'center' ? 'middle' : 'end';
+
+  const text = svg('text', {
+    x, y: h / 2, 'dominant-baseline': 'central', 'text-anchor': anchor,
+    'font-size': Math.min(h * 0.62, 28), 'font-family': 'var(--mono)',
+  });
+  const mark = svg('text', {
+    x: align === 'left' ? w - 2 : 2, y: h - 2,
+    'text-anchor': align === 'left' ? 'end' : 'start',
+    'font-size': 9, fill: 'var(--alarm)',
+  });
+  const sim = svg('text', {
+    x: align === 'right' ? 2 : w - 2,
+    y: 9,
+    'text-anchor': align === 'right' ? 'start' : 'end',
+    'font-size': 8, fill: 'var(--warn)', 'letter-spacing': '0.5',
+  });
+  const group = svg('g', {}, [text, mark, sim]);
+
+  return {
+    node: group,
+    update() {
+      const { tag, view } = ctx.slot(instance, 'value');
+      const state = widgetState(view, ctx.violation(tag));
+      text.textContent = formatValue(view, instance.properties || {});
+      // Недостоверное значение перечёркивается и подписывается причиной:
+      // одного лишь цвета для этого мало (FR-700.9).
+      const bad = state === 'nodata' || state === 'nocomm' || state === 'stale';
+      text.setAttribute('fill', prop(instance, 'color_by_state', true)
+        ? (bad ? 'var(--muted)' : stateColor(state))
+        : 'var(--text)');
+      text.setAttribute('text-decoration', bad ? 'line-through' : 'none');
+      mark.textContent = qualityMark(state);
+      // Вымышленная величина подписывается всегда — независимо от качества.
+      sim.textContent = simulatedMark(view);
+      group.classList.toggle('w-bad', bad);
+      group.classList.toggle('w-sim', !!(view && view.simulated));
+    },
+  };
+});
+
+registerRenderer('core.indicator', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const shape = prop(instance, 'shape', 'circle');
+  const r = Math.min(w, h) / 2 - 1;
+  let body;
+  if (shape === 'square' || shape === 'rounded') {
+    body = svg('rect', { x: 1, y: 1, width: w - 2, height: h - 2, rx: shape === 'rounded' ? 4 : 0 });
+  } else if (shape === 'diamond') {
+    body = svg('polygon', { points: `${w / 2},1 ${w - 1},${h / 2} ${w / 2},${h - 1} 1,${h / 2}` });
+  } else if (shape === 'triangle') {
+    body = svg('polygon', { points: `${w / 2},1 ${w - 1},${h - 1} 1,${h - 1}` });
+  } else {
+    body = svg('circle', { cx: w / 2, cy: h / 2, r });
+  }
+  body.setAttribute('stroke', 'var(--line)');
+  const cross = svg('path', { stroke: 'var(--alarm)', 'stroke-width': 1.5, fill: 'none' });
+  const group = svg('g', {}, [body, cross]);
+
+  return {
+    node: group,
+    update() {
+      const { tag, view } = ctx.slot(instance, 'value');
+      const state = widgetState(view, ctx.violation(tag));
+      const bad = state === 'nodata' || state === 'nocomm' || state === 'stale';
+      const on = view && (view.value === true || view.value === 1 || view.value > 0);
+      body.setAttribute('fill', bad ? 'none' : on ? stateColor(state) : 'var(--panel-2)');
+      // Перечёркивание вместо цвета: индикатор без связи не должен выглядеть
+      // как выключенный — это разные вещи для оператора.
+      cross.setAttribute('d', bad ? `M2,2 L${w - 2},${h - 2} M${w - 2},2 L2,${h - 2}` : '');
+      group.classList.toggle('w-bad', bad);
+    },
+  };
+});
+
+registerRenderer('core.bar', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const min = Number(prop(instance, 'min', 0));
+  const max = Number(prop(instance, 'max', 100));
+  const back = svg('rect', { x: 0, y: 0, width: w, height: h, rx: 3, fill: 'var(--panel-2)', stroke: 'var(--line)' });
+  const fill = svg('rect', { x: 1, y: 1, width: 0, height: h - 2, rx: 2 });
+  const label = svg('text', {
+    x: w / 2, y: h / 2, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+    'font-size': Math.min(h * 0.55, 14), fill: 'var(--text)',
+  });
+  const group = svg('g', {}, [back, fill, label]);
+
+  return {
+    node: group,
+    update() {
+      const { tag, view } = ctx.slot(instance, 'value');
+      const state = widgetState(view, ctx.violation(tag));
+      const bad = state === 'nodata' || state === 'nocomm';
+      const value = view && typeof view.value === 'number' ? view.value : min;
+      const frac = max > min ? Math.max(0, Math.min(1, (value - min) / (max - min))) : 0;
+      fill.setAttribute('width', bad ? 0 : Math.max(0, (w - 2) * frac));
+      fill.setAttribute('fill', stateColor(state));
+      label.textContent = bad ? qualityMark(state) : formatValue(view, instance.properties || {});
+      group.classList.toggle('w-bad', bad);
+    },
+  };
+});
+
+registerRenderer('core.gauge', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const cx = w / 2, cy = h * 0.72, r = Math.min(w / 2, h * 0.7) - 4;
+  const min = Number(prop(instance, 'min', 0));
+  const max = Number(prop(instance, 'max', 100));
+  const START = -120, END = 120;
+
+  const arc = svg('path', {
+    d: arcPath(cx, cy, r, START, END), fill: 'none',
+    stroke: 'var(--line)', 'stroke-width': 6, 'stroke-linecap': 'round',
+  });
+  const value = svg('path', { fill: 'none', 'stroke-width': 6, 'stroke-linecap': 'round' });
+  const needle = svg('line', { x1: cx, y1: cy, stroke: 'var(--text)', 'stroke-width': 2 });
+  const text = svg('text', {
+    x: cx, y: cy + 14, 'text-anchor': 'middle', 'font-size': Math.min(h * 0.22, 18),
+    'font-family': 'var(--mono)',
+  });
+  const group = svg('g', {}, [arc, value, needle, text]);
+
+  return {
+    node: group,
+    update() {
+      const { tag, view } = ctx.slot(instance, 'value');
+      const state = widgetState(view, ctx.violation(tag));
+      const bad = state === 'nodata' || state === 'nocomm';
+      const v = view && typeof view.value === 'number' ? view.value : min;
+      const frac = max > min ? Math.max(0, Math.min(1, (v - min) / (max - min))) : 0;
+      const angle = START + (END - START) * frac;
+      value.setAttribute('d', bad ? '' : arcPath(cx, cy, r, START, angle));
+      value.setAttribute('stroke', stateColor(state));
+      const rad = (angle - 90) * Math.PI / 180;
+      needle.setAttribute('x2', bad ? cx : cx + Math.cos(rad) * r * 0.85);
+      needle.setAttribute('y2', bad ? cy : cy + Math.sin(rad) * r * 0.85);
+      needle.setAttribute('stroke', bad ? 'var(--stale)' : 'var(--text)');
+      text.textContent = bad ? qualityMark(state) : formatValue(view, instance.properties || {});
+      text.setAttribute('fill', bad ? 'var(--alarm)' : 'var(--text)');
+      group.classList.toggle('w-bad', bad);
+    },
+  };
+});
+
+function arcPath(cx, cy, r, from, to) {
+  const p = (deg) => {
+    const rad = (deg - 90) * Math.PI / 180;
+    return [cx + Math.cos(rad) * r, cy + Math.sin(rad) * r];
+  };
+  const [x1, y1] = p(from), [x2, y2] = p(to);
+  const large = Math.abs(to - from) > 180 ? 1 : 0;
+  return `M${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2}`;
+}
+
+registerRenderer('core.label', (instance) => {
+  const { w, h } = instance.geometry;
+  const text = svg('text', {
+    x: 2, y: h / 2, 'dominant-baseline': 'central',
+    'font-size': Math.min(h * 0.7, 16), fill: 'var(--text)',
+  });
+  text.textContent = prop(instance, 'text', '');
+  return { node: text, update() { text.textContent = prop(instance, 'text', ''); } };
+});
+
+registerRenderer('core.shape', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const kind = prop(instance, 'shape', 'rect');
+  let node;
+  if (kind === 'ellipse') node = svg('ellipse', { cx: w / 2, cy: h / 2, rx: w / 2, ry: h / 2 });
+  else if (kind === 'line') node = svg('line', { x1: 0, y1: h / 2, x2: w, y2: h / 2 });
+  else if (kind === 'polygon' || kind === 'polyline') {
+    const pts = (prop(instance, 'points', []) || []).map((p) => `${p.x},${p.y}`).join(' ');
+    node = svg(kind, { points: pts });
+  } else node = svg('rect', { x: 0, y: 0, width: w, height: h });
+
+  node.setAttribute('fill', prop(instance, 'fill', 'none'));
+  node.setAttribute('fill-opacity', prop(instance, 'fill_opacity', 1));
+  node.setAttribute('stroke', resolveColor(prop(instance, 'stroke', '@color.border')));
+  node.setAttribute('stroke-width', prop(instance, 'stroke_width', 1));
+  const dash = prop(instance, 'dash', 'solid');
+  if (dash === 'dash') node.setAttribute('stroke-dasharray', '6 4');
+  if (dash === 'dot') node.setAttribute('stroke-dasharray', '1 4');
+
+  return {
+    node,
+    update() {
+      const { tag, view } = ctx.slot(instance, 'value');
+      if (!tag) return;
+      const state = widgetState(view, ctx.violation(tag));
+      if (prop(instance, 'color_by_state', true)) node.setAttribute('stroke', stateColor(state));
+    },
+  };
+});
+
+registerRenderer('core.button', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const box = svg('rect', {
+    x: 0, y: 0, width: w, height: h, rx: 5,
+    fill: 'var(--panel-2)', stroke: 'var(--line)',
+  });
+  const text = svg('text', {
+    x: w / 2, y: h / 2, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+    'font-size': Math.min(h * 0.45, 14), fill: 'var(--text)',
+  });
+  text.textContent = prop(instance, 'text', 'Команда');
+  const group = svg('g', { class: 'w-clickable' }, [box, text]);
+  attachActions(group, instance, ctx);
+  return { node: group, update() {} };
+});
+
+registerRenderer('core.toggle', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const track = svg('rect', { x: 0, y: h * 0.2, width: w, height: h * 0.6, rx: h * 0.3, stroke: 'var(--line)' });
+  const knob = svg('circle', { cy: h / 2, r: h * 0.26, fill: '#fff' });
+  const group = svg('g', { class: 'w-clickable' }, [track, knob]);
+  attachActions(group, instance, ctx);
+  return {
+    node: group,
+    update() {
+      const { tag, view } = ctx.slot(instance, 'value');
+      const state = widgetState(view, ctx.violation(tag));
+      const bad = state === 'nodata' || state === 'nocomm';
+      const on = view && (view.value === true || view.value === 1);
+      track.setAttribute('fill', bad ? 'var(--panel-2)' : on ? 'var(--ok)' : 'var(--panel-2)');
+      knob.setAttribute('cx', on && !bad ? w - h * 0.32 : h * 0.32);
+      knob.setAttribute('fill', bad ? 'var(--stale)' : '#fff');
+      group.classList.toggle('w-bad', bad);
+    },
+  };
+});
+
+registerRenderer('core.traffic_light', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const r = Math.min(w / 2, h / 6) - 2;
+  const lamps = ['critical', 'warning', 'normal'].map((state, i) =>
+    svg('circle', { cx: w / 2, cy: h * (0.2 + i * 0.3), r, fill: 'var(--panel-2)', stroke: 'var(--line)' }));
+  const group = svg('g', {}, lamps);
+  return {
+    node: group,
+    update() {
+      const { tag, view } = ctx.slot(instance, 'value');
+      const state = widgetState(view, ctx.violation(tag));
+      const lit = { critical: 0, alarm: 0, warning: 1, normal: 2 }[state];
+      lamps.forEach((lamp, i) => {
+        lamp.setAttribute('fill', i === lit ? stateColor(state) : 'var(--panel-2)');
+      });
+    },
+  };
+});
+
+// ── Виджеты опроса: линии, приборы, регистры (13.6) ─────────────────
+
+/**
+ * Карточка прибора.
+ *
+ * Показывает **опрос**, а не измеряемую величину: состояние прибора, сколько
+ * его тегов недостоверно, когда был последний успешный обмен. На объекте это
+ * первое, что спрашивают при разборе: «прибор жив?» — и ответ должен читаться
+ * с мнемосхемы, а не только с отдельного экрана диагностики.
+ */
+registerRenderer('core.device_card', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const box = svg('rect', {
+    x: 0, y: 0, width: w, height: h, rx: 6,
+    fill: 'var(--panel)', stroke: 'var(--line)',
+  });
+  // Полоса состояния слева: различает состояние формой и положением, а не
+  // только цветом (FR-700.9).
+  const strip = svg('rect', { x: 0, y: 0, width: 4, height: h, rx: 2 });
+  const title = svg('text', {
+    x: 12, y: 18, 'font-size': 13, fill: 'var(--text)', 'font-weight': '600',
+  });
+  const state = svg('text', { x: 12, y: 36, 'font-size': 11 });
+  const counts = svg('text', { x: 12, y: 52, 'font-size': 11, fill: 'var(--muted)' });
+  // Опрос: заданный период против измеренного. Строка появляется, только если
+  // карточка достаточно высока — иначе она наложилась бы на счётчики.
+  const cadence = svg('text', { x: 12, y: 68, 'font-size': 11 });
+  const badMark = svg('text', { x: w - 10, y: 20, 'font-size': 12, 'text-anchor': 'end' });
+  const group = svg('g', {}, [box, strip, title, state, counts, cadence, badMark]);
+
+  return {
+    node: group,
+    update() {
+      const binding = (instance.bindings || {}).device;
+      const path = binding && binding.device ? binding.device : prop(instance, 'device', '');
+      const device = ctx.device(path);
+      const tags = ctx.deviceTags(path);
+      const bad = tags.filter((t) => !t.good).length;
+      const alarms = tags.filter((t) => ctx.violation(t.name)).length;
+
+      title.textContent = prop(instance, 'title', '') || path || 'прибор не задан';
+
+      if (!device) {
+        // Прибор, которого нет в конфигурации, — ошибка схемы, а не пустая
+        // карточка: пустота читается как «всё в порядке».
+        strip.setAttribute('fill', 'var(--warn)');
+        state.setAttribute('fill', 'var(--warn)');
+        state.textContent = 'нет такого прибора';
+        counts.textContent = '';
+        cadence.textContent = '';
+        badMark.textContent = '';
+        group.classList.add('w-bad');
+        return;
+      }
+
+      const online = device.state === 'работает';
+      // Прибор «на связи», но все его теги недостоверны, — тоже отказ:
+      // показывать его исправным значило бы соврать.
+      const kind = !online ? 'offline' : bad === tags.length && tags.length ? 'nocomm'
+        : alarms ? 'alarm' : bad ? 'warning' : 'normal';
+      strip.setAttribute('fill', stateColor(kind === 'offline' ? 'nocomm' : kind));
+      state.setAttribute('fill', stateColor(kind === 'offline' ? 'nocomm' : kind));
+      // Прибор имитатора называется имитатором прямо в строке состояния:
+      // «работает» о несуществующем приборе — неправда.
+      state.textContent = device.simulated
+        ? 'имитация' + (online ? '' : ', нет ответа')
+        : (online ? device.state : 'нет связи');
+      if (device.simulated) state.setAttribute('fill', 'var(--warn)');
+      counts.textContent = `тегов ${tags.length}` + (bad ? `, недостоверных ${bad}` : '');
+      badMark.textContent = alarms ? '▲ ' + alarms : '';
+      badMark.setAttribute('fill', 'var(--alarm)');
+
+      // Опрос идёт медленнее заданного — это перегруженная линия, а не отказ
+      // прибора. Отличие показывается прямо в карточке, потому что иначе
+      // «показания не обновляются» разбирают как неисправность прибора.
+      const wanted = Number(device.period_ms || 0);
+      const actual = device.actual_period_ms;
+      if (h >= 76 && wanted) {
+        if (actual == null) {
+          cadence.textContent = `опрос ${cadenceText(wanted)} — ещё не повторялся`;
+          cadence.setAttribute('fill', 'var(--muted)');
+        } else {
+          const slow = actual > wanted * 1.5 + 50;
+          cadence.textContent = `опрос ${cadenceText(wanted)} → факт ${cadenceText(actual)}`
+            + (device.worst_period_ms && device.worst_period_ms > actual * 2
+              ? `, худший ${cadenceText(device.worst_period_ms)}` : '');
+          cadence.setAttribute('fill', slow ? 'var(--warn)' : 'var(--muted)');
+        }
+      } else {
+        cadence.textContent = '';
+      }
+
+      group.classList.toggle('w-bad', !online);
+      group.classList.toggle('w-sim', !!device.simulated);
+    },
+  };
+});
+
+/**
+ * Таблица регистров.
+ *
+ * Привязывается к набору тегов либо к шаблону имени: `line1.dev16.*` — все
+ * регистры прибора. Столбец качества обязателен: таблица значений без него
+ * — ровно тот случай, когда устаревшее показание принимают за текущее.
+ */
+registerRenderer('core.table', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const rowHeight = Number(prop(instance, 'row_height', 18));
+  const showQuality = prop(instance, 'show_quality', true);
+  const box = svg('rect', {
+    x: 0, y: 0, width: w, height: h, rx: 4,
+    fill: 'var(--panel)', stroke: 'var(--line)',
+  });
+  const body = svg('g', {});
+  const group = svg('g', {}, [box, body]);
+
+  return {
+    node: group,
+    update() {
+      const binding = (instance.bindings || {}).rows || (instance.bindings || {}).values;
+      let views = ctx.tagsOf(binding);
+      if (!views.length && prop(instance, 'pattern', '')) {
+        views = ctx.tagsOf({ pattern: prop(instance, 'pattern', '') });
+      }
+      views.sort((a, b) => a.name.localeCompare(b.name));
+
+      const children = [];
+      const header = svg('text', { x: 8, y: 14, 'font-size': 11, fill: 'var(--muted)' });
+      header.textContent = prop(instance, 'title', '') || `регистров: ${views.length}`;
+      children.push(header);
+
+      const capacity = Math.max(0, Math.floor((h - 22) / rowHeight));
+      views.slice(0, capacity).forEach((view, i) => {
+        const y = 22 + i * rowHeight + rowHeight * 0.7;
+        const state = widgetState(view, ctx.violation(view.name));
+        const bad = state !== 'normal';
+
+        const name = svg('text', { x: 8, y, 'font-size': 11, fill: 'var(--text)' });
+        // Имя обрезается по ширине, а не переносится: строка таблицы обязана
+        // оставаться одной строкой, иначе строки перестают соответствовать.
+        name.textContent = shortTagName(view.name, Math.floor((w * 0.55) / 6));
+        const value = svg('text', {
+          x: w - (showQuality ? 62 : 8), y, 'font-size': 11, 'text-anchor': 'end',
+          'font-family': 'var(--mono)',
+          fill: bad ? 'var(--muted)' : stateColor(state),
+          'text-decoration': bad ? 'line-through' : 'none',
+        });
+        value.textContent = formatValue(view, {});
+        children.push(name, value);
+
+        if (showQuality) {
+          const mark = svg('text', {
+            x: w - 8, y, 'font-size': 10, 'text-anchor': 'end',
+            fill: bad ? 'var(--alarm)' : 'var(--muted)',
+          });
+          mark.textContent = bad ? (qualityMark(state) || 'недост.') : 'ок';
+          children.push(mark);
+        }
+      });
+
+      if (views.length > capacity) {
+        const more = svg('text', {
+          x: 8, y: h - 5, 'font-size': 10, fill: 'var(--muted)',
+        });
+        // Молчаливая обрезка списка читается как «остальных нет».
+        more.textContent = `…ещё ${views.length - capacity}`;
+        children.push(more);
+      }
+      if (!views.length) {
+        const empty = svg('text', { x: 8, y: 34, 'font-size': 11, fill: 'var(--warn)' });
+        empty.textContent = 'привязка не дала ни одного тега';
+        children.push(empty);
+      }
+      body.replaceChildren(...children);
+    },
+  };
+});
+
+function shortTagName(name, maxChars) {
+  if (name.length <= maxChars) return name;
+  // Обрезается **начало**: различающая часть имени тега — в конце.
+  return '…' + name.slice(name.length - maxChars + 1);
+}
+
+/** Список последних событий. */
+registerRenderer('core.event_list', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const box = svg('rect', {
+    x: 0, y: 0, width: w, height: h, rx: 4, fill: 'var(--panel)', stroke: 'var(--line)',
+  });
+  const body = svg('g', {});
+  const group = svg('g', {}, [box, body]);
+
+  return {
+    node: group,
+    update() {
+      const limit = Math.max(1, Math.floor((h - 8) / 16));
+      const children = [];
+      const events = (ctx.events || []).slice(0, limit);
+      events.forEach((event, i) => {
+        const y = 16 + i * 16;
+        const dot = svg('circle', {
+          cx: 10, cy: y - 4, r: 3, fill: priorityColor(event.priority),
+        });
+        const text = svg('text', { x: 20, y, 'font-size': 11, fill: 'var(--text)' });
+        text.textContent = shortTagName(event.message, Math.floor((w - 26) / 6));
+        children.push(dot, text);
+      });
+      if (!events.length) {
+        const empty = svg('text', { x: 8, y: 18, 'font-size': 11, fill: 'var(--muted)' });
+        empty.textContent = 'событий нет';
+        children.push(empty);
+      }
+      body.replaceChildren(...children);
+    },
+  };
+});
+
+function priorityColor(priority) {
+  const p = String(priority || '').toLowerCase();
+  if (p.includes('крит')) return 'var(--critical)';
+  if (p.includes('трев')) return 'var(--alarm)';
+  if (p.includes('предупр')) return 'var(--warn)';
+  return 'var(--muted)';
+}
+
+/** Полоса тревог: число неквитированных и самое важное сообщение. */
+registerRenderer('core.alarm_banner', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const box = svg('rect', { x: 0, y: 0, width: w, height: h, rx: 4 });
+  const text = svg('text', {
+    x: 12, y: h / 2, 'dominant-baseline': 'central', 'font-size': Math.min(h * 0.4, 14),
+  });
+  const group = svg('g', {}, [box, text]);
+
+  return {
+    node: group,
+    update() {
+      const active = [...ctx.violations.values()];
+      const unack = active.filter((v) => !v.acknowledged);
+      if (!active.length) {
+        box.setAttribute('fill', 'var(--panel)');
+        box.setAttribute('stroke', 'var(--line)');
+        text.setAttribute('fill', 'var(--muted)');
+        text.textContent = 'активных нарушений нет';
+        return;
+      }
+      const worst = unack[0] || active[0];
+      box.setAttribute('fill', priorityColor(worst.priority));
+      box.setAttribute('stroke', priorityColor(worst.priority));
+      text.setAttribute('fill', '#fff');
+      text.textContent = `${active.length} нарушений, ${unack.length} неквитированных — ${worst.tag}`;
+    },
+  };
+});
+
+// ── Векторная схема с привязками к элементам (13.4.13, FR-773) ──────
+
+/**
+ * Тренд на мнемосхеме (`core.trend`, FR-744).
+ *
+ * График на схеме отвечает на вопрос, на который мгновенное значение не
+ * отвечает никогда: «так было всегда или стало только что». Цифра «95 °C» без
+ * истории одинаково выглядит и при медленном подъёме за час, и при скачке за
+ * минуту, а действия по ним разные.
+ *
+ * Архив запрашивается **один раз на виджет** при появлении и обновляется
+ * по таймеру, а не на каждый приход значения: обновление подписки идёт
+ * несколько раз в секунду, и запрос на каждое из них уложил бы и сервер, и
+ * экран (FR-745.1).
+ */
+registerRenderer('core.trend', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const group = svg('g', { class: 'mnemo-trend-widget' });
+  const frame = svg('rect', {
+    x: 0, y: 0, width: w, height: h, rx: 8,
+    fill: 'var(--panel)', stroke: 'var(--line)',
+  });
+  group.append(frame);
+
+  const holder = svg('g', {});
+  group.append(holder);
+
+  const heading = svg('text', {
+    x: 12, y: 16, 'font-size': 11, 'font-weight': 700, fill: 'var(--text)',
+  });
+  heading.textContent = String(prop(instance, 'title', '') || 'Тренд');
+  group.append(heading);
+
+  const legend = svg('text', {
+    x: 12, y: 31, 'font-size': 9, fill: 'var(--muted)',
+  });
+  group.append(legend);
+  const latest = svg('text', {
+    x: w - 10, y: 31, 'text-anchor': 'end', 'font-size': 9,
+    'font-family': 'var(--mono)', fill: 'var(--ok)',
+  });
+  group.append(latest);
+
+  const note = svg('text', {
+    x: w / 2, y: Math.max(50, h / 2 + 8), 'text-anchor': 'middle', 'dominant-baseline': 'central',
+    'font-size': 11, fill: 'var(--muted)',
+  });
+  note.textContent = 'загрузка истории…';
+  group.append(note);
+
+  const open = svg('g', {
+    tabindex: '0', role: 'link', 'aria-label': 'Открыть выбранные ряды в анализе трендов',
+    style: 'cursor:pointer',
+  });
+  const openText = svg('text', {
+    x: w - 10, y: 16, 'text-anchor': 'end', 'font-size': 9,
+    fill: 'var(--accent)', 'text-decoration': 'underline',
+  });
+  openText.textContent = '↗ анализ';
+  open.append(openText);
+  if (!ctx.onTrendOpen) open.setAttribute('display', 'none');
+  group.append(open);
+
+  const periodSec = Number(prop(instance, 'period', 3600)) || 3600;
+  const resolution = prop(instance, 'resolution', 'auto');
+  const showThresholds = prop(instance, 'show_thresholds', true) !== false;
+  const showBand = prop(instance, 'show_min_max_band', true) !== false;
+  const showLegend = prop(instance, 'show_legend', true) !== false;
+  const refreshSec = Math.max(5, Number(prop(instance, 'refresh_sec', 30)) || 30);
+
+  let tags = [];
+  let timer = null;
+  let disposed = false;
+  let requestId = 0;
+  let from = 0;
+  let to = 0;
+
+  const openAnalysis = (event) => {
+    event?.stopPropagation?.();
+    if (!tags.length) return;
+    ctx.openTrend(tags, from || Date.now() * 1000 - periodSec * 1e6, to || Date.now() * 1000);
+  };
+  open.addEventListener('click', openAnalysis);
+  open.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openAnalysis(event);
+    }
+  });
+
+  async function reload() {
+    if (disposed || !tags.length) return;
+    const currentRequest = ++requestId;
+    to = Math.floor(Date.now() / 1000) * 1e6;
+    from = to - periodSec * 1e6;
+    try {
+      const answer = await ctx.history(tags, from, to, resolution, Math.max(60, Math.round(w * 2)));
+      if (disposed || currentRequest !== requestId) return;
+      const decorated = answer.series.map((s, i) => {
+        const view = ctx.view(s.tag) || {};
+        return {
+          ...s, index: i, title: view.title || '', units: view.units || '',
+          limits: view.limits || null,
+        };
+      });
+      const chart = renderChart(decorated, from, to, {
+        width: Math.max(120, w - 12), height: Math.max(60, h - 38),
+        showThresholds, showBand, tooltip: true,
+      });
+      // Вложенный SVG получает явную геометрию; события курсора/зума остаются
+      // на самом графике и не теряются при помещении внутрь мнемосхемы.
+      chart.svg.setAttribute('x', '6');
+      chart.svg.setAttribute('y', '36');
+      chart.svg.setAttribute('width', String(Math.max(120, w - 12)));
+      chart.svg.setAttribute('height', String(Math.max(60, h - 38)));
+      chart.svg.style.width = `${Math.max(120, w - 12)}px`;
+      chart.svg.style.height = `${Math.max(60, h - 38)}px`;
+      holder.replaceChildren(chart.svg);
+      const count = decorated.length;
+      heading.textContent = String(prop(instance, 'title', '') || (count
+        ? `${decorated[0].title || decorated[0].tag}${count > 1 ? ` · ещё ${count - 1}` : ''}`
+        : 'Тренд'));
+      legend.textContent = showLegend
+        ? decorated.map((s) => `${s.title || s.tag}${s.units ? ` (${s.units})` : ''}`)
+          .join('   ·   ').slice(0, Math.max(12, Math.floor(w / 12)))
+        : '';
+      legend.setAttribute('aria-label', decorated.map((s) => `${s.title || s.tag}${s.units ? `, ${s.units}` : ''}`).join('; '));
+      const freshest = decorated.flatMap((s) => (s.points || [])
+        .filter((p) => p.samples > 0 && p.bad_fraction < 1)
+        .map((p) => ({ series: s, point: p })))
+        .sort((a, b) => b.point.end_us - a.point.end_us)[0];
+      const latestTime = freshest
+        ? new Date(freshest.point.end_us / 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+        : '';
+      latest.textContent = freshest
+        ? `${fmtNumber(freshest.point.avg)}${freshest.series.units ? ' ' + freshest.series.units : ''} · ${latestTime} · ${freshest.point.bad_fraction > 0 ? 'частично недост.' : 'достоверно'}`
+        : 'нет данных';
+      latest.setAttribute('fill', freshest?.point.bad_fraction > 0 ? 'var(--warn)' : (freshest ? 'var(--ok)' : 'var(--muted)'));
+      latest.setAttribute('aria-label', freshest
+        ? `Последнее архивное значение ${fmtNumber(freshest.point.avg)} ${freshest.series.units || ''}, ${new Date(freshest.point.end_us / 1000).toLocaleString('ru-RU')}${freshest.point.bad_fraction > 0 ? ', частично недостоверно' : ', достоверно'}`
+        : 'Нет достоверного архивного значения');
+      const hasGoodPoint = decorated.some((s) => s.points
+        && s.points.some((p) => p.samples > 0 && p.bad_fraction < 1));
+      const hasArchivePoint = decorated.some((s) => s.points && s.points.length);
+      note.textContent = hasGoodPoint ? '' : (hasArchivePoint ? 'за период нет достоверных точек' : '');
+      note.setAttribute('fill', 'var(--muted)');
+    } catch (e) {
+      if (disposed || currentRequest !== requestId) return;
+      // Не стираем последнюю успешную выборку при временной сетевой ошибке.
+      note.textContent = holder.firstChild
+        ? `архив временно недоступен · показана история на ${new Date(to / 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`
+        : 'история временно недоступна';
+      note.setAttribute('fill', 'var(--warn)');
+      note.setAttribute('aria-label', String(e && e.message ? e.message : e));
+    }
+  }
+
+  return {
+    node: group,
+    update() {
+      const wanted = ctx.tagsOf(instance.bindings && instance.bindings.series)
+        .map((t) => t.name);
+      const changed = wanted.length !== tags.length
+        || wanted.some((t, i) => t !== tags[i]);
+      if (!changed) return;
+      tags = wanted;
+      requestId++;
+      if (!tags.length) {
+        heading.textContent = String(prop(instance, 'title', '') || 'Тренд');
+        legend.textContent = '';
+        latest.textContent = '—';
+        note.textContent = 'добавьте сигналы в свойствах графика';
+        holder.replaceChildren();
+        if (timer) { clearInterval(timer); timer = null; }
+        return;
+      }
+      if (timer) { clearInterval(timer); timer = null; }
+      note.textContent = 'загрузка истории…';
+      reload();
+      if (!timer) timer = setInterval(reload, refreshSec * 1000);
+    },
+    dispose() {
+      disposed = true;
+      if (timer) clearInterval(timer);
+    },
+  };
+});
+
+/**
+ * Мини-график (`core.sparkline`, FR-745).
+ *
+ * Короткая история без осей — для карточек и таблиц. Разрешение выбирается по
+ * ширине: запрашивать больше точек, чем есть пикселей, бессмысленно.
+ */
+registerRenderer('core.sparkline', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const group = svg('g', { class: 'mnemo-sparkline-widget' });
+  if (ctx.interactive && ctx.onTrendOpen) {
+    group.setAttribute('tabindex', '0');
+    group.setAttribute('role', 'link');
+    group.setAttribute('aria-label', 'Открыть мини-график в анализе трендов');
+    group.style.cursor = 'pointer';
+  }
+  const frame = svg('rect', {
+    x: 0, y: 0, width: w, height: h, rx: 7,
+    fill: 'var(--panel)', stroke: 'var(--line)',
+  });
+  const line = svg('polyline', {
+    fill: 'none', stroke: 'var(--accent)', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', points: '',
+  });
+  const last = svg('text', {
+    x: w - 2, y: h / 2, 'text-anchor': 'end', 'dominant-baseline': 'central',
+    'font-size': Math.min(11, h * 0.6), fill: 'var(--text)',
+    'font-family': 'var(--mono)',
+  });
+  const note = svg('text', {
+    x: 8, y: h / 2, 'dominant-baseline': 'central', 'font-size': 9, fill: 'var(--muted)',
+  });
+  note.textContent = 'загрузка истории…';
+  group.append(frame, line, note, last);
+
+  const periodSec = Number(prop(instance, 'period', 3600)) || 3600;
+  const showLast = prop(instance, 'show_last', true) !== false;
+  const refreshSec = Math.max(10, Number(prop(instance, 'refresh_sec', 60)) || 60);
+
+  let tag = null;
+  let timer = null;
+  let disposed = false;
+  let requestId = 0;
+
+  const openAnalysis = (event) => {
+    event?.stopPropagation?.();
+    if (tag) {
+      const to = Math.floor(Date.now() / 1000) * 1e6;
+      ctx.openTrend([tag], to - periodSec * 1e6, to);
+    }
+  };
+  group.addEventListener('click', openAnalysis);
+  group.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openAnalysis(event);
+    }
+  });
+
+  async function reload() {
+    if (disposed || !tag) return;
+    const currentRequest = ++requestId;
+    const to = Date.now() * 1000;
+    const from = to - periodSec * 1e6;
+    try {
+      const answer = await ctx.history([tag], from, to, 'auto', Math.max(20, Math.round(w)));
+      if (disposed || currentRequest !== requestId) return;
+      const points = (answer.series[0] || {}).points || [];
+      const useful = points.filter((p) => p.samples > 0 && p.bad_fraction < 1);
+      if (useful.length < 2) {
+        line.setAttribute('points', '');
+        note.textContent = useful.length ? 'недостаточно точек' : 'за период нет истории';
+        return;
+      }
+      const lo = Math.min(...useful.map((p) => p.min));
+      const hi = Math.max(...useful.map((p) => p.max));
+      const span = hi - lo || 1;
+      const width = showLast ? w * 0.62 : w;
+      line.setAttribute('points', useful.map((p) => {
+        const x = ((p.start_us - from) / Math.max(1, to - from)) * width;
+        const y = h - 1 - ((p.avg - lo) / span) * (h - 2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' '));
+      note.textContent = '';
+    } catch (error) {
+      if (disposed || currentRequest !== requestId) return;
+      // Последняя успешная линия остаётся: моргнувшая сеть не означает,
+      // что величина перестала меняться.
+      note.textContent = line.getAttribute('points') ? 'обновление не удалось' : 'история недоступна';
+      note.setAttribute('aria-label', String(error && error.message ? error.message : error));
+    }
+  }
+
+  return {
+    node: group,
+    update() {
+      const { tag: bound, view } = ctx.slot(instance, 'value');
+      if (showLast) {
+        last.textContent = view && view.value !== null && view.value !== undefined
+          ? formatValue(view, { decimals: Number(prop(instance, 'decimals', 1)), show_units: false })
+          : '—';
+        last.setAttribute('fill', view && view.good ? 'var(--ok)' : 'var(--stale)');
+        last.setAttribute('aria-label', view
+          ? `Текущее значение ${last.textContent}${view.updated_at_us ? ', обновлено ' + new Date(view.updated_at_us / 1000).toLocaleString('ru-RU') : ''}${view.good ? ', достоверно' : ', недостоверно'}`
+          : 'текущее значение недоступно');
+      } else {
+        last.textContent = '';
+      }
+      if (bound === tag) return;
+      requestId++;
+      tag = bound;
+      if (!tag) {
+        line.setAttribute('points', '');
+        note.textContent = 'выберите тег';
+        if (timer) { clearInterval(timer); timer = null; }
+        return;
+      }
+      reload();
+      if (!timer) timer = setInterval(reload, refreshSec * 1000);
+    },
+    dispose() {
+      disposed = true;
+      if (timer) clearInterval(timer);
+    },
+  };
+});
+
+/**
+ * Поле ввода (`core.input`, FR-748).
+ *
+ * Пока поле в фокусе и изменено человеком, приходящие обновления его **не**
+ * затирают: уставка, набранная наполовину и заменённая опросом, — это либо
+ * потерянный ввод, либо, что хуже, записанное не то. Расхождение с текущим
+ * значением при этом видно.
+ */
+registerRenderer('core.input', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const group = svg('g', {});
+  const holder = svg('foreignObject', { x: 0, y: 0, width: w, height: h });
+  const box = document.createElement('div');
+  box.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  box.style.cssText = 'display:flex;gap:4px;align-items:center;height:100%';
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.step = String(prop(instance, 'step', 'any'));
+  input.style.cssText = 'flex:1;min-width:0;height:100%';
+  const current = document.createElement('span');
+  current.style.cssText = 'font-size:11px;color:var(--muted);white-space:nowrap';
+  box.append(input, current);
+  holder.append(box);
+  group.append(holder);
+
+  let dirty = false;
+  let currentValue = null;
+  const units = prop(instance, 'units', '');
+  const decimals = Number(prop(instance, 'decimals', 2));
+
+  input.addEventListener('input', () => { dirty = true; markDirty(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      // Отмена возвращает фактическое значение (FR-748.4).
+      dirty = false;
+      input.value = currentValue === null ? '' : String(currentValue);
+      markDirty();
+    }
+    if (e.key === 'Enter') commit();
+  });
+  input.addEventListener('blur', () => {
+    if (prop(instance, 'commit_on', 'enter') === 'blur') commit();
+  });
+
+  function markDirty() {
+    input.style.borderColor = dirty ? 'var(--warn)' : '';
+    current.textContent = dirty && currentValue !== null
+      ? `сейчас ${fmtNumber(currentValue, decimals)}${units ? ' ' + units : ''}`
+      : (units || '');
+  }
+
+  function commit() {
+    if (!dirty || !ctx.onAction) return;
+    const { tag } = ctx.slot(instance, 'value');
+    if (!tag) return;
+    const value = Number(input.value);
+    if (!Number.isFinite(value)) return;
+    ctx.onAction({
+      action: 'write',
+      params: { tag, value, source: 'const' },
+      confirm: instance.properties && instance.properties.confirm,
+    }, instance);
+    dirty = false;
+    markDirty();
+  }
+
+  return {
+    node: group,
+    update() {
+      const { view } = ctx.slot(instance, 'value');
+      currentValue = view && typeof view.value === 'number' ? view.value : null;
+      // Ввод не затирается, пока человек его правит (FR-748.2).
+      if (!dirty && document.activeElement !== input) {
+        input.value = currentValue === null ? '' : String(currentValue);
+      }
+      input.disabled = !ctx.interactive || !(view && view.writable);
+      input.title = input.disabled ? 'запись в этот тег не разрешена' : '';
+      markDirty();
+    },
+  };
+});
+
+/**
+ * Выбор из списка (`core.select`, FR-749).
+ *
+ * Текущее значение, отсутствующее в перечне, показывается как «Значение N» и
+ * **не** подменяется первым элементом: подмена выглядела бы как «режим
+ * такой-то», хотя прибор в другом.
+ */
+registerRenderer('core.select', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const group = svg('g', {});
+  const holder = svg('foreignObject', { x: 0, y: 0, width: w, height: h });
+  const wrap = document.createElement('div');
+  wrap.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  wrap.style.cssText = 'height:100%';
+  const select = document.createElement('select');
+  select.style.cssText = 'width:100%;height:100%';
+  wrap.append(select);
+  holder.append(wrap);
+  group.append(holder);
+
+  const items = () => (instance.properties && instance.properties.items) || [];
+  let known = null;
+
+  select.addEventListener('change', () => {
+    if (!ctx.onAction) return;
+    const { tag } = ctx.slot(instance, 'value');
+    if (!tag) return;
+    const chosen = items().find((i) => String(i.value) === select.value);
+    ctx.onAction({
+      action: 'write',
+      params: { tag, value: Number(select.value), source: 'const' },
+      confirm: instance.properties && instance.properties.confirm,
+      // Подпись попадает в вопрос: «Записать 2» ничего не говорит, а
+      // «Установить режим „Ручной“» — говорит.
+      label: chosen ? chosen.label : undefined,
+    }, instance);
+  });
+
+  return {
+    node: group,
+    update() {
+      const { view } = ctx.slot(instance, 'value');
+      const list = items();
+      const signature = JSON.stringify(list);
+      if (signature !== known) {
+        known = signature;
+        select.replaceChildren(...list.map((i) => {
+          const option = document.createElement('option');
+          option.value = String(i.value);
+          option.textContent = i.label || String(i.value);
+          if (i.dangerous) option.textContent += ' ⚠';
+          return option;
+        }));
+      }
+      const value = view && typeof view.value === 'number' ? view.value : null;
+      if (value === null) {
+        select.value = '';
+      } else if (list.some((i) => Number(i.value) === value)) {
+        select.value = String(value);
+      } else {
+        // Значения нет в перечне — показывается как есть.
+        let extra = select.querySelector('option[data-unknown]');
+        if (!extra) {
+          extra = document.createElement('option');
+          extra.setAttribute('data-unknown', '1');
+          select.append(extra);
+        }
+        extra.value = String(value);
+        extra.textContent = `Значение ${fmtNumber(value, 0)}`;
+        select.value = String(value);
+      }
+      select.disabled = !ctx.interactive || !(view && view.writable);
+      select.title = select.disabled ? 'запись в этот тег не разрешена' : '';
+    },
+  };
+});
+
+registerRenderer('core.svg', (instance, ctx) => {
+  const { w, h } = instance.geometry;
+  const host = svg('g', {});
+  const placeholder = svg('text', {
+    x: 4, y: 14, 'font-size': 11, fill: 'var(--muted)',
+  });
+  placeholder.textContent = 'загрузка векторной схемы…';
+  host.append(placeholder);
+
+  let applied = null;
+
+  loadSvgSource(instance, ctx)
+    .then((root) => {
+      host.replaceChildren();
+      fitInto(root, w, h, prop(instance, 'fit', 'contain'));
+      host.append(root);
+      applied = bindSvgElements(root, instance, ctx);
+      if (applied) applied.update();
+    })
+    .catch((e) => {
+      // Отсутствующий ресурс показывается заглушкой с именем: пустое место
+      // на схеме читается как «здесь ничего нет» (FR-756.2).
+      placeholder.textContent = 'нет ресурса: ' + (prop(instance, 'source', '') || 'источник не задан');
+      placeholder.setAttribute('fill', 'var(--alarm)');
+      host.replaceChildren(
+        svg('rect', { x: 0, y: 0, width: w, height: h, fill: 'none', stroke: 'var(--alarm)', 'stroke-dasharray': '4 3' }),
+        placeholder,
+      );
+      console.warn('SVG не загружен:', e);
+    });
+
+  return { node: host, update() { if (applied) applied.update(); } };
+});
+
+/** Загружает и очищает файл SVG (FR-773.2, FR-773.3). */
+async function loadSvgSource(instance, ctx) {
+  const source = prop(instance, 'source', '');
+  if (!source) throw new Error('источник не задан');
+  const inline = ctx.resources[source];
+  const text = inline !== undefined ? inline : await (await fetch(source)).text();
+  return sanitizeSvg(text);
+}
+
+/**
+ * Очистка файла SVG.
+ *
+ * Удаляются сценарии, обработчики событий в атрибутах и внешние ссылки.
+ * Идентификаторы, имена, классы и структура групп **не трогаются**: именно
+ * они служат точками привязки, и переименование сломало бы схему (FR-773.3).
+ */
+export function sanitizeSvg(text) {
+  const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+  const root = doc.documentElement;
+  if (!root || root.nodeName === 'parsererror' || root.querySelector('parsererror')) {
+    throw new Error('файл не разбирается как SVG');
+  }
+  for (const node of [...root.querySelectorAll('script, foreignObject, use[href^="http"]')]) {
+    node.remove();
+  }
+  const walk = (node) => {
+    for (const attr of [...node.attributes || []]) {
+      const name = attr.name.toLowerCase();
+      if (name.startsWith('on')) node.removeAttribute(attr.name);
+      // Внешние адреса запрещены: в замкнутом контуре они не загрузятся,
+      // а в открытом стали бы каналом утечки сведений об объекте.
+      if ((name === 'href' || name === 'xlink:href' || name === 'src') &&
+          /^\s*(https?:|\/\/)/i.test(attr.value)) {
+        node.removeAttribute(attr.name);
+      }
+      if (name === 'style' && /url\(\s*['"]?\s*(https?:|\/\/)/i.test(attr.value)) {
+        node.removeAttribute(attr.name);
+      }
+    }
+    for (const child of node.children) walk(child);
+  };
+  walk(root);
+  return document.importNode(root, true);
+}
+
+/** Вписывание с сохранением `viewBox` и пропорций (FR-773.4). */
+function fitInto(root, w, h, fit) {
+  if (!root.getAttribute('viewBox')) {
+    const vw = parseFloat(root.getAttribute('width')) || w;
+    const vh = parseFloat(root.getAttribute('height')) || h;
+    root.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+  }
+  root.setAttribute('width', w);
+  root.setAttribute('height', h);
+  root.setAttribute('preserveAspectRatio', {
+    contain: 'xMidYMid meet',
+    cover: 'xMidYMid slice',
+    stretch: 'none',
+    actual: 'xMinYMin meet',
+  }[fit] || 'xMidYMid meet');
+}
+
+/**
+ * Имя элемента в понимании векторных редакторов (FR-773.6).
+ *
+ * Inkscape пишет `inkscape:label`, Figma и Illustrator — `data-name`,
+ * многие чертежи несут `<title>`. Смотреть только на `id` недостаточно:
+ * в половине файлов он машинный вида `path4821`.
+ */
+export function elementName(node) {
+  return node.getAttribute('inkscape:label')
+    || node.getAttribute('data-name')
+    || node.getAttribute('data-title')
+    || (node.querySelector(':scope > title') || {}).textContent
+    || node.getAttribute('id')
+    || '';
+}
+
+/** Дерево элементов файла для инспектора (FR-773.6, FR-777.2). */
+export function svgElementTree(root) {
+  const out = [];
+  const visit = (node, depth) => {
+    for (const child of node.children) {
+      if (child.tagName === 'defs' || child.tagName === 'title') continue;
+      out.push({
+        node: child,
+        depth,
+        id: child.getAttribute('id') || '',
+        name: elementName(child),
+        cls: child.getAttribute('class') || '',
+        tag: child.tagName,
+      });
+      visit(child, depth + 1);
+    }
+  };
+  visit(root, 0);
+  return out;
+}
+
+/** Находит элементы по селектору привязки (FR-773.7). */
+function selectElements(root, binding) {
+  if (binding.id) {
+    const found = root.querySelector(`[id="${cssEscape(binding.id)}"]`);
+    return found ? [found] : [];
+  }
+  if (binding.class) return [...root.querySelectorAll('.' + cssEscape(binding.class))];
+  if (binding.selector) {
+    try { return [...root.querySelectorAll(binding.selector)]; } catch { return []; }
+  }
+  if (binding.name) {
+    return svgElementTree(root).filter((e) => e.name === binding.name).map((e) => e.node);
+  }
+  return [];
+}
+
+function cssEscape(s) {
+  return window.CSS && CSS.escape ? CSS.escape(s) : String(s).replace(/["\\]/g, '\\$&');
+}
+
+/**
+ * Применяет карту привязок к элементам изображения.
+ *
+ * Обновление меняет **только привязанные характеристики** (FR-773.21):
+ * всё остальное в файле остаётся таким, каким его нарисовал проектировщик.
+ */
+export function bindSvgElements(root, instance, ctx) {
+  const bindings = prop(instance, 'element_bindings', []) || [];
+  const interactive = prop(instance, 'interactive_elements', []) || [];
+
+  const jobs = [];
+  const missing = [];
+  for (const binding of bindings) {
+    const nodes = selectElements(root, binding);
+    if (!nodes.length) { missing.push(binding); continue; }
+    for (const node of nodes) jobs.push({ node, binding, original: originalOf(node, binding.attribute) });
+  }
+
+  for (const spec of interactive) {
+    for (const node of selectElements(root, spec)) {
+      node.classList.add('w-clickable');
+      if (spec.tooltip) {
+        const title = document.createElementNS(SVGNS, 'title');
+        title.textContent = spec.tooltip;
+        node.append(title);
+      }
+      if (spec.action && ctx.interactive && ctx.onAction) {
+        node.addEventListener('click', (e) => {
+          e.stopPropagation();
+          ctx.onAction(spec.action, instance);
+        });
+      }
+    }
+  }
+
+  return {
+    missing,
+    update() {
+      for (const job of jobs) applyBinding(job, ctx);
+    },
+  };
+}
+
+function originalOf(node, attribute) {
+  switch (attribute) {
+    case 'text': return node.textContent;
+    case 'class': return node.getAttribute('class') || '';
+    case 'transform': return node.getAttribute('transform') || '';
+    default: return node.getAttribute(attribute);
+  }
+}
+
+/** Значение источника привязки: тег либо постоянная величина. */
+function sourceView(binding, ctx) {
+  if (binding.tag) return { tag: binding.tag, view: ctx.view(binding.tag) };
+  return { tag: null, view: undefined };
+}
+
+function applyBinding(job, ctx) {
+  const { node, binding, original } = job;
+  const { tag, view } = sourceView(binding, ctx);
+  const state = widgetState(view, ctx.violation(tag));
+  const bad = state === 'nodata' || state === 'nocomm';
+  const raw = view ? view.value : null;
+
+  // Недостоверность обрабатывается до правил автора: вариант «нет данных»
+  // обязателен для дискретной привязки (FR-773.10), и если он задан — он
+  // и применяется, иначе элемент возвращается к исходному виду файла.
+  const result = bad && binding.bad !== undefined
+    ? binding.bad
+    : mapValue(raw, binding, state);
+
+  switch (binding.attribute) {
+    case 'visibility':
+      node.style.display = truthy(result) ? '' : 'none';
+      break;
+    case 'opacity':
+      node.setAttribute('opacity', clamp01(numberOr(result, 1)));
+      break;
+    case 'fill':
+    case 'stroke':
+      node.setAttribute(binding.attribute, result === null || result === undefined ? original : result);
+      break;
+    case 'stroke-width':
+      node.setAttribute('stroke-width', numberOr(result, 1));
+      break;
+    case 'stroke-dasharray':
+      node.setAttribute('stroke-dasharray', result === null ? original : result);
+      break;
+    case 'text': {
+      const target = node.tagName === 'text' ? (node.querySelector('tspan') || node) : node;
+      target.textContent = bad
+        ? (binding.bad !== undefined ? String(result) : qualityMark(state))
+        : formatValue(view, binding.format || {});
+      break;
+    }
+    case 'class': {
+      const base = original ? original.split(/\s+/).filter(Boolean) : [];
+      const extra = String(result || '').split(/\s+/).filter(Boolean);
+      node.setAttribute('class', [...new Set([...base, ...extra])].join(' '));
+      break;
+    }
+    case 'rotate': {
+      const angle = numberOr(result, 0);
+      const c = binding.center || { x: 0, y: 0 };
+      node.setAttribute('transform', `${original} rotate(${angle} ${c.x} ${c.y})`.trim());
+      break;
+    }
+    case 'translate': {
+      const d = numberOr(result, 0);
+      const axis = binding.axis === 'y' ? `0 ${d}` : `${d} 0`;
+      node.setAttribute('transform', `${original} translate(${axis})`.trim());
+      break;
+    }
+    case 'scale': {
+      const s = numberOr(result, 1);
+      const c = binding.center || { x: 0, y: 0 };
+      node.setAttribute(
+        'transform',
+        `${original} translate(${c.x} ${c.y}) scale(${binding.axis === 'y' ? `1 ${s}` : binding.axis === 'x' ? `${s} 1` : s}) translate(${-c.x} ${-c.y})`.trim(),
+      );
+      break;
+    }
+    case 'tooltip': {
+      let title = node.querySelector(':scope > title');
+      if (!title) { title = document.createElementNS(SVGNS, 'title'); node.append(title); }
+      title.textContent = bad
+        ? `${binding.tag}: ${qualityMark(state)}`
+        : `${binding.tag}: ${formatValue(view, binding.format || {})}`;
+      break;
+    }
+    case 'state':
+      node.setAttribute('data-state', state);
+      break;
+    default:
+      // Неизвестная характеристика молча не игнорируется: автор схемы должен
+      // узнать об опечатке, а не искать, почему привязка «не работает».
+      if (!job.warned) {
+        console.warn('неизвестная характеристика привязки:', binding.attribute);
+        job.warned = true;
+      }
+  }
+}
+
+/**
+ * Преобразование величины по правилу привязки.
+ *
+ * Числовое: диапазон значений тега → диапазон результата (FR-773.9).
+ * Дискретное: таблица соответствия с обязательным вариантом «прочее» (FR-773.10).
+ */
+function mapValue(raw, binding, state) {
+  if (binding.map) {
+    const key = String(raw);
+    if (Object.prototype.hasOwnProperty.call(binding.map, key)) return binding.map[key];
+    if (Object.prototype.hasOwnProperty.call(binding.map, state)) return binding.map[state];
+    return binding.map.other !== undefined ? binding.map.other : null;
+  }
+  if (binding.range && typeof raw === 'number') {
+    const [inFrom, inTo] = binding.range.in || [0, 100];
+    const [outFrom, outTo] = binding.range.out || [0, 1];
+    const span = inTo - inFrom;
+    let f = span === 0 ? 0 : (raw - inFrom) / span;
+    // Выход за диапазон ограничивается краем, а не экстраполируется: стрелка,
+    // ушедшая за шкалу, читается как исправная (FR-742.2).
+    f = Math.max(0, Math.min(1, f));
+    return outFrom + (outTo - outFrom) * f;
+  }
+  return raw;
+}
+
+const truthy = (v) => !(v === false || v === 0 || v === null || v === undefined || v === '' || v === 'false');
+const numberOr = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : Number.isFinite(Number(v)) ? Number(v) : d);
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+function resolveColor(value) {
+  if (typeof value !== 'string') return value;
+  const named = {
+    '@color.border': 'var(--line)',
+    '@color.text': 'var(--text)',
+    '@color.ok': 'var(--ok)',
+    '@color.alarm': 'var(--alarm)',
+  };
+  return named[value] || value;
+}
+
+// ── Действия ────────────────────────────────────────────────────────
+
+function attachActions(node, instance, ctx) {
+  const spec = instance.on_click || (instance.events || {}).on_click;
+  if (!spec || !ctx.interactive || !ctx.onAction) return;
+  node.addEventListener('click', (e) => {
+    e.stopPropagation();
+    ctx.onAction(spec, instance);
+  });
+}
+
+// ── Сборка документа ────────────────────────────────────────────────
+
+/** Заглушка для типа без отрисовщика: пустое место скрыло бы ошибку схемы. */
+function unknownType(instance) {
+  const { w, h } = instance.geometry;
+  const text = svg('text', { x: 4, y: 14, 'font-size': 10, fill: 'var(--warn)' });
+  text.textContent = 'тип «' + instance.type + '» не отображается';
+  return {
+    node: svg('g', {}, [
+      svg('rect', { x: 0, y: 0, width: w, height: h, fill: 'none', stroke: 'var(--warn)', 'stroke-dasharray': '3 3' }),
+      text,
+    ]),
+    update() {},
+  };
+}
+
+/**
+ * Отрисовка документа мнемосхемы.
+ *
+ * Возвращает элемент и функцию обновления. Обновление не перестраивает
+ * дерево: при пятистах виджетах и обновлении дважды в секунду перестройка
+ * съедала бы кадр целиком и делала бы схему дёрганой (FR-728.1).
+ */
+/**
+ * Составные типы объекта: «шаблоны схем» (ТЗ 13.4.10).
+ *
+ * Тип не разворачивается в отдельные виджеты при установке, а остаётся одним:
+ * иначе правка вида не подействовала бы на уже поставленные — и это была бы
+ * не библиотека типов, а вставка заготовки. Смысл ровно в обратном: узел
+ * «насос» стоит на схеме сорок раз, а правят его один раз.
+ */
+const COMPOSITE = new Map();
+
+/** Предел вложенности: тип, поставленный внутрь себя, зациклил бы отрисовку. */
+const MAX_COMPOSITE_DEPTH = 8;
+
+export function registerComposite(type) {
+  COMPOSITE.set(type.id, type);
+  if (!RENDERERS[type.id]) {
+    RENDERERS[type.id] = (instance, ctx) => renderComposite(type.id, instance, ctx);
+  }
+}
+
+export function forgetComposites() {
+  for (const id of COMPOSITE.keys()) delete RENDERERS[id];
+  COMPOSITE.clear();
+}
+
+export function compositeTypes() {
+  return [...COMPOSITE.values()];
+}
+
+/**
+ * Подстановка параметров в привязки ребёнка.
+ *
+ * Значение вида `$насос` заменяется тем, что задано в экземпляре. Без этого
+ * составной тип нёс бы внутри конкретные теги и годился бы одному месту схемы.
+ */
+function substitute(value, params) {
+  if (typeof value === 'string' && value.startsWith('$')) {
+    const name = value.slice(1);
+    return Object.prototype.hasOwnProperty.call(params, name) ? params[name] : value;
+  }
+  if (Array.isArray(value)) return value.map((v) => substitute(v, params));
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = substitute(v, params);
+    return out;
+  }
+  return value;
+}
+
+/** Собственный размер составного типа — охватывающий прямоугольник детей. */
+export function compositeSize(type) {
+  let w = 0;
+  let h = 0;
+  for (const child of type.children || []) {
+    const g = child.geometry || {};
+    w = Math.max(w, (g.x || 0) + (g.w || 0));
+    h = Math.max(h, (g.y || 0) + (g.h || 0));
+  }
+  return { w: w || 100, h: h || 40 };
+}
+
+function renderComposite(typeId, instance, ctx, depth = 0) {
+  const type = COMPOSITE.get(typeId);
+  const group = svg('g', {});
+  if (!type) {
+    group.append(unknownType(instance).node);
+    return { node: group, update() {} };
+  }
+  if (depth >= MAX_COMPOSITE_DEPTH) {
+    // Молча оборвать отрисовку нельзя: пустое место на схеме читается как
+    // «здесь ничего нет», а не как «тип вложен сам в себя».
+    const note = svg('text', { x: 4, y: 14, 'font-size': 11, fill: 'var(--alarm)' });
+    note.textContent = 'слишком глубокая вложенность типов';
+    group.append(note);
+    return { node: group, update() {} };
+  }
+
+  const params = { ...(instance.parameters || instance.params || {}) };
+  // Умолчания параметров типа: экземпляр задаёт не все.
+  for (const p of type.parameters || []) {
+    if (params[p.id] === undefined && p.default !== undefined) params[p.id] = p.default;
+  }
+
+  // Масштаб: тип собран в своих размерах, а поставлен может быть иного.
+  // Собственный размер — охватывающий прямоугольник детей: отдельного поля у
+  // типа нет, а расходиться два источника размера рано или поздно начнут.
+  const own = compositeSize(type);
+  const kx = own.w ? instance.geometry.w / own.w : 1;
+  const ky = own.h ? instance.geometry.h / own.h : 1;
+  const inner = svg('g', { transform: `scale(${kx} ${ky})` });
+  group.append(inner);
+
+  const parts = [];
+  for (const child of [...(type.children || [])].sort((a, b) => (a.z || 0) - (b.z || 0))) {
+    const resolved = {
+      ...child,
+      bindings: substitute(child.bindings || {}, params),
+      properties: substitute(child.properties || {}, params),
+    };
+    const make = COMPOSITE.has(resolved.type)
+      ? (i, c) => renderComposite(resolved.type, i, c, depth + 1)
+      : RENDERERS[resolved.type] || unknownType;
+    let part;
+    try {
+      part = make(resolved, ctx);
+    } catch (e) {
+      console.warn('виджет типа', typeId, 'не построен:', e);
+      part = unknownType(resolved);
+    }
+    const g = resolved.geometry;
+    inner.append(svg('g', { transform: `translate(${g.x} ${g.y})` }, [part.node]));
+    parts.push(part);
+  }
+
+  return {
+    node: group,
+    update() {
+      for (const p of parts) {
+        try { p.update(); } catch { /* один виджет не рушит остальные */ }
+      }
+    },
+  };
+}
+
+export function renderDocument(doc, ctx) {
+  const canvas = doc.canvas || { w: 1280, h: 720 };
+  const root = svg('svg', {
+    class: 'mnemo',
+    viewBox: `0 0 ${canvas.w} ${canvas.h}`,
+    width: '100%',
+    preserveAspectRatio: doc.canvas && doc.canvas.fit === 'actual' ? 'xMinYMin meet' : 'xMidYMid meet',
+  });
+  if (canvas.background) {
+    root.append(svg('rect', { x: 0, y: 0, width: canvas.w, height: canvas.h, fill: canvas.background }));
+  }
+
+  const hiddenLayers = new Set(
+    (doc.layers || []).filter((l) => l.visible === false).map((l) => l.id),
+  );
+
+  const parts = [];
+  const instances = [...(doc.widgets || [])].sort((a, b) => (a.z || 0) - (b.z || 0));
+  for (const instance of instances) {
+    if (instance.layer && hiddenLayers.has(instance.layer)) continue;
+    const make = RENDERERS[instance.type] || unknownType;
+    let part;
+    try {
+      part = make(instance, ctx);
+    } catch (e) {
+      console.warn('виджет', instance.id, 'не построен:', e);
+      part = unknownType(instance);
+    }
+    const g = instance.geometry;
+    const wrap = svg('g', {
+      'data-widget': instance.id,
+      transform: `translate(${g.x} ${g.y})` + (g.rotation ? ` rotate(${g.rotation} ${g.w / 2} ${g.h / 2})` : ''),
+    }, [part.node]);
+    if (instance.tooltip) {
+      const title = document.createElementNS(SVGNS, 'title');
+      title.textContent = instance.tooltip;
+      wrap.append(title);
+    }
+    root.append(wrap);
+    parts.push(part);
+  }
+
+  const update = () => { for (const p of parts) { try { p.update(); } catch { /* один виджет не рушит схему */ } } };
+  // Освобождение обязательно: график на схеме держит таймер обновления, и
+  // схема, закрытая без освобождения, продолжала бы дёргать архив вечно.
+  const dispose = () => {
+    for (const p of parts) {
+      if (typeof p.dispose === 'function') {
+        try { p.dispose(); } catch { /* один виджет не мешает остальным */ }
+      }
+    }
+  };
+  update();
+  return { node: root, update, parts, dispose };
+}

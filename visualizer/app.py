@@ -80,6 +80,10 @@ def create_app():
     app.register_blueprint(export_bp)
     app.register_blueprint(notifications_bp, url_prefix='/api')
 
+    if not os.environ.get('KVT_DEMO_TOKEN'):
+        from visualizer.routes.demo import demo_bp
+        app.register_blueprint(demo_bp)
+
     return app
 
 

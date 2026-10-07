@@ -1,0 +1,824 @@
+// Графики трендов (ТЗ 13.10).
+//
+// Своя отрисовка вместо готовой библиотеки — не из принципа, а из требования:
+// служба ставится в закрытый контур одним файлом, а любая внешняя библиотека
+// либо тянет за собой загрузку извне, либо раздувает бинарь ради возможностей,
+// которых здесь не нужно.
+//
+// Что здесь решается сверх «нарисовать линию»:
+//
+// * **Несколько осей.** Давление в барах и температура в градусах на общей оси
+//   дают линию, прижатую к нулю: оператор читает «не меняется» там, где
+//   меняется на десять градусов (FR-709.35).
+// * **Разрывы.** Между выборками, разделёнными часом молчания, линия рисует
+//   переход, которого не было. Это не упрощение, а выдумка данных (FR-709.41).
+// * **Полоса «минимум — максимум».** Суточный график по часовым средним теряет
+//   выброс до аварийного значения. Одна линия среднего показывает спокойный
+//   участок там, где была авария (FR-709.34).
+// * **Ступени для логических величин.** Между двумя выборками состояние не
+//   менялось плавно, и интерполяция здесь — ложь (FR-709.40).
+
+import { svg } from './widgets.js';
+import { niceTicks, logTicks, logFraction, timeTicks, timeTickLabel, formatNumber, axisLabels, padded }
+  from './scale.js';
+
+/** Цвета рядов. Различаются и тоном, и светлотой — не только цветом. */
+const PALETTE = ['#1f6feb', '#2ea043', '#d29922', '#a371f7', '#db6d28', '#3fb950',
+  '#58a6ff', '#f778ba', '#7ee787', '#ffa657', '#bc8cff', '#79c0ff'];
+
+/** Начертания линий: ряды различаются не одним лишь цветом (FR-709.70). */
+const DASHES = ['', '5 3', '2 3', '8 3 2 3', '1 3'];
+
+const PAD = { top: 14, right: 12, bottom: 26, left: 58 };
+/** Высота одной дорожки логической величины. */
+const TRACK_H = 22;
+
+/**
+ * Строит график.
+ *
+ * `series` — массив рядов из `/history`; каждый дополняется полями вида:
+ * `title`, `units`, `limits`, `discrete`, `hidden`, `compare` (ряд сравнения).
+ *
+ * Возвращает `{ node, timeAt, valueAt, plot }`: `timeAt(x)` переводит
+ * координату в момент времени — по нему работают курсор и выделение.
+ */
+export function renderChart(series, from, to, options = {}) {
+  const {
+    width = 900,
+    height = 340,
+    showThresholds = true,
+    showBand = true,
+    cursors = [],
+    events = [],
+    onCursor = null,
+    onZoom = null,
+    tooltip = true,
+    fill = null,
+    style = 'line',
+    thresholdBands = true,
+    timeAxis = true,
+  } = options;
+
+  const visible = series.filter((s) => !s.hidden && s.points && s.points.length);
+  const discrete = visible.filter((s) => s.discrete);
+  const analog = visible.filter((s) => !s.discrete);
+
+  const trackH = discrete.length ? discrete.length * TRACK_H + 6 : 0;
+  // Нижний отступ нужен только под подписи времени. У верхних полей их нет —
+  // ось общая и подписана один раз внизу, — и отдавать им место значит
+  // отнимать высоту у самих графиков.
+  const bottom = timeAxis ? PAD.bottom : 6;
+  const plotH = height - PAD.top - bottom - trackH;
+  const root = svg('svg', {
+    class: 'trend-chart-svg',
+    viewBox: `0 0 ${width} ${height}`,
+    width: '100%',
+    style: 'display:block;touch-action:none',
+  });
+
+  if (!visible.length) {
+    root.append(centeredNote(width, height, series.length
+      ? 'все ряды скрыты — включите хотя бы один в легенде'
+      : 'за выбранный период данных нет'));
+    return { node: root, timeAt: () => from, plot: null };
+  }
+
+  // ── Оси: ряды группируются по единице измерения ────────────────────
+  //
+  // Единица — единственный признак, по которому величины сравнимы между
+  // собой. Совмещать градусы с барами на одной оси значит показывать одну из
+  // них прижатой к краю.
+  // Делений столько, сколько помещается: на поле в сто пятьдесят пикселей
+  // семь подписей сливаются в серую полосу, а на трёхсотпиксельном три
+  // деления оставляют ось без опоры.
+  const valueTicks = Math.max(2, Math.min(6, Math.round(plotH / 45)));
+  const axes = buildAxes(analog, valueTicks);
+  const plotW = width - PAD.left - PAD.right - Math.max(0, axes.length - 1) * 46;
+  const left = PAD.left;
+
+  const sx = (us) => left + (to > from ? clamp((us - from) / (to - from), 0, 1) : 0) * plotW;
+  const timeAt = (x) => from + clamp((x - left) / plotW, 0, 1) * (to - from);
+
+  // ── Сетка по значению ──────────────────────────────────────────────
+  //
+  // Линии ставятся по делениям **первой** оси: сетка, нарисованная по каждой
+  // оси сразу, превращается в клетчатую бумагу, сквозь которую не видно
+  // линий. Прочие оси подписываются, но своей сетки не рисуют.
+  const grid = axes[0];
+  if (grid) {
+    for (const v of grid.values) {
+      const y = PAD.top + plotH - fraction(grid, v) * plotH;
+      if (y < PAD.top - 0.5 || y > PAD.top + plotH + 0.5) continue;
+      root.append(svg('line', {
+        x1: left, y1: y, x2: left + plotW, y2: y,
+        stroke: 'var(--line)', 'stroke-width': 1,
+        opacity: v === 0 ? 0.9 : 0.32,
+      }));
+    }
+  } else {
+    root.append(svg('line', {
+      x1: left, y1: PAD.top + plotH, x2: left + plotW, y2: PAD.top + plotH,
+      stroke: 'var(--line)', 'stroke-width': 1, opacity: 0.9,
+    }));
+  }
+
+  // ── Ось времени ────────────────────────────────────────────────────
+  //
+  // Деления выровнены по круглым моментам: «12:03:47» на оси не узнаётся
+  // никем, а «12:00» узнаётся сразу.
+  const wanted = Math.min(9, Math.max(2, Math.round(plotW / 110)));
+  const ticks = timeTicks(from, to, wanted);
+  const tickStep = ticks.length > 1 ? ticks[1].us - ticks[0].us : to - from;
+  for (const tick of ticks) {
+    const x = sx(tick.us);
+    if (x < left - 0.5 || x > left + plotW + 0.5) continue;
+    root.append(svg('line', {
+      x1: x, y1: PAD.top, x2: x, y2: PAD.top + plotH + trackH,
+      stroke: 'var(--line)', 'stroke-width': 1,
+      // Граница суток заметнее прочих: без неё на многодневном графике не
+      // видно, где кончился один день и начался другой.
+      opacity: tick.major ? 0.6 : 0.22,
+    }));
+    if (timeAxis) {
+      root.append(text(x, height - 8, timeTickLabel(tick.us, tickStep, tick.major), {
+        anchor: 'middle',
+        fill: tick.major ? 'var(--text)' : 'var(--muted)',
+      }));
+    }
+  }
+
+  // ── Оси значений ───────────────────────────────────────────────────
+  axes.forEach((axis, index) => {
+    const onLeft = index === 0;
+    const ax = onLeft ? left : left + plotW + 46 * (index - 1);
+    // Подписи всей оси росписываются одной кратностью: «5000» рядом с «10 к»
+    // читается как две разные шкалы, склеенные по ошибке.
+    //
+    // Кроме логарифмической: она **по определению** охватывает порядки, и
+    // общая кратность даёт «0,01 к · 0,1 к · 1 к» вместо «10 · 100 · 1000».
+    // Там каждое деление росписывается само по себе.
+    const labels = axis.log
+      ? axis.values.map((v) => formatNumber(v))
+      : axisLabels(axis.values, axis.step);
+    axis.values.forEach((v, i) => {
+      const y = PAD.top + plotH - fraction(axis, v) * plotH;
+      if (y < PAD.top - 0.5 || y > PAD.top + plotH + 0.5) return;
+      root.append(text(onLeft ? ax - 6 : ax + 6, y, labels[i], {
+        anchor: onLeft ? 'end' : 'start', mono: true, baseline: 'central',
+        fill: axis.color,
+      }));
+    });
+    if (axis.units) {
+      root.append(text(onLeft ? ax - 6 : ax + 6, PAD.top - 4, axis.units, {
+        anchor: onLeft ? 'end' : 'start', fill: axis.color,
+      }));
+    }
+  });
+
+  const sy = (axis, v) => PAD.top + plotH - clamp(fraction(axis, v), -0.2, 1.2) * plotH;
+
+  // ── Подсветка нарушений и отметки событий ──────────────────────────
+  for (const mark of events) {
+    const x = sx(mark.at_us);
+    if (x < left || x > left + plotW) continue;
+    root.append(svg('line', {
+      x1: x, y1: PAD.top, x2: x, y2: PAD.top + plotH,
+      stroke: eventColor(mark.priority), 'stroke-width': 1, 'stroke-dasharray': '3 2',
+      opacity: 0.75,
+    }));
+    const tip = svg('title');
+    tip.textContent = `${mark.message || ''}`.slice(0, 200);
+    const hit = svg('rect', {
+      x: x - 3, y: PAD.top, width: 6, height: plotH, fill: 'transparent',
+    });
+    hit.append(tip);
+    root.append(hit);
+  }
+
+  // ── Зоны порогов ───────────────────────────────────────────────────
+  //
+  // Линия порога говорит, где граница; заливка говорит, **по какую сторону**
+  // от неё лежит значение. Читать это по линии приходится каждый раз заново:
+  // выше она безопасной зоны или ниже, зависит от того, верхний это порог или
+  // нижний, а на графике они выглядят одинаково.
+  //
+  // Заливается только при **одной** оси: при двух непонятно, к какой из
+  // величин относится закрашенная полоса, и она вводит в заблуждение вместо
+  // того, чтобы помогать.
+  if (showThresholds && thresholdBands && axes.length === 1) {
+    const axis = axes[0];
+    const withLimits = analog.find((a) => a.limits && !a.compare);
+    if (withLimits) {
+      const zone = (from_v, to_v, color, opacity) => {
+        const y1 = sy(axis, from_v);
+        const y2 = sy(axis, to_v);
+        const top = Math.max(PAD.top, Math.min(y1, y2));
+        const bottom = Math.min(PAD.top + plotH, Math.max(y1, y2));
+        if (bottom - top < 0.5) return;
+        root.append(svg('rect', {
+          x: left, y: top, width: plotW, height: bottom - top,
+          fill: color, opacity, stroke: 'none',
+        }));
+      };
+      const lim = withLimits.limits;
+      // Тревога — от порога до края поля; предупреждение — только полоса между
+      // предупреждением и тревогой, иначе одно закрасило бы другое.
+      if (typeof lim.hi_alarm === 'number') zone(lim.hi_alarm, axis.hi, 'var(--alarm)', 0.1);
+      if (typeof lim.lo_alarm === 'number') zone(axis.lo, lim.lo_alarm, 'var(--alarm)', 0.1);
+      if (typeof lim.hi_warning === 'number') {
+        zone(lim.hi_warning, lim.hi_alarm ?? axis.hi, 'var(--warn)', 0.1);
+      }
+      if (typeof lim.lo_warning === 'number') {
+        zone(lim.lo_alarm ?? axis.lo, lim.lo_warning, 'var(--warn)', 0.1);
+      }
+    }
+  }
+
+  // ── Пороги ─────────────────────────────────────────────────────────
+  if (showThresholds) {
+    for (const s of analog) {
+      const axis = axes.find((a) => a.tags.has(s.tag));
+      if (!axis || !s.limits) continue;
+      for (const [key, color] of [['lo_alarm', 'var(--alarm)'], ['lo_warning', 'var(--warn)'],
+        ['hi_warning', 'var(--warn)'], ['hi_alarm', 'var(--alarm)']]) {
+        const v = s.limits[key];
+        if (v === undefined || v === null) continue;
+        const y = sy(axis, v);
+        if (y < PAD.top - 2 || y > PAD.top + plotH + 2) continue;
+        root.append(svg('line', {
+          x1: left, y1: y, x2: left + plotW, y2: y,
+          stroke: color, 'stroke-width': 1, 'stroke-dasharray': '6 4', opacity: 0.55,
+        }));
+      }
+    }
+  }
+
+  // ── Ряды ───────────────────────────────────────────────────────────
+  analog.forEach((s) => {
+    const axis = axes.find((a) => a.tags.has(s.tag));
+    if (!axis) return;
+    const color = s.color || PALETTE[s.index % PALETTE.length];
+    const dash = s.compare ? '4 3' : DASHES[(s.index || 0) % DASHES.length];
+    const opacity = s.compare ? 0.5 : 1;
+
+    // Полоса «минимум — максимум»: показывает, что скрыто под средним.
+    if (showBand && !s.compare && s.points.some((p) => p.max > p.min)) {
+      for (const run of runsOf(s.points, s)) {
+        if (run.length < 2) continue;
+        const top = run.map((p) => `${sx(mid(p))},${sy(axis, p.max)}`);
+        const bottom = [...run].reverse().map((p) => `${sx(mid(p))},${sy(axis, p.min)}`);
+        root.append(svg('polygon', {
+          points: [...top, ...bottom].join(' '), fill: color, opacity: 0.15, stroke: 'none',
+        }));
+      }
+    }
+
+    // Заливка под линией. Не украшение: на графике из одного-двух рядов она
+    // сразу отвечает на вопрос «выше или ниже нуля», а взгляд перестаёт искать
+    // тонкую линию среди сетки. На пяти рядах заливки перекрывают друг друга и
+    // мешают — потому и включается она только при малом числе рядов.
+    const filled = fill === null ? analog.filter((a) => !a.compare).length <= 2 : fill;
+    if (filled && !s.compare) {
+      const zero = PAD.top + plotH - clamp(fraction(axis, Math.max(axis.lo, 0)), 0, 1) * plotH;
+      const stepped = (s.style || style) === 'step';
+      for (const run of runsOf(s.points, s)) {
+        if (run.length < 2) continue;
+        // Заливка идёт по тем же точкам, что и линия: разойдись они — под
+        // ступенчатой линией оказалась бы наклонная заливка.
+        const line = stepped
+          ? run.flatMap((p) => [
+            `${sx(p.start_us)},${sy(axis, p.avg)}`,
+            `${sx(p.end_us)},${sy(axis, p.avg)}`,
+          ])
+          : run.map((p) => `${sx(mid(p))},${sy(axis, p.avg)}`);
+        const first = stepped ? sx(run[0].start_us) : sx(mid(run[0]));
+        const last = stepped
+          ? sx(run[run.length - 1].end_us)
+          : sx(mid(run[run.length - 1]));
+        root.append(svg('polygon', {
+          points: [`${first},${zero}`, ...line, `${last},${zero}`].join(' '),
+          fill: color, opacity: 0.1, stroke: 'none',
+        }));
+      }
+    }
+
+    // Ряд рисуется выбранным способом, разорванный там, где связи не было.
+    const how = s.style || style;
+    for (const run of runsOf(s.points, s)) {
+      if (how === 'bars') {
+        for (const p of run) {
+          const y = sy(axis, p.avg);
+          const zero = PAD.top + plotH - clamp(fraction(axis, Math.max(axis.lo, 0)), 0, 1) * plotH;
+          const x0 = sx(p.start_us);
+          const x1 = sx(p.end_us);
+          root.append(svg('rect', {
+            x: Math.min(x0, x1), y: Math.min(y, zero),
+            // Не тоньше пикселя: столбец нулевой ширины не виден вовсе, и
+            // ряд с редкими записями выглядел бы пустым.
+            width: Math.max(1, Math.abs(x1 - x0) - 1), height: Math.max(1, Math.abs(zero - y)),
+            fill: color, opacity: opacity * 0.75,
+          }));
+        }
+        continue;
+      }
+      if (how === 'points') {
+        for (const p of run) {
+          root.append(svg('circle', {
+            cx: sx(mid(p)), cy: sy(axis, p.avg), r: 1.8, fill: color, opacity,
+          }));
+        }
+        continue;
+      }
+      // Ступени: запись архива покрывает интервал, а не мгновение. Прямая от
+      // середины к середине рисует плавный переход, которого не было, — на
+      // пятиминутном опросе это выдуманный наклон длиной в пять минут.
+      const points = how === 'step'
+        ? run.flatMap((p) => [
+          `${sx(p.start_us)},${sy(axis, p.avg)}`,
+          `${sx(p.end_us)},${sy(axis, p.avg)}`,
+        ])
+        : run.map((p) => `${sx(mid(p))},${sy(axis, p.avg)}`);
+      if (points.length > 1) {
+        root.append(svg('polyline', {
+          points: points.join(' '), fill: 'none', stroke: color, 'stroke-width': s.compare ? 1.4 : 2.1,
+          'stroke-dasharray': dash, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', opacity,
+        }));
+      } else if (points.length === 1) {
+        const [x, y] = points[0].split(',');
+        root.append(svg('circle', { cx: x, cy: y, r: 2, fill: color, opacity }));
+      }
+    }
+
+    // Частично недостоверные участки — полосой понизу поля.
+    for (const p of s.points) {
+      if (p.bad_fraction > 0 && p.bad_fraction < 1) {
+        root.append(svg('rect', {
+          x: sx(p.start_us), y: PAD.top + plotH - 3,
+          width: Math.max(1, sx(p.end_us) - sx(p.start_us)), height: 3,
+          fill: 'var(--alarm)', opacity: Math.min(1, 0.3 + p.bad_fraction * 0.7),
+        }));
+      }
+    }
+  });
+
+  // ── Дорожки логических величин ─────────────────────────────────────
+  discrete.forEach((s, i) => {
+    const color = s.color || PALETTE[s.index % PALETTE.length];
+    const y0 = PAD.top + plotH + 6 + i * TRACK_H;
+    root.append(svg('rect', {
+      x: left, y: y0, width: plotW, height: TRACK_H - 6,
+      fill: 'var(--line)', opacity: 0.12,
+    }));
+    // Ступенями: между выборками состояние не менялось плавно.
+    for (const p of s.points) {
+      if (p.bad_fraction >= 1 || p.samples === 0) continue;
+      const on = p.avg >= 0.5;
+      if (!on) continue;
+      root.append(svg('rect', {
+        x: sx(p.start_us), y: y0 + 2,
+        width: Math.max(1.5, sx(p.end_us) - sx(p.start_us)), height: TRACK_H - 10,
+        fill: color, opacity: s.compare ? 0.4 : 0.85,
+      }));
+    }
+    root.append(text(left + 4, y0 + (TRACK_H - 6) / 2, s.title || s.tag, {
+      baseline: 'central', fill: 'var(--muted)',
+    }));
+  });
+
+  // ── Курсоры ────────────────────────────────────────────────────────
+  for (const [i, us] of cursors.entries()) {
+    if (us === null || us === undefined) continue;
+    const x = sx(us);
+    root.append(svg('line', {
+      x1: x, y1: PAD.top, x2: x, y2: PAD.top + plotH + trackH,
+      stroke: 'var(--accent)', 'stroke-width': 1.2,
+      'stroke-dasharray': i === 0 ? '' : '4 3',
+    }));
+  }
+  if (cursors.length === 2 && cursors.every((c) => c !== null && c !== undefined)) {
+    const x1 = sx(cursors[0]);
+    const x2 = sx(cursors[1]);
+    root.append(svg('rect', {
+      x: Math.min(x1, x2), y: PAD.top, width: Math.abs(x2 - x1), height: plotH,
+      fill: 'var(--accent)', opacity: 0.08,
+    }));
+  }
+
+  // ── Подсказка под курсором ─────────────────────────────────────────
+  //
+  // Значения всех рядов в одном месте, у самого курсора. Отдельная строка под
+  // графиком для этого не годится: чтобы прочесть значение, приходится увести
+  // взгляд от точки, которую разбираешь, а вернувшись — искать её заново.
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-wrap';
+  wrap.append(root);
+  const tip = document.createElement('div');
+  tip.className = 'chart-tip';
+  tip.hidden = true;
+  wrap.append(tip);
+
+  // Отметки на рядах и след курсора рисуются поверх всего: под линиями их
+  // не было бы видно там, где линии сходятся.
+  const overlay = svg('g', {});
+  root.append(overlay);
+
+  // Ширина одного пикселя графика во времени: допуск попадания курсора.
+  const pixelUs = plotW > 0 ? (to - from) / plotW : 0;
+
+  function markAt(us, pointerY) {
+    overlay.replaceChildren();
+    if (us === null || us === undefined) return [];
+    const x = sx(us);
+    overlay.append(svg('line', {
+      x1: x, y1: PAD.top, x2: x, y2: PAD.top + plotH + trackH,
+      stroke: 'var(--muted)', 'stroke-width': 1, opacity: 0.7,
+    }));
+    const rows = [];
+    for (const s of visible) {
+      const point = valueAt(s, us, pixelUs * 2);
+      if (!point) {
+        rows.push({ series: s, point: null, y: null });
+        continue;
+      }
+      if (s.discrete) {
+        rows.push({ series: s, point, y: null });
+        continue;
+      }
+      const axis = axes.find((a) => a.tags.has(s.tag));
+      if (!axis) continue;
+      const y = sy(axis, point.avg);
+      rows.push({ series: s, point, y });
+      overlay.append(svg('circle', {
+        cx: x, cy: y, r: 3.2,
+        fill: s.color || PALETTE[s.index % PALETTE.length],
+        stroke: 'var(--panel)', 'stroke-width': 1.2,
+      }));
+    }
+    // Ближайший к указателю ряд выделяется в подсказке. На графике из
+    // восьми рядов иначе не понять, какая из линий под курсором.
+    if (pointerY !== null && pointerY !== undefined) {
+      let best = null;
+      for (const row of rows) {
+        if (row.y === null) continue;
+        const d = Math.abs(row.y - pointerY);
+        if (best === null || d < best.d) best = { d, row };
+      }
+      if (best && best.d < 24) best.row.nearest = true;
+    }
+    return rows;
+  }
+
+  function showTip(us, rows, event) {
+    if (!tooltip || us === null || us === undefined || !rows.length) {
+      tip.hidden = true;
+      return;
+    }
+    const head = document.createElement('div');
+    head.className = 'chart-tip-time';
+    head.textContent = new Date(us / 1000).toLocaleString('ru-RU');
+    const list = document.createElement('div');
+    for (const row of rows) {
+      const line = document.createElement('div');
+      line.className = 'chart-tip-row' + (row.nearest ? ' near' : '');
+      const dot = document.createElement('span');
+      dot.className = 'chart-tip-dot';
+      dot.style.background = row.series.color
+        || PALETTE[row.series.index % PALETTE.length];
+      const name = document.createElement('span');
+      name.className = 'chart-tip-name';
+      name.textContent = (row.series.title || row.series.tag)
+        + (row.series.compare ? ' (сравнение)' : '');
+      const value = document.createElement('span');
+      value.className = 'chart-tip-value';
+      if (!row.point) {
+        value.textContent = 'нет данных';
+        value.classList.add('none');
+      } else if (row.series.discrete) {
+        value.textContent = row.point.avg >= 0.5 ? 'вкл' : 'выкл';
+      } else {
+        value.textContent = formatNumber(row.point.avg)
+          + (row.series.units ? ' ' + row.series.units : '');
+        // Разброс внутри точки показывается только когда он есть: на сыром
+        // разрешении минимум равен максимуму, и «4,2 (4,2…4,2)» — шум.
+        if (row.point.max > row.point.min) {
+          const span = document.createElement('span');
+          span.className = 'chart-tip-band';
+          span.textContent = ` ${formatNumber(row.point.min)}…${formatNumber(row.point.max)}`;
+          value.append(span);
+        }
+        if (row.point.bad_fraction > 0) {
+          const bad = document.createElement('span');
+          bad.className = 'chart-tip-bad';
+          bad.textContent = ` ${Math.round(row.point.bad_fraction * 100)} % недостоверно`;
+          value.append(bad);
+        }
+      }
+      line.append(dot, name, value);
+      list.append(line);
+    }
+    tip.replaceChildren(head, list);
+    tip.hidden = false;
+
+    // Сторона выбирается по месту: подсказка, уехавшая за край окна, не
+    // читается вовсе.
+    const box = root.getBoundingClientRect();
+    const px = event.clientX - box.left;
+    const py = event.clientY - box.top;
+    const width = tip.offsetWidth || 220;
+    const height = tip.offsetHeight || 80;
+    const leftSide = px + 16 + width > box.width && px - 16 - width > 0;
+    tip.style.left = `${Math.max(0, leftSide ? px - width - 16 : px + 16)}px`;
+    tip.style.top = `${Math.min(Math.max(0, py - height / 2), Math.max(0, box.height - height))}px`;
+  }
+
+  // ── Взаимодействие: курсор, выделение интервала, колесо ────────────
+  const plot = svg('rect', {
+    x: left, y: PAD.top, width: plotW, height: plotH + trackH,
+    fill: 'transparent', style: onZoom ? 'cursor:crosshair' : 'cursor:default',
+  });
+  root.append(plot);
+
+  let dragFrom = null;
+  const band = svg('rect', {
+    y: PAD.top, height: plotH, fill: 'var(--accent)', opacity: 0.18, width: 0, x: 0,
+  });
+  root.append(band);
+
+  const localX = (event) => {
+    const box = root.getBoundingClientRect();
+    return ((event.clientX - box.left) / box.width) * width;
+  };
+  const localY = (event) => {
+    const box = root.getBoundingClientRect();
+    return ((event.clientY - box.top) / box.height) * height;
+  };
+
+  /**
+   * Показать курсор в указанный момент.
+   *
+   * Вызывается и своим указателем, и **посторонним**: когда полей несколько,
+   * курсор обязан идти по всем сразу. Разбор аварии — это сличение величин в
+   * один и тот же момент, а курсор, живущий только в одном поле, заставляет
+   * сличать на глаз по горизонтали.
+   *
+   * Без события подсказка не показывается: она принадлежит полю, над которым
+   * указатель, а вторая такая же в соседнем поле — помеха.
+   */
+  function showCursor(us, event = null, pointerY = null) {
+    const rows = markAt(us, pointerY);
+    if (event) showTip(us, rows, event);
+    else tip.hidden = true;
+    return rows;
+  }
+
+  plot.addEventListener('mousemove', (e) => {
+    const x = localX(e);
+    if (dragFrom !== null) {
+      band.setAttribute('x', String(Math.min(dragFrom, x)));
+      band.setAttribute('width', String(Math.abs(x - dragFrom)));
+    }
+    const us = timeAt(x);
+    showCursor(us, e, localY(e));
+    if (onCursor) onCursor(us, e);
+  });
+  plot.addEventListener('mouseleave', () => {
+    overlay.replaceChildren();
+    tip.hidden = true;
+    dragFrom = null;
+    band.setAttribute('width', '0');
+    if (onCursor) onCursor(null);
+  });
+
+  if (onZoom) {
+    plot.addEventListener('mousedown', (e) => { dragFrom = localX(e); });
+    plot.addEventListener('mouseup', (e) => {
+      if (dragFrom === null) return;
+      const x = localX(e);
+      band.setAttribute('width', '0');
+      const a = timeAt(Math.min(dragFrom, x));
+      const b = timeAt(Math.max(dragFrom, x));
+      dragFrom = null;
+      // Совсем узкое выделение — это нажатие, а не выделение: иначе дрожание
+      // руки схлопывало бы график в точку.
+      if (b - a > (to - from) / 200) onZoom(a, b);
+    });
+
+    // Колесо приближает **только с зажатой клавишей**. Без неё страница
+    // перестала бы прокручиваться там, где под указателем оказался график, —
+    // а он занимает пол-экрана.
+    plot.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey && !e.shiftKey) return;
+      e.preventDefault();
+      const at = timeAt(localX(e));
+      const factor = e.deltaY > 0 ? 1.4 : 1 / 1.4;
+      // Приближение идёт **к точке под указателем**, а не к середине окна:
+      // разбираемый участок обязан остаться на месте.
+      onZoom(at - (at - from) * factor, at + (to - at) * factor);
+    }, { passive: false });
+
+    // Двойное нажатие отдаляет вдвое: обратный ход к выделению интервала,
+    // который иначе приходится искать в кнопках над графиком.
+    plot.addEventListener('dblclick', (e) => {
+      const at = timeAt(localX(e));
+      onZoom(at - (at - from) * 2, at + (to - at) * 2);
+    });
+  }
+
+  return { node: wrap, svg: root, timeAt, plot, axes, pixelUs, showCursor };
+}
+
+/** Группировка рядов по единицам с расчётом диапазона каждой оси. */
+function buildAxes(series, target = 5) {
+  const byUnits = new Map();
+  for (const s of series) {
+    const key = s.units || '';
+    if (!byUnits.has(key)) byUnits.set(key, []);
+    byUnits.get(key).push(s);
+  }
+  // Не более четырёх осей (FR-709.36): сверх того ряды идут на последнюю.
+  const groups = [...byUnits.entries()].slice(0, 4);
+  const overflow = [...byUnits.entries()].slice(4).flatMap(([, list]) => list);
+  if (overflow.length && groups.length) groups[groups.length - 1][1].push(...overflow);
+
+  return groups.map(([units, list], index) => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const s of list) {
+      for (const p of s.points) {
+        if (p.samples === 0) continue;
+        lo = Math.min(lo, p.min);
+        hi = Math.max(hi, p.max);
+      }
+      // Пороги входят в диапазон: линия порога за краем поля бесполезна.
+      for (const key of ['lo_alarm', 'lo_warning', 'hi_warning', 'hi_alarm']) {
+        const v = s.limits && s.limits[key];
+        if (typeof v === 'number') { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+      }
+    }
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) { lo = 0; hi = 1; }
+    // Логарифмическая шкала — только там, где величина меняется на порядки и
+    // все значения положительны: ноль и отрицательные логарифму не поддаются.
+    const log = list.some((s) => s.log) && lo > 0 && hi / lo >= 100;
+    // Небольшой запас сверху и снизу: линия, прижатая к краю поля, читается
+    // как обрезанная, даже когда она вся на виду. Через ноль запас не
+    // переходит: ось, ушедшая в минус на положительном ряду, и место тратит,
+    // и показывает величину, которой не бывает.
+    const room = padded(lo, hi, 0.04);
+    const scale = log ? logTicks(lo, hi) : niceTicks(room.lo, room.hi, target);
+    return {
+      units,
+      log,
+      lo: scale.lo,
+      hi: scale.hi,
+      step: scale.step,
+      values: scale.values,
+      tags: new Set(list.map((s) => s.tag)),
+      color: index === 0 ? 'var(--muted)' : (list[0].color || PALETTE[list[0].index % PALETTE.length]),
+    };
+  });
+}
+
+/** Доля поля, которую занимает значение на этой оси. */
+function fraction(axis, v) {
+  if (axis.log) return logFraction(v, axis.lo, axis.hi);
+  return axis.hi > axis.lo ? (v - axis.lo) / (axis.hi - axis.lo) : 0.5;
+}
+
+/**
+ * Разбивает точки ряда на непрерывные участки.
+ *
+ * Разрыв — полностью недостоверный интервал либо промежуток, превышающий
+ * кратное шагу точек (FR-709.42). Соединять через него значит рисовать
+ * данные, которых не было.
+ */
+function runsOf(points, series) {
+  const gapFactor = series.gap_factor || 3;
+  const step = medianStep(points);
+  const runs = [];
+  let run = [];
+  let prev = null;
+  for (const p of points) {
+    const broken = p.bad_fraction >= 1 || p.samples === 0;
+    const jumped = prev !== null && step > 0 && p.start_us - prev.end_us > step * gapFactor;
+    if (broken || jumped) {
+      if (run.length) runs.push(run);
+      run = [];
+      prev = broken ? null : p;
+      if (broken) continue;
+    }
+    run.push(p);
+    prev = p;
+  }
+  if (run.length) runs.push(run);
+  return runs;
+}
+
+function medianStep(points) {
+  if (points.length < 2) return 0;
+  const steps = [];
+  for (let i = 1; i < points.length; i++) steps.push(points[i].start_us - points[i - 1].start_us);
+  steps.sort((a, b) => a - b);
+  return steps[Math.floor(steps.length / 2)] || 0;
+}
+
+const mid = (p) => (p.start_us + p.end_us) / 2;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+function eventColor(priority) {
+  if (priority === 'критическая') return 'var(--critical)';
+  if (priority === 'тревога') return 'var(--alarm)';
+  if (priority === 'предупреждение') return 'var(--warn)';
+  return 'var(--muted)';
+}
+
+function text(x, y, value, { anchor = 'start', fill = 'var(--muted)', mono = false,
+  baseline = 'auto', size = 10 } = {}) {
+  const node = svg('text', {
+    x, y, 'text-anchor': anchor, fill, 'font-size': size,
+    'dominant-baseline': baseline,
+    ...(mono ? { 'font-family': 'var(--mono)' } : {}),
+  });
+  node.textContent = value;
+  return node;
+}
+
+function centeredNote(width, height, message) {
+  return text(width / 2, height / 2, message, { anchor: 'middle', size: 13 });
+}
+
+// Прежние `formatTick` и `formatTime` убраны: подписи осей считает `scale.js`,
+// и две несогласованные росписи чисел на одном экране расходились бы —
+// одна писала «4,1 к», другая «4100,0».
+
+/** Значение ряда в точке времени — для курсора. */
+export function valueAt(series, us, tolerance = 0) {
+  if (!series.points || !series.points.length) return null;
+  let best = null;
+  for (const p of series.points) {
+    if (p.start_us <= us && us <= p.end_us) return p;
+    if (!best || Math.abs(mid(p) - us) < Math.abs(mid(best) - us)) best = p;
+  }
+  // Ближайшая точка годится только вплотную: иначе курсор показывал бы
+  // значение часовой давности как текущее.
+  //
+  // «Вплотную» меряется **и в данных, и в пикселях**. Одного шага точек мало:
+  // при секундной записи в шестичасовом окне пиксель графика — это двадцать
+  // четыре секунды, курсор почти всегда попадает между выборками, и подсказка
+  // отвечала бы «нет данных» над сплошной линией. Это и было: изъян нашёлся
+  // на работающем объекте, а не в проверках.
+  const step = medianStep(series.points);
+  const near = Math.max(step * 2, tolerance);
+  if (best && near > 0 && Math.abs(mid(best) - us) > near) return null;
+  return best;
+}
+
+/** Статистика ряда по видимому интервалу (FR-709.48, FR-709.49). */
+export function statistics(series, from, to) {
+  const inside = (series.points || []).filter((p) => p.end_us >= from && p.start_us <= to);
+  const useful = inside.filter((p) => p.samples > 0 && p.bad_fraction < 1);
+  if (!useful.length) {
+    return { min: null, max: null, avg: null, last: null, good: 0, points: inside.length };
+  }
+  let min = Infinity;
+  let max = -Infinity;
+  let sum = 0;
+  let weight = 0;
+  let bad = 0;
+  let span = 0;
+  for (const p of inside) {
+    const duration = Math.max(1, p.end_us - p.start_us);
+    span += duration;
+    bad += duration * (p.bad_fraction || 0);
+    if (p.samples === 0 || p.bad_fraction >= 1) continue;
+    min = Math.min(min, p.min);
+    max = Math.max(max, p.max);
+    sum += p.avg * duration;
+    weight += duration;
+  }
+  return {
+    min: Number.isFinite(min) ? min : null,
+    max: Number.isFinite(max) ? max : null,
+    avg: weight ? sum / weight : null,
+    last: useful[useful.length - 1].avg,
+    good: span ? 1 - bad / span : 0,
+    points: inside.length,
+  };
+}
+
+/** Мелкий график в строке таблицы — по массиву чисел. */
+export function sparkline(values, { width = 90, height = 18, color = 'var(--accent)' } = {}) {
+  const root = svg('svg', { viewBox: `0 0 ${width} ${height}`, width, height });
+  const finite = values.filter((v) => Number.isFinite(v));
+  if (finite.length < 2) return root;
+  const lo = Math.min(...finite), hi = Math.max(...finite);
+  const span = hi - lo || 1;
+  const points = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * width;
+    const y = height - ((v - lo) / span) * (height - 2) - 1;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  root.append(svg('polyline', {
+    points: points.join(' '), fill: 'none', stroke: color, 'stroke-width': 1.2,
+  }));
+  return root;
+}

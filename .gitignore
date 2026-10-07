@@ -45,5 +45,6 @@ MocTestServer/data/
 MocTestServer/logs/
 # Local packaged Win64 builds.
 win64/
+build/
 
 

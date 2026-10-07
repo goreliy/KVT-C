@@ -1,17 +1,20 @@
 ﻿{
   "email": {
-    "enabled": false,
-    "smtp_server": "",
-    "smtp_port": 587,
+    "enabled": true,
+    "smtp_server": "mail-serv.bolid.ru",
+    "smtp_port": 25,
     "security": "starttls",
     "verify_certificate": true,
     "ca_cert_path": "",
     "client_cert_path": "",
     "client_key_path": "",
     "timeout_seconds": 15,
-    "smtp_user": "",
-    "from_address": "",
-    "recipients": [],
+    "smtp_user": "reports",
+    "from_address": "reports@bolid.ru",
+    "recipients": [
+      "shadrin@bolid.ru",
+      "gorelyi@bolid.ru"
+    ],
     "on_alarm": true,
     "on_warning": true,
     "on_recovery": false,

@@ -273,7 +273,7 @@ function selectPlan(planId) {
         }
       });
     } else {
-      canvas.style.backgroundImage = `url(${plan.background})`;
+      canvas.style.backgroundImage = `url(${window.kvtPath(plan.background)})`;
     }
   }
 
