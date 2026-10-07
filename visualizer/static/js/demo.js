@@ -16,6 +16,8 @@
   if (!boot.active) return;
   let state = boot.state;
   let busy = false;
+  let hintTimer, hintKey;
+  let hintTarget = null;
   window.fetch = async (input, options) => {
     const url = new URL(input instanceof Request ? input.url : input, location.href);
     if (url.origin !== location.origin) throw new Error('Внешние запросы в демо отключены');
@@ -73,10 +75,26 @@
     <progress id="demo-progress" max="100" value="0" aria-label="Прогресс демо"></progress>
     <p id="demo-text" class="demo-panel__text"></p>
     <div class="demo-panel__actions"><button class="btn" id="demo-back">← Назад</button><button class="btn" id="demo-repeat">Повторить</button>
-    <button class="btn" id="demo-example">Подставить пример</button><button class="btn" id="demo-open">Открыть шаг</button>
+    <button class="btn" id="demo-example">Подставить пример</button><button class="btn" id="demo-alarm" hidden>Показать тревогу / норму</button><button class="btn" id="demo-open">Открыть шаг</button>
     <button class="btn btn-primary" id="demo-next">Далее →</button><button class="btn" id="demo-skip">Пропустить</button>
     <button class="btn" id="demo-exit">Выйти из демо</button><span class="demo-panel__status" id="demo-status" role="status" aria-live="polite"></span></div>`;
   document.body.append(panel);
+  const intro = document.createElement('section');
+  intro.id = 'demo-intro';
+  intro.className = 'form-section demo-intro';
+  const introTitle = document.createElement('h1');
+  introTitle.textContent = 'Как пользоваться учебным путеводителем';
+  intro.append(introTitle);
+  (state.steps[0].intro || []).forEach(text => {
+    const paragraph = document.createElement('p'); paragraph.textContent = text; intro.append(paragraph);
+  });
+  document.querySelector('.container').prepend(intro);
+  const nudge = document.createElement('aside');
+  nudge.className = 'demo-nudge'; nudge.hidden = true;
+  nudge.innerHTML = '<span id="demo-nudge-text" role="status" aria-live="polite"></span><button class="btn" id="demo-reveal">Показать кнопку</button><button class="btn" id="demo-dismiss" aria-label="Закрыть подсказку">×</button>';
+  const arrow = document.createElement('span');
+  arrow.className = 'demo-nudge__arrow'; arrow.hidden = true; arrow.setAttribute('aria-hidden', 'true');
+  document.body.append(nudge, arrow);
   const el = id => document.getElementById('demo-' + id);
   const currentPath = () => location.pathname.slice(boot.prefix.length).replace(/\/$/, '') || '/';
   const onStepPage = () => currentPath() === (state.steps[state.step].path.replace(/\/$/, '') || '/');
@@ -100,14 +118,66 @@
     el('next').disabled = Boolean(step.writes && !completed);
     el('next').textContent = state.step === state.steps.length - 1 ? 'Завершить ✓' : 'Далее →';
     el('skip').hidden = !step.writes || completed;
-    el('example').hidden = !(step.example || step.action);
-    el('example').disabled = !onStepPage();
-    el('example').textContent = step.action === 'alarm' ? 'Показать тревогу / норму' : 'Подставить пример';
+    el('example').disabled = !onStepPage() || !step.example;
+    el('example').title = step.example ? 'Заполнить учебные значения; затем сохраните их на странице' : 'На этом шаге готовый пример не нужен';
+    el('alarm').hidden = step.action !== 'alarm';
+    el('alarm').disabled = !onStepPage();
+    intro.hidden = state.step !== 0 || !onStepPage();
     el('open').hidden = onStepPage();
     el('status').textContent = `Выполнено ${state.completed.length}/${state.steps.length} · Пропущено ${state.skipped.length}` + (completed ? ' · Шаг выполнен' : '');
     document.querySelectorAll('.demo-focus').forEach(node => node.classList.remove('demo-focus'));
     if (onStepPage() && step.target) document.querySelector(step.target)?.classList.add('demo-focus');
+    scheduleHint();
+    if (!nudge.hidden) positionHint();
   }
+  function hideHint() {
+    clearTimeout(hintTimer);
+    nudge.hidden = true; arrow.hidden = true; hintTarget = null;
+  }
+  function positionHint() {
+    hintTarget = chooseHintTarget();
+    if (!hintTarget || !hintTarget.isConnected) {hideHint(); return;}
+    const rect = hintTarget.getBoundingClientRect();
+    const panelTop = panel.getBoundingClientRect().top;
+    const inPanel = panel.contains(hintTarget);
+    const modal = hintTarget.closest('.modal');
+    const modalRect = modal?.getBoundingClientRect();
+    const bottom = inPanel ? innerHeight : Math.min(panelTop, modalRect?.bottom ?? innerHeight);
+    const below = rect.bottom > bottom;
+    const above = rect.top < Math.max(0, modalRect?.top ?? 0);
+    const label = hintTarget.textContent.trim().replace(/\s+/g, ' ') || 'Продолжить';
+    el('nudge-text').textContent = below ? `Кнопка «${label}» ниже. Прокрутите ${hintTarget.closest('.modal') ? 'окно настройки' : 'страницу'} вниз.`
+      : above ? `Кнопка «${label}» выше. Прокрутите ${modal ? 'окно настройки' : 'страницу'} вверх.` : `Следующее действие: нажмите «${label}».`;
+    arrow.textContent = above ? '↑' : '↓';
+    const top = below ? Math.max(8, bottom - 66) : above ? 8 : Math.max(8, rect.top - 58);
+    arrow.style.top = top + 'px';
+    arrow.style.left = Math.max(8, Math.min(innerWidth - 56, rect.left + rect.width / 2 - 24)) + 'px';
+  }
+  function chooseHintTarget() {
+    const controls = !onStepPage() ? ['#demo-open'] : state.completed.includes(state.step) ? ['#demo-next'] : state.steps[state.step].next_controls || ['#demo-next'];
+    return controls.map(selector => document.querySelector(selector)).find(node => node && !node.disabled && node.getClientRects().length);
+  }
+  function scheduleHint() {
+    const key = `${state.step}:${state.completed.includes(state.step)}:${onStepPage()}`;
+    if (key === hintKey) return; // Five-second API refreshes must not restart the 20-second timer.
+    hintKey = key; hideHint();
+    if (state.step === state.steps.length - 1 && state.completed.includes(state.step)) return;
+    hintTimer = setTimeout(() => {
+      hintTarget = chooseHintTarget();
+      if (!hintTarget) return;
+      positionHint(); nudge.hidden = false;
+      arrow.classList.remove('demo-nudge__arrow--blink');
+      arrow.hidden = false; void arrow.offsetWidth;
+      arrow.classList.add('demo-nudge__arrow--blink');
+      setTimeout(() => {arrow.hidden = true;}, 2400);
+    }, 20000);
+  }
+  el('reveal').onclick = () => {
+    if (hintTarget) {hintTarget.scrollIntoView({behavior:'smooth', block:'center'}); hintTarget.focus({preventScroll:true});}
+  };
+  el('dismiss').onclick = hideHint;
+  document.addEventListener('scroll', () => {if (!nudge.hidden) positionHint();}, true);
+  window.addEventListener('resize', () => {if (!nudge.hidden) positionHint();});
   async function refresh() {
     const response = await rawFetch(window.kvtPath('/_demo/state'), {cache:'no-store'});
     if (!response.ok) throw new Error('Демо приостановлено. Запустите его снова.');
@@ -120,6 +190,7 @@
       const response = await rawFetch(window.kvtPath('/_demo/move'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, step})});
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
+      hideHint(); hintKey = null;
       state = result;
       if (action === 'next' && state.completed.length === state.steps.length) {
         render(); showToast('Демо пройдено. Можно повторить шаги или выйти.');
@@ -136,11 +207,6 @@
   el('open').onclick = () => location.assign(window.kvtPath(state.steps[state.step].path));
   el('example').onclick = async () => {
     const step = state.steps[state.step];
-    if (step.action === 'alarm') {
-      try { const result = await apiFetch('/_demo/alarm', {method:'POST'}); showToast(result.message); await refresh(); }
-      catch (error) {showToast(error.message, 'error');}
-      return;
-    }
     if (step.action === 'sensor' && typeof window.openAddModal === 'function') window.openAddModal();
     Object.entries(step.example || {}).forEach(([id, value]) => {
       const field = document.getElementById(id);
@@ -150,6 +216,10 @@
       field.dispatchEvent(new Event('change', {bubbles:true}));
     });
     showToast('Пример заполнен. Проверьте поля и нажмите «Сохранить» на странице.');
+  };
+  el('alarm').onclick = async () => {
+    try { const result = await apiFetch('/_demo/alarm', {method:'POST'}); showToast(result.message); await refresh(); }
+    catch (error) {showToast(error.message, 'error');}
   };
   el('exit').onclick = async () => {
     try {
@@ -162,6 +232,7 @@
     const height = panel.getBoundingClientRect().height + 24;
     document.body.style.paddingBottom = height + 'px';
     document.body.style.setProperty('--demo-panel-height', height + 'px');
+    if (!nudge.hidden) positionHint();
   }).observe(panel);
   render();
   if (new URLSearchParams(location.search).has('demo_resume')) location.replace(window.kvtPath(state.steps[state.step].path));
