@@ -1,4 +1,7 @@
 """SMTP/Telegram delivery and durable transition outbox owned by the archiver."""
+import base64
+import json
+import logging
 import math
 import os
 import smtplib
@@ -16,6 +19,7 @@ import requests
 from shared import notifications as settings
 from shared.config_manager import load_system_config, load_runtime_json, atomic_save_json
 from shared.paths import data_dir, app_root
+from shared.daily_report import build_report
 
 
 def _certificate_path(path):
@@ -35,7 +39,7 @@ def tls_context(config):
     return context
 
 
-def send_email(config, password, subject, body, recipients=None, message_id=None):
+def send_email(config, password, subject, body, recipients=None, message_id=None, report=None):
     recipients = config['recipients'] if recipients is None else recipients
     if not config['smtp_server'] or not config['from_address'] or not recipients:
         raise ValueError('Нужны SMTP сервер, отправитель и получатели')
@@ -46,6 +50,12 @@ def send_email(config, password, subject, body, recipients=None, message_id=None
     message['Date'] = formatdate(localtime=True)
     message['Message-ID'] = message_id or make_msgid(domain='kvt.local')
     message.set_content(body)
+    if report:
+        message.add_alternative(report['html'], subtype='html')
+        html_part = message.get_payload()[-1]
+        for cid, encoded in report.get('images', {}).items():
+            html_part.add_related(base64.b64decode(encoded), maintype='image', subtype='png',
+                                  cid=f'<{cid}>', disposition='inline')
     mode = config['security']
     if mode not in ('none', 'starttls', 'tls'):
         raise ValueError('Неизвестный режим SMTP')
@@ -129,6 +139,8 @@ class NotificationService:
         ''')
         if 'sensor_id' not in {row['name'] for row in db.execute('PRAGMA table_info(outbox)')}:
             db.execute('ALTER TABLE outbox ADD COLUMN sensor_id INTEGER')
+        if 'report_json' not in {row['name'] for row in db.execute('PRAGMA table_info(outbox)')}:
+            db.execute('ALTER TABLE outbox ADD COLUMN report_json TEXT')
         return db
 
     def start(self):
@@ -153,13 +165,14 @@ class NotificationService:
             self._stop.wait(2)
 
     @staticmethod
-    def _enqueue(db, channel, config, subject, body, sensor_id=None):
+    def _enqueue(db, channel, config, subject, body, sensor_id=None, report=None):
         recipients = config['recipients' if channel == 'email' else 'chat_ids']
         for recipient in recipients:
-            db.execute('''INSERT INTO outbox(channel,recipient,subject,body,message_id,created_at,sensor_id)
-                          VALUES (?,?,?,?,?,?,?)''',
+            db.execute('''INSERT INTO outbox(channel,recipient,subject,body,message_id,created_at,sensor_id,report_json)
+                          VALUES (?,?,?,?,?,?,?,?)''',
                        (channel, recipient, subject, body, make_msgid(domain='kvt.local'),
-                        datetime.now().isoformat(), sensor_id))
+                        datetime.now().isoformat(), sensor_id,
+                        json.dumps(report, ensure_ascii=False) if report else None))
 
     def collect(self, db, config, current, sensors):
         known = {str(s['id']): s for s in sensors if s.get('id') is not None}
@@ -217,11 +230,16 @@ class NotificationService:
             today = now.date().isoformat()
             old = db.execute('SELECT level FROM states WHERE key=?', (key,)).fetchone()
             if not old or old['level'] != today:
-                body = '\n'.join(f'{s.get("name", s.get("id"))}: T={(s.get("temperature") or {}).get("value")} °C, '
-                                 f'H={(s.get("humidity") or {}).get("value")} %, {s.get("combined_status")}'
-                                 for s in current['sensors'])
+                from archiver.archive_service import ArchiveService
+                history_error = False
+                try:
+                    rows = list(ArchiveService(root_dir=os.path.dirname(self.root)).iter_measurements())
+                except Exception:
+                    logging.getLogger(__name__).exception('Daily summary archive read failed')
+                    rows, history_error = [], True
+                body, report = build_report(current, sensors, rows, now=now, history_error=history_error)
                 self._enqueue(db, 'email', email, 'КВТ: ежедневная сводка ' + today,
-                              'Текущие показания, время снимка: ' + str(current.get('timestamp')) + '\n' + body)
+                              body, report=report)
                 db.execute('INSERT OR REPLACE INTO states VALUES (?,?)', (key, today))
 
     def tick(self):
@@ -245,8 +263,9 @@ class NotificationService:
                     continue
                 try:
                     if channel == 'email':
+                        extra = {'report': json.loads(job['report_json'])} if job['report_json'] else {}
                         send_email(cfg, credentials.get('smtp_password', ''), job['subject'], job['body'],
-                                   [job['recipient']], job['message_id'])
+                                   [job['recipient']], job['message_id'], **extra)
                     else:
                         send_telegram(credentials.get('bot_token', ''), job['recipient'], job['body'])
                     db.execute("UPDATE outbox SET status='sent',sent_at=?,error=NULL WHERE id=?",
