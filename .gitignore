@@ -2,6 +2,12 @@
 *.py[cod]
 .pytest_cache/
 
+# Local virtual environments, build output, and editor settings.
+venv/
+.venv/
+dist/
+.vscode/
+
 # Local runtime state.
 .run/
 logs/
