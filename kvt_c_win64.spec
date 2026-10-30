@@ -14,7 +14,7 @@ from shared.notifications import defaults as notification_defaults
 # Only seed JSON files belong in the portable executable, never local keys or backups.
 default_configs = tempfile.TemporaryDirectory(prefix="kvt-build-defaults-")
 for filename in SEEDED_CONFIGS:
-    source = os.path.join(SPECPATH, "data", "config", filename)
+    source = os.path.join(SPECPATH, "default_config", filename)
     destination = os.path.join(default_configs.name, filename)
     if filename == "notifications.json":
         with open(destination, "w", encoding="utf-8") as handle:

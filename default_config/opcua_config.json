@@ -1,6 +1,6 @@
-﻿{
-  "enabled": true,
-  "autostart": true,
+{
+  "enabled": false,
+  "autostart": false,
   "server": {
     "host": "0.0.0.0",
     "port": 4840,
@@ -20,10 +20,10 @@
   "fields": {
     "temperature": true,
     "humidity": true,
-    "combined_status": false,
-    "timestamp": false,
-    "poll_port_metadata": false,
-    "limits": false
+    "combined_status": true,
+    "timestamp": true,
+    "poll_port_metadata": true,
+    "limits": true
   },
   "security": {
     "mode": "anonymous_readonly",

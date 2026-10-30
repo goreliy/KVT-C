@@ -1,0 +1,23 @@
+{
+  "config_version": "1.0.0",
+  "config_schema_version": "1.0",
+  "created_at": null,
+  "updated_at": null,
+  "update_history": [],
+  "system": {
+    "name": "КВТ",
+    "description": "Комплект контроля температуры и влажности",
+    "location": "",
+    "timezone": "Europe/Moscow"
+  },
+  "network": {
+    "web_host": "0.0.0.0",
+    "web_port": 5000,
+    "poller_host": "0.0.0.0",
+    "poller_port": 5001,
+    "archiver_host": "0.0.0.0",
+    "archiver_port": 5002
+  },
+  "sensors": [],
+  "next_sensor_id": 1
+}

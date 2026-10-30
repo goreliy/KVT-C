@@ -1,0 +1,30 @@
+{
+  "email": {
+    "enabled": false,
+    "smtp_server": "",
+    "smtp_port": 587,
+    "security": "starttls",
+    "verify_certificate": true,
+    "ca_cert_path": "",
+    "client_cert_path": "",
+    "client_key_path": "",
+    "timeout_seconds": 15,
+    "smtp_user": "",
+    "from_address": "",
+    "recipients": [],
+    "on_alarm": true,
+    "on_warning": true,
+    "on_recovery": false,
+    "daily_report": false,
+    "daily_report_time": "08:00"
+  },
+  "telegram": {
+    "enabled": false,
+    "chat_ids": [],
+    "on_alarm": true,
+    "on_warning": true,
+    "on_recovery": false
+  },
+  "per_sensor": {},
+  "groups": []
+}
