@@ -41,9 +41,11 @@
     <label><input id="email-on_recovery" type="checkbox" {{ 'checked' if notif.email.on_recovery }}> Возврат в норму</label>
   </div>
   <div class="form-row">
-    <label><input id="daily_report" type="checkbox" {{ 'checked' if notif.email.daily_report }}> Ежедневная сводка текущих показаний</label>
+    <label><input id="daily_report" type="checkbox" {{ 'checked' if notif.email.daily_report }}> Ежедневная сводка: текущие показания и минимум/максимум за вчера</label>
     <div class="form-group"><label for="daily_report_time">Время на компьютере КВТ</label><input id="daily_report_time" type="time" value="{{ notif.email.daily_report_time }}"></div>
   </div>
+  <button class="btn" type="button" data-test="daily-report">Сохранить и отправить тест ежедневной сводки</button>
+  <p class="text-muted">Полное письмо с текущими показаниями, минимумом/максимумом за вчера и графиками будет отправлено общим получателям. Тест доступен и при выключенной сводке; расписание не меняется.</p>
 </div>
 <div class="form-section">
   <div class="form-section__title">Telegram</div>
@@ -122,9 +124,12 @@ async function saveNotifications(channel) {
     document.getElementById('clear_token').checked = false;
     showToast('Настройки сохранены');
     if (channel) {
-      const sensorId = value('test-sensor');
+      const daily = channel === 'daily-report';
+      const sensorId = daily ? '' : value('test-sensor');
       const test = sensorId ? {channel, sensor_id: Number(sensorId)} : {channel};
-      const result = await apiFetch('/api/notifications/test', {method: 'POST', body: JSON.stringify(test)});
+      document.getElementById('notification-status').textContent = daily ? 'Формирование и отправка ежедневной сводки…' : 'Отправка теста…';
+      const result = await apiFetch(daily ? '/api/notifications/test-daily-report' : '/api/notifications/test',
+        {method: 'POST', body: JSON.stringify(daily ? {} : test)});
       showToast(result.message);
     }
     await refreshNotificationStatus();

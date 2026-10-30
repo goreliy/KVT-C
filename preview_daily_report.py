@@ -12,14 +12,15 @@ from shared.paths import data_dir
 
 
 def demo():
-    now = datetime(2026, 10, 27, 7, 30)
+    now = datetime(2026, 10, 30, 7, 30)
+    day_start = now.replace(hour=0, minute=0) - timedelta(days=1)
     names = ['к. 168 Контролёр СМД', 'к. 168 Р-ДИП прогон', 'к. 166 Филоненко',
              'к. 168 Проверка', 'к. 168 Упаковка']
     sensors = [{'id': i+1, 'name': name} for i, name in enumerate(names)]
     readings, rows = [], []
     for i, sensor in enumerate(sensors):
-        for step in range(145):
-            stamp = now - timedelta(hours=24) + timedelta(minutes=10*step)
+        for step in range(144):
+            stamp = day_start + timedelta(minutes=10*step)
             t = 22 + i*.18 + math.sin(step/15+i)*.6
             h = 25 + i*.8 + math.sin(step/22+i)*2
             rows.append({'sensor_id': sensor['id'], 'timestamp_start': stamp,

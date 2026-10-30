@@ -24,8 +24,8 @@ class DailyReportTests(unittest.TestCase):
             {'id': 1, 'name': 'Помещение <1>', 'combined_status': 'guarded',
              'temperature': {'value': 22.625}, 'humidity': {'value': 24}}]}
         self.sensors = [{'id': 1, 'name': 'Помещение <1>'}]
-        self.rows = [self.row(-2, 20, 30, 1), self.row(-1, 24, 40, 3),
-                     self.row(-25, 1000, 1000, 1), self.row(1, 1000, 1000, 1)]
+        self.rows = [self.row(-12, 20, 30, 1), self.row(-10, 24, 40, 3),
+                     self.row(-32, 1000, 1000, 1), self.row(1, 1000, 1000, 1)]
 
     def row(self, hours, t, h, count):
         return {'sensor_id': 1, 'timestamp_start': self.now + timedelta(hours=hours),
@@ -34,12 +34,15 @@ class DailyReportTests(unittest.TestCase):
 
     def test_table_precision_escaping_period_stats_and_pngs(self):
         body, report = build_report(self.current, self.sensors, self.rows, now=self.now)
-        self.assertIn('27.10.2026 07:30:00', body)
+        self.assertIn('27.10.2026 07:30', body)
+        self.assertNotIn('07:30:00', body + report['html'])
         self.assertNotIn('188822', body + report['html'])
         self.assertIn('Помещение &lt;1&gt;', report['html'])
         self.assertNotIn('Помещение <1>', report['html'])
-        self.assertIn('20,00 / 23,00 / 24,00', body)
-        self.assertIn('30,00 / 37,50 / 40,00', body)
+        self.assertIn('температура мин 20 / макс 24 °C', body)
+        self.assertIn('влажность мин 30 / макс 40 %', body)
+        self.assertIn('Сейчас: температура 23 °C; влажность 24 %', body)
+        self.assertIn('За предыдущий день · 26.10.2026', report['html'])
         self.assertIn('Норма', body)
         self.assertNotIn('guarded', body)
         self.assertEqual(len(report['images']), 2)
@@ -55,7 +58,7 @@ class DailyReportTests(unittest.TestCase):
         self.current['sensors'][0]['temperature']['value'] = float('nan')
         body, report = build_report(self.current, self.sensors, [], now=self.now)
         self.assertIn('Данные устарели', body)
-        self.assertIn('T=—', body)
+        self.assertIn('температура — °C', body)
         self.assertNotIn('nan', body)
         self.assertEqual(report['images'], {})
         self.assertIn('Нет архивных данных', report['html'])
@@ -109,8 +112,8 @@ class DailyReportTests(unittest.TestCase):
                 self.assertEqual(json.loads(db.execute('SELECT report_json FROM outbox WHERE id=2').fetchone()[0]), saved)
 
     def test_gaps_are_not_drawn_but_compressed_intervals_are_continuous(self):
-        first = self.row(-24, 20, 30, 1)
-        last = self.row(0, 20, 30, 1)
+        first = self.row(-31.5, 20, 30, 1)
+        last = self.row(-7.5001, 20, 30, 1)
         _, report = build_report(self.current, self.sensors, [first, last], now=self.now)
         image = Image.open(BytesIO(base64.b64decode(report['images']['kvt-daily-t'])))
         self.assertNotEqual(image.getpixel((522, 151)), (37, 99, 235))
@@ -118,6 +121,30 @@ class DailyReportTests(unittest.TestCase):
         _, report = build_report(self.current, self.sensors, [first], now=self.now)
         image = Image.open(BytesIO(base64.b64decode(report['images']['kvt-daily-t'])))
         self.assertEqual(image.getpixel((522, 151)), (37, 99, 235))
+
+    def test_previous_calendar_day_boundaries_and_crossing_interval(self):
+        # Yesterday starts 31.5 hours before this morning's 07:30 report.
+        rows = [self.row(-31.5, 18.125, 29.125, 1),
+                self.row(-7.5001, 25.125, 45.125, 1),
+                self.row(-7.5, 999, 999, 1),  # today's midnight is excluded
+                self.row(-2, 999, 999, 1),   # today's morning is excluded
+                self.row(-31.5001, -999, -999, 1)]
+        interval = self.row(-33, 16.125, 20.125, 1)
+        interval['timestamp_end'] = self.now - timedelta(hours=30)
+        rows.append(interval)
+        body, report = build_report(self.current, self.sensors, rows, now=self.now)
+        self.assertIn('температура мин 16 / макс 25 °C', body)
+        self.assertIn('влажность мин 20 / макс 45 %', body)
+        self.assertNotIn('999', body + report['html'])
+
+    def test_offline_and_nonfinite_history_does_not_change_extrema(self):
+        offline = self.row(-15, -999, 999, 1)
+        offline['status'] = 'offline'
+        nonfinite = self.row(-14, float('nan'), float('inf'), 1)
+        body, _ = build_report(self.current, self.sensors,
+                               self.rows + [offline, nonfinite], now=self.now)
+        self.assertIn('температура мин 20 / макс 24 °C', body)
+        self.assertIn('влажность мин 30 / макс 40 %', body)
 
     def test_delivery_retry_uses_persisted_html_and_images(self):
         with tempfile.TemporaryDirectory() as root:

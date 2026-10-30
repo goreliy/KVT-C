@@ -490,6 +490,51 @@ class ApiTests(ConfigTests):
         self.assertEqual(response.status_code, 502)
         self.assertNotIn(b'private-password', response.data)
 
+    def test_daily_summary_test_sends_full_report_with_schedule_disabled(self):
+        self.client.post('/api/notifications', json={'email': {
+            **email_config(), 'enabled': False, 'daily_report': False}})
+        now = datetime.now()
+        current = {'timestamp': now.isoformat(), 'sensors': [
+            {'id': 1, 'name': 'Комната 1', 'combined_status': 'guarded',
+             'temperature': {'value': 23.4375}, 'humidity': {'value': 30.0}}]}
+        yesterday = now.replace(hour=12, minute=0) - timedelta(days=1)
+        rows = [{'sensor_id': 1, 'timestamp_start': yesterday, 'status': 'guarded',
+                 't_min': 20, 't_avg': 22, 't_max': 24,
+                 'h_min': 25, 'h_avg': 30, 'h_max': 35}]
+        with patch('visualizer.routes.notifications.data_dir', return_value=self.temp.name), \
+             patch('visualizer.routes.notifications.load_runtime_json', return_value=current), \
+             patch('visualizer.routes.notifications.load_system_config', return_value={'sensors': [{'id': 1}]}), \
+             patch('archiver.archive_service.ArchiveService.iter_measurements', return_value=iter(rows)), \
+             patch('visualizer.routes.notifications.send_email') as send:
+            response = self.client.post('/api/notifications/test-daily-report', json={})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('ТЕСТ ежедневной сводки', send.call_args.args[2])
+        self.assertEqual(send.call_args.args[0]['recipients'], ['operator@example.test'])
+        self.assertIn('температура 23 °C; влажность 30 %', send.call_args.args[3])
+        self.assertIn('температура мин 20 / макс 24 °C', send.call_args.args[3])
+        self.assertIn('<table', send.call_args.kwargs['report']['html'])
+        self.assertEqual(len(send.call_args.kwargs['report']['images']), 2)
+        self.assertFalse((Path(self.temp.name) / 'notifications.db').exists())
+
+    def test_daily_summary_test_rejects_missing_recipients_and_readings(self):
+        self.client.post('/api/notifications', json={'email': {**email_config(), 'recipients': []}})
+        with patch('visualizer.routes.notifications.send_email') as send:
+            self.assertEqual(self.client.post('/api/notifications/test-daily-report').status_code, 400)
+            self.client.post('/api/notifications', json={'email': email_config()})
+            with patch('visualizer.routes.notifications.load_runtime_json', return_value={}):
+                self.assertEqual(self.client.post('/api/notifications/test-daily-report').status_code, 400)
+            send.assert_not_called()
+
+    def test_daily_summary_test_redacts_delivery_errors(self):
+        self.client.post('/api/notifications', json={'email': email_config()})
+        with patch('visualizer.routes.notifications.load_runtime_json', return_value={'sensors': [{'id': 1}]}), \
+             patch('visualizer.routes.notifications.load_system_config', return_value={'sensors': []}), \
+             patch('visualizer.routes.notifications.prepare_daily_report', return_value=('text', {'html': '<table></table>'})), \
+             patch('visualizer.routes.notifications.send_email', side_effect=RuntimeError('private-password')):
+            response = self.client.post('/api/notifications/test-daily-report', json={})
+        self.assertEqual(response.status_code, 502)
+        self.assertNotIn(b'private-password', response.data)
+
     def test_sensor_test_uses_saved_routes_for_email_and_telegram(self):
         payload = {'email': email_config(), 'telegram': {'bot_token': '123:token'},
                    'groups': [{'id': 'warehouse', 'name': 'Warehouse', 'sensor_ids': [1],
@@ -517,6 +562,8 @@ class ApiTests(ConfigTests):
         for mode in ('none', 'starttls', 'tls'):
             self.assertIn(f'value="{mode}"', html)
         self.assertIn('notificationPayload', html)
+        self.assertIn('data-test="daily-report"', html)
+        self.assertIn('/api/notifications/test-daily-report', html)
         self.assertNotIn('Заглушка', html)
 
 

@@ -20,7 +20,7 @@ def local_time(value):
 
 def time_text(value):
     stamp = local_time(value)
-    return stamp.strftime('%d.%m.%Y %H:%M:%S') if stamp else '—'
+    return stamp.strftime('%d.%m.%Y %H:%M') if stamp else '—'
 
 
 def number(value):
@@ -33,7 +33,7 @@ def number(value):
 
 def value_text(value):
     value = number(value)
-    return f'{value:.2f}'.replace('.', ',') if value is not None else '—'
+    return f'{value:.0f}' if value is not None else '—'
 
 
 def _chart(series, start, end):
@@ -84,7 +84,8 @@ def _chart(series, start, end):
 def build_report(current, sensors, archive_rows, now=None, history_error=False):
     """Return a JSON-serializable immutable outbox payload and plain fallback."""
     now = local_time(now or datetime.now())
-    start = now - timedelta(hours=24)
+    end_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start = end_of_day - timedelta(days=1)
     known = {str(sensor['id']): sensor for sensor in sensors}
     readings = current.get('sensors') or []
     series = {metric: {str(s['id']): [] for s in readings} for metric in ('t', 'h')}
@@ -95,7 +96,8 @@ def build_report(current, sensors, archive_rows, now=None, history_error=False):
             continue
         stamp = local_time(row['timestamp_start'])
         end = local_time(row.get('timestamp_end')) or stamp
-        if not stamp or end < start or stamp > now:
+        # Previous local calendar day, with midnight at the end excluded.
+        if not stamp or end < start or stamp >= end_of_day:
             continue
         for metric in ('t', 'h'):
             value = number(row.get(metric + '_avg')) if row.get('status') not in OFFLINE else None
@@ -104,14 +106,13 @@ def build_report(current, sensors, archive_rows, now=None, history_error=False):
                 # A compressed interval explicitly represents unchanged readings,
                 # so it is continuous even when it lasts more than 30 minutes.
                 cursor = max(start, stamp) + timedelta(minutes=30)
-                while cursor < min(now, end):
+                while cursor < min(end_of_day, end):
                     series[metric][sid].append((cursor, value))
                     cursor += timedelta(minutes=30)
-                series[metric][sid].append((min(now, end), value))
+                series[metric][sid].append((min(end_of_day, end), value))
             if value is not None:
                 bucket = stats[metric].setdefault(sid, [])
-                bucket.append((number(row.get(metric+'_min')), value, number(row.get(metric+'_max')),
-                               max(1, int(row.get('sample_count') or 1))))
+                bucket.append((number(row.get(metric+'_min')), value, number(row.get(metric+'_max'))))
     for metric in series:
         for points in series[metric].values():
             points.sort(key=lambda point: point[0])
@@ -119,15 +120,14 @@ def build_report(current, sensors, archive_rows, now=None, history_error=False):
     def summary(metric, sid):
         rows = stats[metric].get(sid, [])
         if not rows:
-            return '—'
+            return ('—', '—')
         low = min(r[0] if r[0] is not None else r[1] for r in rows)
         high = max(r[2] if r[2] is not None else r[1] for r in rows)
-        avg = sum(r[1]*r[3] for r in rows) / sum(r[3] for r in rows)
-        return ' / '.join(value_text(v) for v in (low, avg, high))
+        return value_text(low), value_text(high)
 
     plain = [f'КВТ: ежедневная сводка {now:%d.%m.%Y}',
              f'Снимок: {time_text(current.get("timestamp"))}',
-             f'История за 24 часа: {time_text(start)} — {time_text(now)}']
+             f'За предыдущий день: {start:%d.%m.%Y} (00:00–24:00)']
     table_rows, stat_rows, legend = [], [], []
     attention = 0
     for index, reading in enumerate(readings):
@@ -159,23 +159,28 @@ def build_report(current, sensors, archive_rows, now=None, history_error=False):
                  f'<span style="color:{color};font-weight:bold">{label}</span>',
                  '<br>'.join(escape(time_text(stamp)) for stamp in dict.fromkeys(stamps))]
         table_rows.append('<tr>' + ''.join(f'<td style="{CELL}">{cell}</td>' for cell in cells) + '</tr>')
-        stat_cells = [escape(str(name)), summary('t', sid), summary('h', sid)]
+        t_min, t_max = summary('t', sid)
+        h_min, h_max = summary('h', sid)
+        stat_cells = [escape(str(name)), t_min, t_max, h_min, h_max]
         stat_rows.append('<tr>' + ''.join(f'<td style="{CELL}">{cell}</td>' for cell in stat_cells) + '</tr>')
-        plain.append(f'{name}: T={values[0]} °C; H={values[1]} %; {label}; {time_text(stamps[0])}')
-        plain.append(f'  Мин / сред / макс: T {summary("t", sid)} °C; H {summary("h", sid)} %')
+        plain.append(f'\n{index+1}. {name}\n  Сейчас: температура {values[0]} °C; влажность {values[1]} %.'
+                     f'\n  Состояние: {label}. Измерено: {time_text(stamps[0])}'
+                     + (f'; влажность: {time_text(stamps[1])}' if stamps[1] != stamps[0] else ''))
+        plain.append(f'  За {start:%d.%m.%Y}: температура мин {t_min} / макс {t_max} °C; '
+                     f'влажность мин {h_min} / макс {h_max} %.')
         legend.append(f'<span style="color:{COLORS[index % len(COLORS)]}">● {index+1}. {escape(str(name))}</span>')
     images, charts = {}, []
     for metric, title, unit in (('t', 'Температура', '°C'), ('h', 'Влажность', '%')):
-        chart = _chart(series[metric], start, now)
+        chart = _chart(series[metric], start, end_of_day)
         charts.append(f'<h3 style="font-size:17px;margin:28px 0 12px">{title}, {unit}</h3>')
         if chart:
             cid = 'kvt-daily-' + metric
             images[cid] = chart
-            charts.append(f'<img src="cid:{cid}" alt="{title} за последние 24 часа" width="900" style="display:block;width:100%;max-width:900px;height:auto">')
+            charts.append(f'<img src="cid:{cid}" alt="{title} за {start:%d.%m.%Y}" width="900" style="display:block;width:100%;max-width:900px;height:auto">')
         else:
             charts.append('<p style="color:#64748b">Нет архивных данных за выбранный период.</p>')
     history_note = ('Архив недоступен. Показаны только последние показания.' if history_error else
-                    'Статистика по доступным архивным измерениям; среднее взвешено по числу отсчётов. '
+                    'Минимум и максимум за предыдущий календарный день по доступным архивным измерениям. '
                     'Пробелы более 30 минут и отсутствие связи показаны разрывами.')
     plain.append(history_note)
     html = f'''<!doctype html><html lang="ru"><head><meta charset="utf-8"></head>
@@ -188,11 +193,11 @@ def build_report(current, sensors, archive_rows, now=None, history_error=False):
 Сформировано: {time_text(now)} · Местное время системы КВТ</p>
 <p style="padding:14px;background:#eff6ff;color:#1e40af">Датчиков: <b>{len(readings)}</b> &nbsp; · &nbsp; Требуют внимания: <b>{attention}</b></p>
 <h2 style="font-size:19px;margin:26px 0 12px">Текущие показания</h2>
-{_table(['№', 'Датчик / помещение', 'T, °C', 'H, %', 'Состояние', 'Время измерения¹'], table_rows)}
+{_table(['№', 'Датчик / помещение', 'Температура, °C', 'Влажность, %', 'Состояние', 'Время измерения¹'], table_rows)}
 <p style="color:#64748b;font-size:12px">¹ Если времена различаются: температура, затем влажность. Устаревшие значения приведены справочно.</p>
-<h2 style="font-size:19px;margin:28px 0 8px">Последние 24 часа</h2>
-<p style="color:#64748b">{time_text(start)} — {time_text(now)}</p>
-{_table(['Датчик / помещение', 'T: мин / сред / макс, °C', 'H: мин / сред / макс, %'], stat_rows)}
+<h2 style="font-size:19px;margin:28px 0 8px">За предыдущий день · {start:%d.%m.%Y}</h2>
+<p style="color:#64748b">С 00:00 до 24:00 · {start:%d.%m.%Y}</p>
+{_table(['Датчик / помещение', 'Температура мин, °C', 'Температура макс, °C', 'Влажность мин, %', 'Влажность макс, %'], stat_rows)}
 <p style="color:#64748b;font-size:12px;line-height:1.6">{history_note}</p>
 <p style="line-height:1.8">{' &nbsp; '.join(legend)}</p>
 {''.join(charts)}

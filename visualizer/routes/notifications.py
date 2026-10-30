@@ -6,10 +6,35 @@ from flask import Blueprint, jsonify, request
 
 from shared import notifications as settings
 from shared.config_manager import load_runtime_json, load_system_config
-from shared.notification_service import send_email, send_telegram, error_message
+from shared.notification_service import send_email, send_telegram, error_message, prepare_daily_report
 from shared.paths import data_dir
 
 notifications_bp = Blueprint('notifications', __name__)
+
+
+@notifications_bp.route('/notifications/test-daily-report', methods=['POST'])
+def test_daily_report():
+    """Send a full daily summary without consuming today's scheduled report."""
+    try:
+        config = settings.validate({}, settings.load())
+        cfg = config['email']
+        if not cfg['recipients']:
+            raise ValueError('Укажите общих получателей ежедневной сводки')
+        root = data_dir()
+        current = load_runtime_json(os.path.join(root, 'current.json'))
+        if not current.get('sensors'):
+            raise ValueError('Нет текущих показаний для ежедневной сводки. Проверьте опрос датчиков')
+        now = datetime.now()
+        body, report = prepare_daily_report(current, load_system_config().get('sensors', []),
+                                            root=root, now=now)
+        send_email(cfg, settings.secrets().get('smtp_password', ''),
+                   f'КВТ: ТЕСТ ежедневной сводки {now:%d.%m.%Y}', body, report=report)
+        return jsonify(ok=True, message='Тестовая ежедневная сводка принята почтовым сервером. '
+                       'Отправка по расписанию сохранена')
+    except ValueError as exc:
+        return jsonify(error=str(exc)), 400
+    except Exception as exc:
+        return jsonify(error=error_message(exc)), 502
 
 
 @notifications_bp.route('/notifications', methods=['GET', 'POST'])

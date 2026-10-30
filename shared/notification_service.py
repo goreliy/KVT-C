@@ -85,6 +85,18 @@ def send_telegram(token, chat_id, body):
         raise RuntimeError('Telegram отклонил сообщение')
 
 
+def prepare_daily_report(current, sensors, root=None, now=None):
+    """Build the same snapshot for scheduled delivery and an explicit test."""
+    from archiver.archive_service import ArchiveService
+    history_error = False
+    try:
+        rows = list(ArchiveService(root_dir=os.path.dirname(root or data_dir())).iter_measurements())
+    except Exception:
+        logging.getLogger(__name__).exception('Daily summary archive read failed')
+        rows, history_error = [], True
+    return build_report(current, sensors, rows, now=now, history_error=history_error)
+
+
 def error_message(exc):
     if isinstance(exc, ssl.SSLCertVerificationError):
         return 'Не удалось проверить сертификат SMTP сервера'
@@ -230,14 +242,7 @@ class NotificationService:
             today = now.date().isoformat()
             old = db.execute('SELECT level FROM states WHERE key=?', (key,)).fetchone()
             if not old or old['level'] != today:
-                from archiver.archive_service import ArchiveService
-                history_error = False
-                try:
-                    rows = list(ArchiveService(root_dir=os.path.dirname(self.root)).iter_measurements())
-                except Exception:
-                    logging.getLogger(__name__).exception('Daily summary archive read failed')
-                    rows, history_error = [], True
-                body, report = build_report(current, sensors, rows, now=now, history_error=history_error)
+                body, report = prepare_daily_report(current, sensors, root=self.root, now=now)
                 self._enqueue(db, 'email', email, 'КВТ: ежедневная сводка ' + today,
                               body, report=report)
                 db.execute('INSERT OR REPLACE INTO states VALUES (?,?)', (key, today))
