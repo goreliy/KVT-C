@@ -3,6 +3,7 @@ import json
 import os
 import socketserver
 import ssl
+import sys
 import tempfile
 import threading
 import unittest
@@ -534,6 +535,29 @@ class ApiTests(ConfigTests):
             response = self.client.post('/api/notifications/test-daily-report', json={})
         self.assertEqual(response.status_code, 502)
         self.assertNotIn(b'private-password', response.data)
+
+    def test_daily_summary_reports_missing_pillow_before_smtp(self):
+        self.client.post('/api/notifications', json={'email': email_config()})
+        now = datetime.now()
+        current = {'timestamp': now.isoformat(), 'sensors': [{'id': 1}]}
+        rows = [{'sensor_id': 1, 'timestamp_start': now - timedelta(days=1),
+                 'status': 'guarded', 't_min': 20, 't_max': 24, 't_avg': 22,
+                 'h_min': 25, 'h_max': 35, 'h_avg': 30}]
+        with patch('visualizer.routes.notifications.load_runtime_json', return_value=current), \
+             patch('visualizer.routes.notifications.load_system_config', return_value={'sensors': [{'id': 1}]}), \
+             patch('archiver.archive_service.ArchiveService.iter_measurements', return_value=iter(rows)), \
+             patch.dict(sys.modules, {'PIL': None}), \
+             patch('visualizer.routes.notifications.send_email') as send:
+            response = self.client.post('/api/notifications/test-daily-report', json={})
+        self.assertEqual(response.status_code, 502)
+        self.assertIn('Pillow (PIL)', response.json['error'])
+        self.assertNotIn('проверьте соединение', response.json['error'])
+        send.assert_not_called()
+
+    def test_missing_module_error_omits_exception_details(self):
+        message = delivery.error_message(ModuleNotFoundError('private-password', name='example_module'))
+        self.assertIn('example_module', message)
+        self.assertNotIn('private-password', message)
 
     def test_sensor_test_uses_saved_routes_for_email_and_telegram(self):
         payload = {'email': email_config(), 'telegram': {'bot_token': '123:token'},

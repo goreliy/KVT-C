@@ -98,6 +98,12 @@ def prepare_daily_report(current, sensors, root=None, now=None):
 
 
 def error_message(exc):
+    if isinstance(exc, ModuleNotFoundError):
+        if exc.name == 'PIL' or (exc.name or '').startswith('PIL.'):
+            return ('Не установлен Pillow (PIL), необходимый для графиков ежедневной сводки. '
+                    'Установите зависимости requirements.txt в окружении КВТ '
+                    'и перезапустите визуализатор и архиватор. Для EXE нужна новая сборка.')
+        return f'Не найден Python-модуль: {exc.name or "неизвестен"}. Проверьте установку зависимостей КВТ'
     if isinstance(exc, ssl.SSLCertVerificationError):
         return 'Не удалось проверить сертификат SMTP сервера'
     if isinstance(exc, smtplib.SMTPAuthenticationError):

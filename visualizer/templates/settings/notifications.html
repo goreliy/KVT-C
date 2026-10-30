@@ -80,6 +80,7 @@
 <button class="btn" type="button" data-test="telegram">Сохранить и отправить тест в Telegram</button>
 </form>
 <p class="text-muted mt-2">Уведомления отправляются при смене состояния датчика под охраной. Работает в составе службы архиватора.</p>
+<p id="notification-test-status" role="status" aria-live="polite"></p>
 <p id="notification-status" role="status" aria-live="polite"></p>
 {% endblock %}
 {% block scripts %}
@@ -123,17 +124,19 @@ async function saveNotifications(channel) {
     document.getElementById('clear_password').checked = false;
     document.getElementById('clear_token').checked = false;
     showToast('Настройки сохранены');
+    document.getElementById('notification-test-status').textContent = 'Настройки сохранены';
     if (channel) {
       const daily = channel === 'daily-report';
       const sensorId = daily ? '' : value('test-sensor');
       const test = sensorId ? {channel, sensor_id: Number(sensorId)} : {channel};
-      document.getElementById('notification-status').textContent = daily ? 'Формирование и отправка ежедневной сводки…' : 'Отправка теста…';
+      document.getElementById('notification-test-status').textContent = daily ? 'Формирование и отправка ежедневной сводки…' : 'Отправка теста…';
       const result = await apiFetch(daily ? '/api/notifications/test-daily-report' : '/api/notifications/test',
         {method: 'POST', body: JSON.stringify(daily ? {} : test)});
       showToast(result.message);
+      document.getElementById('notification-test-status').textContent = result.message;
     }
     await refreshNotificationStatus();
-  } catch (e) { document.getElementById('notification-status').textContent = e.message; }
+  } catch (e) { document.getElementById('notification-test-status').textContent = e.message; }
   finally { buttons.forEach(b => b.disabled = false); }
 }
 form.addEventListener('submit', e => {e.preventDefault(); saveNotifications();});
@@ -145,7 +148,7 @@ async function refreshNotificationStatus() {
     document.getElementById('notification-status').textContent =
       (s.running ? 'Служба работает.' : 'Служба не активна. Запустите архиватор.') +
       ' В очереди: ' + (counts.pending || 0) + ', отправлено: ' + (counts.sent || 0) + ', ошибок: ' + (counts.failed || 0) +
-      (s.last_error ? '. ' + s.last_error : '') + (s.error ? '. ' + s.error : '');
+      (s.last_error ? '. Последняя ошибка в истории очереди: ' + s.last_error : '') + (s.error ? '. ' + s.error : '');
   } catch (e) { document.getElementById('notification-status').textContent = e.message; }
 }
 refreshNotificationStatus();
